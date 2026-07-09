@@ -1,5 +1,5 @@
 ---
-id: charter-head-gardener
+id: charter-dispatcher
 type: charter
 status: gated
 depends_on: []
@@ -7,7 +7,7 @@ owner: agent
 updated: 2026-07-07
 ---
 
-# head-gardener — dispatch, sequencing, the findings ledger, checkpoint-resume
+# dispatcher — dispatch, sequencing, the findings ledger, checkpoint-resume
 
 > Provenance: generalized from ADR-0030 §Naming/§Dispatch/§Workflows/
 > §Adopted mechanics and the source project's bug-pipeline and
@@ -15,8 +15,8 @@ updated: 2026-07-07
 > source project's own product-specific severity taxonomy in favor of a
 > placeholder.
 
-> **`.claude/agents/head-gardener.md` is scoped, not a full peer of the
-> other gardener agents.** ADR-0030's team table marks head-gardener
+> **`.claude/agents/dispatcher.md` is scoped, not a full peer of the
+> other agents.** ADR-0030's team table marks head-gardener
 > "cold-started: the interactive session (v0)." A genuinely
 > cold-started subagent cannot hold the live, multi-turn dispatch state
 > this role requires in v0; it IS the interactive session, not a role
@@ -28,12 +28,12 @@ updated: 2026-07-07
 > as a one-shot advisor a dispatcher can consult; it explicitly refuses
 > to sequence a run if asked to. Revisit when v0 graduates to a
 > runner-hosted dispatcher, at which point a real persistent
-> head-gardener process becomes possible.
+> dispatcher process becomes possible.
 
 ## What this role is
 
 Classifies every incoming ask into a workflow, sequences the other
-gardeners through it, keeps the findings ledger, and owns the
+agents through it, keeps the findings ledger, and owns the
 checkpoint-resume bounds that keep a run from silently dying.
 
 ## Dispatch contract
