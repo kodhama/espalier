@@ -1,14 +1,16 @@
 # grove
 
 **Grove** is a portable agent-swarm operating model: chartered roles
-("gardeners"), workflows, and a dispatch contract, distributed as markdown
-charters + Claude Code agent definitions + a skill — **no binary, no
-service**. The name is the druids' own: a grove is a community of trees —
-and, in the druidic orders, the name of the community itself. It grows
-along a [Trellis](https://github.com/kodhama/trellis) (the governance
-layer this repo overlays), keeping the family's founding image: *a grove
-trained along a trellis*. The agents are **gardeners** — the grove is
-what they tend, and what they are.
+("grove agents"), workflows, and a dispatch contract, distributed as
+markdown charters + Claude Code agent definitions + a skill — **no
+binary, no service**. The name is the druids' own: a grove is a
+community of trees — and, in the druidic orders, the name of the
+community itself. It grows along a
+[Trellis](https://github.com/kodhama/trellis) (the governance layer
+this repo overlays), keeping the family's founding image: *a grove
+trained along a trellis*. The agents are **grove agents** — the grove
+is what they tend, and what they are; informally, and with real
+affection, its druids.
 
 This repo is the **reference implementation and distribution home**. A
 consuming project adopts grove by vendoring the charters + agents it
@@ -17,14 +19,14 @@ the same door pattern Trellis uses for its own overlay.
 
 ## The team
 
-Grove charters eight gardener roles, one per stage of the pipeline, plus
+Grove charters eight agent roles, one per stage of the pipeline, plus
 two remediation roles that keep runs from silently dying, plus one
 standing audit role over the artifact record itself. Every role is a
 **stateless cold start**: all context travels through artifacts and their
 `depends_on` graph, never through conversation history. A floundering cold
 role is evidence about the artifacts it was given, not just the agent.
 
-| Gardener | Stage | Charter | Cold-started |
+| Agent | Stage | Charter | Cold-started |
 |---|---|---|---|
 | divergent-researcher | 1 | research discipline; loud abort on missing tools | yes |
 | shaper | 2 | decision canvases; never decides | interactive |
@@ -33,7 +35,7 @@ role is evidence about the artifacts it was given, not just the agent.
 | executor | 4 | test-first implementation from artifacts only; under-specification is a surfaced finding, never a silent choice | yes |
 | conformance-reviewer | 4½ | build gate vs. approved upstream, multi-round; drift taxonomy | yes |
 | validator | 5 | per-PR critique + triggered drift audits; report-only | yes |
-| head-gardener | — | dispatch, sequencing, findings ledger, checkpoint-resume | the interactive session (v0) |
+| dispatcher | — | dispatch, sequencing, findings ledger, checkpoint-resume | the interactive session (v0) |
 | run-resumer | remediation | resumes a run that died at its turn cap from its checkpoint | yes |
 | propagation-remediator | remediation | writes an honest missing propagation section when a PR's contract check fails | yes |
 | corpus-reviewer | standing | artifact-corpus conformance vs the repo's own contract (frontmatter, lifecycle, `depends_on`, supersession); report-only | yes |
@@ -43,11 +45,11 @@ consuming project must fill in, live in [`charters/`](charters/).
 
 ## Dispatch and workflows
 
-The head-gardener classifies every ask into one of six workflows and
-sequences gardeners through it (**inference-first**: classify, announce the
+The dispatcher classifies every ask into one of six workflows and
+sequences agents through it (**inference-first**: classify, announce the
 classification in the first status line, proceed — explicit workflow
 commands remain an override, not the operating model). See
-[`charters/head-gardener.md`](charters/head-gardener.md) for the full
+[`charters/dispatcher.md`](charters/dispatcher.md) for the full
 dispatch contract, workflows W1–W6, the backpropagation interrupt (W4), and
 the checkpoint-resume bounds shared with `run-resumer`.
 
@@ -55,13 +57,13 @@ the checkpoint-resume bounds shared with `run-resumer`.
 
 - **`decisions/`** — this repo's own ADRs (append-only; see its README).
 - **`specs/`** — this repo's own specs, if any (see its README).
-- **`charters/`** — the portable role charters: what each gardener is,
+- **`charters/`** — the portable role charters: what each agent is,
   what it does, its boundaries, and its placeholders. This is the artifact
   grove ships.
 - **`.claude/agents/`** — Claude Code subagent definitions generated from
   the charters, ready to drop into a consuming project's `.claude/agents/`.
-- **`.claude/skills/grove-status/`** — the runtime-status skill a
-  gardener uses to report itself onto a [wisp](https://github.com/kodhama/wisp)
+- **`.claude/skills/grove-status/`** — the runtime-status skill an
+  agent uses to report itself onto a [wisp](https://github.com/kodhama/wisp)
   event bus, if one is vendored (telemetry is optional by construction —
   grove never requires wisp to function).
 - **`.trellis/`** — the Trellis governance overlay this repo runs on
@@ -77,7 +79,7 @@ The canonical route is the Claude Code plugin (kodhama-0002 §3):
 /grove:setup
 ```
 
-`/grove:setup` is a composing interview: it asks which gardener roles to
+`/grove:setup` is a composing interview: it asks which agent roles to
 install (default: all eleven), copies their definitions into your project's
 `.claude/agents/`, and resolves every placeholder (test/typecheck
 commands, your VCS/issue-tracker conventions, your parked-item store,
@@ -110,5 +112,5 @@ This repo was lifted out of its source project per ADR-0030 §Lift path
 implementation after ≥2 surviving furrows"). Wave 1 bootstrap covers the
 skeleton and the generalized charters/agents/skill (steps A1–A2 of
 `plan-suite-lift.md` Lane A); the generated landing page (A3) and this
-repo's first self-hosted furrow (A4, the lift's own conformance test) are
+repo's first self-hosted run (A4, the lift's own conformance test) are
 wave 2.

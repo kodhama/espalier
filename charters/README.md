@@ -1,7 +1,7 @@
 # charters/
 
 The portable role charters — what grove actually ships. Each file
-charters one gardener: what it is, its method, its boundaries, and (where
+charters one agent: what it is, its method, its boundaries, and (where
 the role needs a project-specific value) an explicit placeholder for the
 consuming project to fill in. These are narrative artifacts; their
 executable counterparts — ready-to-drop-in Claude Code subagent
