@@ -14,15 +14,18 @@ updated: 2026-07-10
 > charter, matching the existing agent-role charter pattern, not a
 > lighter decision and not deferred. Every sibling charter in this
 > directory was generalized from ADR-0030 and gated together in this
-> repo's bootstrap wave; this one has had no equivalent shaping
-> conversation. `status: draft`, not `gated`, is deliberate: the
-> maintainer decided grove-status **should** have a full charter and in
-> what form (matching the agent-role pattern); the actual content below
-> — what to include, how to frame a skill rather than a pipeline stage —
-> is this author's first pass, not yet reviewed. See the PR this file
-> ships in for an explicit split of what's a confident description of
-> grove-status's real behavior (verified against its own source) vs.
-> this author's own judgment calls about charter scope.
+> repo's bootstrap wave; this one took a different path to the same
+> place — a maintainer shaping-pass conversation (2026-07-10) that
+> resolved the charter's shape, the gate/dispatch hedge below, and the
+> provenance-record question (see the PR body's "Shaping pass complete"
+> section for the specifics). `status: gated`, not `draft`, reflects
+> that: the maintainer decided grove-status **should** have a full
+> charter and in what form (matching the agent-role pattern), and the
+> shaping pass has now settled the actual content below — what to
+> include, how to frame a skill rather than a pipeline stage. See the PR
+> this file ships in for an explicit split of what's a confident
+> description of grove-status's real behavior (verified against its own
+> source) vs. this author's own judgment calls about charter scope.
 
 > **This charter is shaped differently from its siblings.** grove-status
 > is not a dispatched agent role: it has no stage in the W1–W6 pipeline,
