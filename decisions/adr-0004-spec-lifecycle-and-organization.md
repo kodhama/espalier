@@ -31,22 +31,21 @@ updated: 2026-07-11
   rule fresh — `decision-0014` itself is not edited (it already works fine
   scoped to invariants); this ADR states the same shape as the general
   case and cites 0014 as precedent/proof-of-practice.
+- **The `specs/README.md` contradiction fix is in scope for this ADR**
+  (2026-07-11, maintainer): grove's, design-system's, and wisp's
+  `specs/README.md` files (which currently say specs are append-only,
+  inheriting from `decisions/README.md`) get corrected to state the
+  model-4 rule, as part of this same change — landing the decision and
+  the docs that describe it together, not as separate follow-up. See
+  Consequences for the concrete file list.
 
 **Open** (live questions — this draft moves items here to Decided as they
 resolve):
-1. **(New, surfaced by the model-4 decision above.)** grove's, design-
-   system's, and wisp's own `specs/README.md` files currently state the
-   *opposite* rule (specs inherit decisions' append-only discipline) —
-   now directly contradicting the family rule just decided. Should
-   fixing these three files be **in scope for this same ADR** (so the
-   decision and the docs that describe it land together, consistent),
-   or **separate follow-up work** (kept parked, tracked as issues,
-   landed in each repo's own PR after this ADR merges)?
-2. Given model 4, what the required shape of an in-place amendment/delta
+1. Given model 4, what the required shape of an in-place amendment/delta
    note should be — a candidate already exists in this family's own
    organic practice (see Context: the five-field template), not yet
    formalized as a rule anywhere.
-3. Whether — and how — to formalize story-map (user-activity) organization
+2. Whether — and how — to formalize story-map (user-activity) organization
    for specs, given math-quest already has a working, unprompted example
    of this (see below) that predates this issue.
 
@@ -154,8 +153,19 @@ discovery gain at trellis's current corpus size (5 specs).
 
 ## Consequences (drafted, pending Open items above)
 
-*(left blank pending resolution of the Open items — filled in as this
-draft converges, not asserted ahead of the maintainer's actual decision)*
+- **`specs/README.md` fixes, once this ADR is approved** (in scope, per
+  Decided above): `grove/specs/README.md`, `design-system/specs/README.md`,
+  `wisp/specs/README.md` — currently identical, word-for-word copies
+  stating specs inherit decisions' append-only discipline — corrected to
+  state the model-4 rule (revise-in-place; significant changes get a
+  decision citing this ADR; minor edits don't). Not executed by this ADR
+  itself (per this repo's own stage discipline: implementation follows
+  approval, doesn't precede it) — a follow-on pass across the three repos
+  once this merges.
+
+*(remaining consequences left blank pending resolution of the other Open
+items — filled in as this draft converges, not asserted ahead of the
+maintainer's actual decision)*
 
 ## Rejected options
 
