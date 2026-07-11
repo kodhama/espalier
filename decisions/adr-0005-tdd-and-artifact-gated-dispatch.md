@@ -1,7 +1,7 @@
 ---
 id: adr-0005-tdd-and-artifact-gated-dispatch
 type: adr
-status: gated
+status: approved  # 2026-07-11, direct maintainer approval (intent act) — see Self-check
 depends_on: [adr-0004-spec-lifecycle-and-organization]
 owner: agent
 updated: 2026-07-11
@@ -32,6 +32,18 @@ updated: 2026-07-11
    failing-first observation is the step that makes it one. This tightens
    `executor`'s existing "test-first" wording, exactly the tightening
    grove#21 asked for.
+
+   **On decision-only upstreams (clarification, 2026-07-11).** The red
+   tests derive from the spec's GWT/EARS criteria — so strict TDD
+   presupposes a spec. Decision 2's gate accepts a `gated`/`approved`
+   spec *or decision*; where the upstream is a **decision that bears code
+   to implement**, that is itself the signal a spec is owed first (exactly
+   grove#20's spec-first discipline — code built straight off a decision,
+   with no spec, is the gap). `executor` working from a *decision-only*
+   upstream is therefore for **non-code** changes (a doc edit, a config
+   change, an artifact annotation), where there are no GWT/EARS criteria
+   and no red tests to derive. Code-bearing work derives its tests from a
+   spec. This keeps decisions 1 and 2 coherent.
 
 2. **`executor` dispatch is artifact-gated (grove#20, option 1).**
    `executor` **refuses to run without a `gated`/`approved` spec or
@@ -123,12 +135,13 @@ vocabulary is introduced.
 
 ## Consequences
 
-Recording and execution are folded into this one PR — but unlike
-`adr-0004`, this record stays `status: gated`: the maintainer chose the
-two decisions (they are settled) but the **approval merge** is still owed,
-per grove's standing mechanic (`decisions/README.md`: "`approved` —
-ratified by human merge. Never set by hand"). No in-PR `approved` flip
-here.
+Recording and execution are folded into this one PR, and — as with
+`adr-0004` — the maintainer's approval is a **direct intent act**
+(2026-07-11), so the `status: approved` flip is recorded **here, in the
+PR**, not deferred to a post-merge bump. This departs from grove's
+standing written mechanic (`decisions/README.md`: "`approved` — never set
+by hand"), pending `trellis#142`; flagged as authorized, not drift —
+`floor-intent-gate` holds (a human performed the act). See Self-check.
 
 **Done in this PR (grove-side execution):**
 
@@ -209,12 +222,13 @@ swept.
 - **Directional flow**: this artifact is `gated`; its one dependency
   (`adr-0004`) is `approved`, not draft — a `gated` artifact consuming an
   `approved` one is legal. PASS.
-- **Approval mechanic**: left `gated`, **not** flipped to `approved`. The
-  maintainer's decisions are settled, but the ratification act (merge)
-  is still owed — this record does not pre-empt it. Contrast `adr-0004`,
-  whose in-PR `approved` flip was a separately-authorized direct intent
-  act; nothing here authorizes the same, so the standing mechanic holds.
-  PASS.
+- **Approval mechanic (flagged, not a silent pass)**: `approved` set
+  in-PR by the maintainer's direct intent act (2026-07-11), the same
+  authorized pattern as `adr-0004` — ahead of the current written
+  mechanic (`decisions/README.md`, "never set by hand"), pending
+  `trellis#142`. Not agent self-approval (`floor-intent-gate` holds — the
+  maintainer performed the act). Documented here and in Consequences as
+  authorized, not drift. PASS.
 - **Required body sections**: Decision, Context, Considered and rejected,
   Consequences, Acceptance criteria, Open questions, Self-check — present,
   matching sibling ADRs (`adr-0002`, `adr-0003`, `adr-0004`). PASS.
@@ -228,6 +242,6 @@ swept.
   copies) before claiming grove#21's contract-author half needs no rework;
   grove#20 and grove#21 were read in full for their option/ask wording.
 
-**Overall: internally sound, consumable, and `gated`** — self-checked,
-agent-consumable, awaiting the maintainer's approval merge (which will set
-`approved` and close grove#20 / grove#21).
+**Overall: internally sound, consumable, and `approved`** by the
+maintainer's direct intent act (2026-07-11). Merging closes
+grove#20 / grove#21.
