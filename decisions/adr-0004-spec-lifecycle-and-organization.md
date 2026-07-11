@@ -42,7 +42,23 @@ updated: 2026-07-11
 4. **Delta-note format: two altitudes, not one uniform note — and the
    note itself is NOT required to be GWT/EARS grammar.** It's a plain
    structured annotation describing a change to a GWT/EARS-shaped spec,
-   not itself a scenario.
+   not itself a scenario. **Why, argued explicitly, not just asserted:**
+   item 1 already establishes that specs — not deltas — are the artifact
+   holding current behavior; the behavioral specification therefore
+   belongs entirely in the spec's own Given/When/Then and EARS
+   statements (item 3), and the delta's job is categorically different
+   (provenance: what changed, when, why, what to trust it against — not
+   a second statement of behavior). This is the **same "one home per
+   kind of information" principle that already rejected model 2**
+   (Context, Considered and rejected) applied to this choice too:
+   forcing the delta into full Gherkin would re-derive a Given/When/Then
+   of the *new* behavior in a second place, one that then gets discarded
+   — worse than model 2's rejected duplication, not better, since one of
+   the two copies is disposable by design. The organic evidence backs
+   this: every real delta tag found (`S8 (amended by #145)`, `INV-1
+   (amended by ADR-0026, #121; was: 9 of the last 10)`) is a compact tag
+   that **quotes** the prior state rather than re-authoring a fresh
+   Gherkin sentence — the actual working shape, not a hypothetical one.
    - **Scenario-level** (routine — a single Given/When/Then or EARS
      statement changes): tag the scenario/invariant's own id inline,
      matching math-quest's already-working practice exactly — `S8
@@ -186,6 +202,15 @@ flagged doesn't materialize.
   moving files only. One-line reason: avoids `depends_on`-graph rework
   across every repo that cites an affected id, for no discovery benefit
   beyond what a stable-id file move already provides.
+- **Requiring GWT/EARS grammar for the delta note itself** (reviewed
+  explicitly, 2026-07-11, not just asserted) — rejected in favor of a
+  plain structured annotation. One-line reason: specs, not deltas, are
+  the artifact that holds behavior (item 1) — forcing the delta into
+  Gherkin would duplicate the spec's own Given/When/Then in a second,
+  disposable place, the same "one home per kind of information" defect
+  that already killed model 2, and the family's real, working delta
+  tags (`S8 (amended by #145)`) already quote the prior state rather
+  than re-authoring it in Gherkin.
 
 ## Consequences
 
