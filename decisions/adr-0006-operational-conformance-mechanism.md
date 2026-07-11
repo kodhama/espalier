@@ -41,11 +41,25 @@ updated: 2026-07-11
   `trellis/decision-0045` combined): a spec → `repo/id@vN`; a decision →
   `repo/adr-id` (append-only; the id *is* the version, no `@`); a design
   artifact → `repo/id@version`; other kinds → their own form.
-- **Tests are first-class artifacts with a deps ledger** — frontmatter
-  `depends_on` listing the specs (`@vN`) AND decisions they rest on. Tests
-  are a *superset* of ACs: behavioral tests derive from a spec's GWT/EARS,
-  but technical/e2e tests are governed by a test-strategy *decision*, not a
+- **Tests are first-class artifacts with a deps ledger** — a `depends_on`
+  listing the specs (`@vN`) AND decisions they rest on. Tests are a
+  *superset* of ACs: behavioral tests derive from a spec's GWT/EARS, but
+  technical/e2e tests are governed by a test-strategy *decision*, not a
   spec AC. (Fits `trellis/decision-0045`'s "generalize artifact.")
+  - **The ledger is a per-package file** (decided 2026-07-11) — one
+    dedicated frontmatter-carrying ledger per package/suite (not per-test-
+    file: no YAML-in-code-files, and one-test-file/one-spec rarely line up
+    1:1). `corpus-reviewer` reads one place per package for the sweep;
+    re-check granularity is the package. `executor` maintains it.
+- **The forgotten-dependency soft spot degrades gracefully** (confirmed
+  2026-07-11) — a missing `depends_on` reads like "no dep needed," but it
+  does not stay silent: it surfaces as a **coverage gap** when the
+  conformance check runs (an implementation matching no declared upstream
+  is a *visible governance gap*, per the guardrail — needs a spec/test,
+  never a delete trigger), plus role-conformance catches gross misses (the
+  charter says to declare). No active declaration-enforcement mechanism is
+  added; the graph being incomplete degrades into "visible gap," not
+  "false clean." This is judged sufficient for v0.
 - **The real graph is a DAG, not a linear chain** — *illustrative, not
   strict* (the maintainer explicitly does not guarantee this topology):
   `(decisions, specs) → tests`; `(decisions, mockups) → specs`;
@@ -85,12 +99,7 @@ updated: 2026-07-11
   its verdict to the staleness signal, rather than building a new agent.
 
 **Open** (the forks to shape):
-1. **The test deps ledger form** — where it lives (per-file frontmatter? a
-   per-package ledger file?) and its exact shape.
-2. **Emergence's forgotten-dependency soft spot** — is "surfaces as a
-   coverage gap when the check runs" (+ role-conformance) enough, or does
-   something enforce declaration more actively?
-3. **The collapsed (charter) case detail** — how "charter conforms to its
+1. **The collapsed (charter) case detail** — how "charter conforms to its
    ADR" is checked concretely (a review verdict), and whether a charter,
    being *dual-consumed* (vendored byte-copy AND behavioral), needs both a
    byte-marker and a behavioral one (`decision-0045`'s dual-consumed open
