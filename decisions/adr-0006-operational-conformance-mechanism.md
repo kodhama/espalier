@@ -1,7 +1,7 @@
 ---
 id: adr-0006-operational-conformance-mechanism
 type: adr
-status: gated  # self-checked 2026-07-11; revised after an adversarial pass (Findings 1–4) — see Self-check
+status: approved  # 2026-07-11, direct maintainer approval (intent act) after two adversarial rounds — see Self-check
 depends_on: [adr-0004-spec-lifecycle-and-organization, adr-0005-tdd-and-artifact-gated-dispatch, trellis/decision-0045, trellis/decision-0044]
 owner: agent
 updated: 2026-07-11
@@ -313,9 +313,15 @@ grammar and the version field:
   the "if nothing lied" caveat, so it is presented to the maintainer for
   the approval act rather than triggering an open-ended third round. PASS
   (two independent rounds ran; the human owns whether to approve now).
-- **Approval mechanic**: left `gated`, not flipped. Ratification (the
-  maintainer's act) is owed; this record does not pre-empt it. PASS.
+- **Approval mechanic (flagged, not a silent pass)**: `approved` set
+  in-PR by the maintainer's direct intent act (2026-07-11) after two
+  independent adversarial rounds, the same authorized pattern as
+  `adr-0004`/`adr-0005` — ahead of the current written mechanic
+  (`decisions/README.md`, "never set by hand"), pending the family's
+  approval-materialization decision (trellis#142). The merge of PR #37 is
+  the ratification act. PASS.
 
-**Overall: internally sound, consumable, and `gated`** — self-checked,
-awaiting the maintainer's approval, which closes kodhama/grove#34 and
-authorizes the charter execution (Consequences).
+**Overall: internally sound, consumable, and `approved`** — self-checked,
+survived two adversarial rounds, and ratified by the maintainer's intent
+act (PR #37 merge), which closes kodhama/grove#34 and authorizes the
+charter execution (Consequences).
