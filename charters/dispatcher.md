@@ -4,7 +4,7 @@ type: charter
 status: gated
 depends_on: []
 owner: agent
-updated: 2026-07-07
+updated: 2026-07-11
 ---
 
 # dispatcher — dispatch, sequencing, the findings ledger, checkpoint-resume
@@ -138,6 +138,13 @@ floor or binary conformance-to-upstream.
 - Every skip is a recorded skip, never a silent one (`floor-transparency`).
 - The intent gate (decisions, specs) never fully opens to agents — human
   sign-off is mandatory there, whatever the dial says elsewhere.
+- **Never dispatch `executor` without a `gated`/`approved` artifact** for
+  it to read — a spec or a decision, but never a conversational prose
+  brief synthesized from the session (`adr-0005`, decision 2). Where the
+  line falls between "a decision is enough" and "a spec is required first"
+  is not fixed here (parked in `adr-0005`); what is fixed is that *some*
+  reviewable `gated`/`approved` artifact must exist — conversation alone
+  never qualifies.
 
 ## Placeholders
 
