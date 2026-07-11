@@ -1,0 +1,154 @@
+---
+id: adr-0004-spec-lifecycle-and-organization
+type: adr
+status: draft
+depends_on: [decision-0014, spec-0001]
+owner: agent
+updated: 2026-07-11
+---
+
+# ADR-0004: how a spec absorbs change, and how specs are organized for discovery
+
+> Provenance: shaping grove#22 (spec lifecycle: current-behavior vs.
+> delta), with grove#21 (GWT/EARS structured specs) and grove#20 (the
+> process-gap incident that motivated both) as direct context. Research
+> pass completed 2026-07-11, findings tagged `verified`/`inferred`
+> throughout this draft — cited inline, not re-argued.
+
+## Decision state
+
+**Decided:**
+- Specs represent **current behavior**, not a delta on top of some other
+  document — settled in grove#22 itself, prior to this shaping pass, not
+  reopened here.
+
+**Open** (live questions — this draft moves items here to Decided as they
+resolve):
+1. Which of the four candidate lifecycle models (below) to formalize as
+   the rule for how a change gets *into* a current-behavior spec.
+2. Given whichever model wins, what the required shape of an in-place
+   amendment/delta note should be.
+3. Whether — and how — to formalize story-map (user-activity) organization
+   for specs, given math-quest already has a working, unprompted example
+   of this (see below) that predates this issue.
+
+**Parked** (explicitly deferred, not part of this decision):
+- The narrower "should executor's plan format be standardized" question
+  from grove#22's tail — the maintainer flagged this as its own,
+  more speculative question; it doesn't gate the lifecycle/organization
+  decision here.
+- A live, three-repo-repeated inconsistency this research surfaced as a
+  side effect (not itself the subject of #22): `grove`/`design-system`/
+  `wisp`'s `specs/README.md` all state specs inherit decisions' append-only
+  discipline, directly contradicting trellis's ratified `spec-0001` §3.7
+  and `decision-0014` (both say revise-in-place) and math-quest's actual
+  practice. No repo has ever set `status: superseded` on a spec, so this
+  hasn't caused an incident — but it's live and unresolved. Parked here
+  because fixing it should follow whatever this decision settles, not
+  precede it — flagged so it isn't lost once this ADR merges.
+
+## Context
+
+Research pass (full report available on request) read: grove#20/#21/#22
+in full, trellis's `spec-0001` §3 (the ratified artifact contract),
+`decision-0014` (2026-07-01, invariants-as-revise-in-place precedent),
+`decision-0028` (checked directly — does **not** actually support the
+citation grove#22 makes to it; the real precedent for "specs are living
+current-truth" is spec-0001 §3.7 + decision-0014, not 0028), grove's own
+`specs/README.md`/`decisions/README.md`, and the real spec corpora of
+trellis, math-quest, wisp, and design-system.
+
+**Load-bearing verified fact**: trellis's already-ratified `spec-0001` §3
+point 7 states specs are **revise-in-place**, explicitly named as the
+contrasting category to append-only decisions — this isn't a green-field
+choice, it's already the family's ratified default. `decision-0014` gives
+the working reasoning: "the invariant set is a compiled, revise-in-place
+spec... not re-ratified per change... significant invariant changes are
+recorded as ADRs; minor/editorial edits are just spec edits — no ADR." That
+is structurally identical to model 4 below, ratified and running since
+2026-07-01, a week before #22 raised the question — nobody in #22's
+discussion cited it.
+
+### The four candidate models (from grove#22), evaluated
+
+1. **Informal delta** — edit in place, no dedicated marker at all. Cheapest,
+   but weakest traceability; `verified`: this is closest to how trellis's
+   own specs 0001-0005 are actually edited today (plain commits, no
+   in-file amendment marker).
+2. **Durable, separate "spec-delta" artifact type.** `verified` risk: this
+   is exactly the "one behavioral contract split across two documents"
+   shape math-quest's own `spec-slice-01-first-loop.md` explicitly
+   rejected in its own "Reconciliation (amend vs. fork)" section, citing
+   this family's "one home per kind of information" principle. Worst
+   storage growth of the four (unbounded artifact count).
+3. **Specs adopt decisions' supersede pattern** (walk a lineage to find
+   "current"). `verified` tension: math-quest's own CLAUDE.md rule 7
+   frames the bounded-context invariant as "spec + code + the live
+   decisions it cites — never the whole archive... never [read ADRs] to
+   reconstruct current-truth" — the whole reason decisions are append-only
+   is that nobody needs them to answer "what's true right now." Making
+   specs work the way decisions do reverses that property for the
+   document type specifically meant to answer "what's true right now."
+4. **Formalized but transient** (maintainer's stated lean) — real
+   structure at delta time (ideally GWT/EARS-shaped, per #21), but not
+   retained as a separate artifact; folded into the current-behavior spec,
+   "why" afterward lives in git history + the motivating decision/issue.
+   This is `decision-0014`'s exact shape, already ratified and exercised.
+
+**All four models pay a real cost under many revisions, just in different
+currencies** — models 2/3 pay it as "which of N files is current"; models
+1/4 pay it as a single growing file where history and current-truth
+interleave (`verified`: math-quest's `spec-slice-01-first-loop.md` is now
+555 lines with amendment markers threaded through nearly every invariant,
+e.g. "INV-1 (amended by ADR-0026, #121; was: 9 of the last 10)"). Neither
+failure mode is free; this draft doesn't pretend model 4 is costless, only
+that its cost is already being paid successfully in this family's largest
+real spec corpus.
+
+### An existing, unformalized delta template (verified, not invented for this draft)
+
+Every real amendment note found in this family's corpus — kodhama-0005,
+kodhama-0007, kodhama-0003, math-quest's `spec-placement.md` and
+`spec-slice-01-first-loop.md` — independently converges on the same
+five-field shape, without anyone naming it as a rule:
+
+> `[dated marker] (DATE, trigger)` — **WHAT** changed (name the rule/id,
+> quote the old reading) — **WHY** (the concrete trigger: incident,
+> ruling, review finding) — **SCOPE** (what's preserved vs. superseded,
+> explicit) — **POINTER** (where the live text now is, if not right here).
+
+Where a spec is already GWT/EARS-scenario-shaped (per #21), the delta
+collapses further: keep the scenario/invariant id, edit its Given/When/Then
+in place, tag the id with what changed and why — math-quest already does
+exactly this ("S8 (amended by #145)").
+
+### Story-map organization
+
+`verified`: math-quest already has a **working, unprompted precedent** —
+component specs (`spec-mastery-engine`, `spec-placement`, etc.) keep
+technical names; a lighter, ungated "living document"
+(`design/Scope Prioritization.md`) provides the user-journey/story-map view
+(Milestones → named Epics reading like user stories: "M1-E1 Página de
+exercício"), and "slice specs" (`spec-slice-01-first-loop`,
+`spec-slice-02-placement`) sit between the two, `depends_on`-citing the
+component specs directly. This wasn't built in response to #22 — it
+predates it, which is real evidence the pattern works in practice, not
+just a proposal.
+
+Sketching the same shape against trellis's actual 5 specs (installing,
+leaving cleanly, keeping the corpus honest, tuning strictness) shows the
+index-over-reorg approach costs nothing structurally — no id/frontmatter
+churn, no `depends_on` graph disruption — while a physical reorg
+(renaming/moving spec files into activity-named directories) would need to
+either break existing ids or add redirection machinery for no clear
+discovery gain at trellis's current corpus size (5 specs).
+
+## Consequences (drafted, pending Open items above)
+
+*(left blank pending resolution of the Open items — filled in as this
+draft converges, not asserted ahead of the maintainer's actual decision)*
+
+## Rejected options
+
+*(none yet — options move here only when the maintainer rejects them,
+per this repo's shaping convention, with a one-line reason)*
