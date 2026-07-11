@@ -55,8 +55,11 @@ updated: 2026-07-11
     bumps its behavioral version counter (`decision-0045`).
   - `shaper` — declares a decision's `depends_on` and supersedes old
     decisions (append-only; no version).
-  - the **test creator** — declares the test deps ledger and maintains it.
-    (No explicit role today — executor holds it; see Open questions.)
+  - `executor` — **owns test authoring + the test deps ledger** (decided
+    2026-07-11): no new test-creator role; executor already writes the
+    tests under strict TDD (`adr-0005`), so it also declares and maintains
+    the ledger. (Derive-skeletons-from-GWT/EARS, grove#21's parked idea,
+    stays parked — a possible later refinement, not now.)
   - a **reviewer sweep** — notices a stale pin (pin < current) and fires
     the real conformance check. Also a charter duty, not a declared schema.
 - **Guardrail (grove#22, carried):** absence of a spec/test is *never*
@@ -76,20 +79,16 @@ updated: 2026-07-11
   its verdict to the staleness signal, rather than building a new agent.
 
 **Open** (the forks to shape):
-1. **The test-creator role** — its own role, or does `executor` absorb
-   "declare + maintain the test deps ledger" (it already writes the tests
-   under strict TDD, adr-0005)? Interacts with grove#21's parked
-   derive-skeletons-from-GWT/EARS idea.
-2. **The staleness sweep** — which role runs pin-vs-current and fires the
+1. **The staleness sweep** — which role runs pin-vs-current and fires the
    conformance check (`conformance-reviewer` / `corpus-reviewer` / new)?
    And *when* — on-change (an upstream bump flags stale downstream) vs.
    standing/periodic?
-3. **Emergence's forgotten-dependency soft spot** — is "surfaces as a
+2. **Emergence's forgotten-dependency soft spot** — is "surfaces as a
    coverage gap when the check runs" (+ role-conformance) enough, or does
    something enforce declaration more actively?
-4. **The test deps ledger form** — where it lives (per-file frontmatter? a
+3. **The test deps ledger form** — where it lives (per-file frontmatter? a
    per-package ledger file?) and its exact shape.
-5. **The collapsed (charter) case detail** — how "charter conforms to its
+4. **The collapsed (charter) case detail** — how "charter conforms to its
    ADR" is checked concretely (a review verdict), and whether a charter,
    being *dual-consumed* (vendored byte-copy AND behavioral), needs both a
    byte-marker and a behavioral one (`decision-0045`'s dual-consumed open
