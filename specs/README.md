@@ -28,9 +28,45 @@ updated: YYYY-MM-DD
   ever sees them.
 - `approved` — ratified by human merge (the spec gate — ADR-0009-style
   gate authority — is human, always). Never set by hand.
-- `superseded` — retired; a forward pointer names the replacement (see
-  `decisions/README.md` for the append-only discipline this inherits).
+- `superseded` — retired and replaced wholesale; a forward pointer names
+  the replacement. (Per-change edits are revise-in-place, not
+  supersession — see below.)
 
 Every spec must carry `## Acceptance criteria` (checkable) and
 `## Open questions` (may be empty, but must exist) — a spec that cannot
 say what "done" means is not yet a spec.
+
+## How a spec absorbs change (`adr-0004`)
+
+Unlike `decisions/` (append-only), a spec is **revise-in-place current
+truth**: it states current behavior, not a delta on prior versions, and
+is edited in place rather than superseded per change (`adr-0004`,
+model 4, generalizing `trellis/decision-0014`). A **significant** change
+additionally gets a durable decision recording why, citing `adr-0004`;
+**minor/editorial** edits are just spec edits — no decision. Each edit
+carries `adr-0004`'s two-altitude delta note at the point of change (a
+scenario-level inline id-tag, or a section-level five-field blockquote
+plus VALUE + CONFIDENCE); the note is provenance, not retained as its own
+artifact.
+
+### Worked example — a section-level delta note
+
+Illustrative (a hypothetical spec change), showing all seven fields:
+
+> **Amendment (2026-07-11, grove#42 — post-incident review).**
+> **WHAT:** §4 "Workflow classification" — scenario `S7` previously routed
+> a bare bug report to W2 (shaping); it now routes to W4 (execution).
+> **WHY:** three plain bug reports in a row stalled in shaping when they
+> needed a direct fix (grove#42).
+> **SCOPE:** `S7` amended; `S1`–`S6` and every EARS invariant in §4 stand
+> unchanged.
+> **POINTER:** the current Given/When/Then for `S7` is in §4 below — this
+> note is provenance only, not itself an acceptance criterion.
+> **VALUE:** as a maintainer filing a plain bug, my report now reaches an
+> executor directly instead of sitting in a shaping queue.
+> **CONFIDENCE:** `verified` — the three stalled reports are linked in
+> grove#42.
+
+The routine, scenario-level form is lighter — just tag the scenario id in
+place, no blockquote: `S7 (amended 2026-07-11, grove#42; was: routed bare
+bug reports to W2/shaping)`.
