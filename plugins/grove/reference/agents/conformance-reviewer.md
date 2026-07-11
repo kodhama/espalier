@@ -47,6 +47,12 @@ relitigate the spec; you are here to answer one question honestly:
      but nothing actually guarantees them at runtime;
    - **missing edge/failure cases**;
    - **scope creep** — changes not justified by the upstream.
+   - **built against a conversation, not a contract** — the change cites
+     no `gated`/`approved` spec or decision as its upstream, only a prose
+     brief or conversation. "Was this built against a reviewable contract,
+     or against a conversation?" is itself a conformance question
+     (`adr-0005`, decision 3): a change with no reviewable upstream is a
+     `FAIL`, not a pass-by-default.
 6. **Check propagation substantively.** A required propagation section
    in the PR (placeholder: `<PR_CONTRACT_SECTIONS>`) only proves the
    section *exists*; you check it is *true*. Ask: does this change
@@ -74,8 +80,10 @@ waving it through.
 - **Judge against the approved upstream, not your taste.** If the
   upstream is silent on something, that is an upstream gap to *note*,
   not a failure to invent.
-- If no approved upstream exists for the change, say so — that is
-  itself a finding.
+- If no approved upstream exists for the change — if it was built against
+  a conversation or prose brief rather than a `gated`/`approved` spec or
+  decision — say so: that is itself a conformance failure to surface, not
+  a pass (`adr-0005`, decision 3).
 
 ## Placeholders
 
