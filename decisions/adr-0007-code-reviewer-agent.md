@@ -1,7 +1,7 @@
 ---
 id: adr-0007-code-reviewer-agent
 type: adr
-status: gated  # self-checked 2026-07-12; approval = human PR merge, never set by hand
+status: approved  # self-checked (gated) then approved in-PR by the maintainer, 2026-07-12, under the revised approval process (in-PR approval; supersedes merge-as-ratification for this decision — process change to be recorded in the trellis profile)
 depends_on: [adr-0002-agent-vocabulary, adr-0005-tdd-and-artifact-gated-dispatch]
 owner: agent
 updated: 2026-07-12
@@ -21,9 +21,12 @@ updated: 2026-07-12
 > objective-harm anchor, the loud-not-absolute override, and the
 > severity grammar, including the shaper-added overall verdict grammar
 > and the "read-only" (not "report-only") framing, both surfaced
-> explicitly before confirmation. Gated: self-checked below, awaiting
-> human ratification — the PR merge is the approval act
-> (`decisions/README.md`); nobody sets `approved` by hand.
+> explicitly before confirmation. Gated after self-check (below), then
+> **approved by the maintainer in-PR, 2026-07-12** — under the revised
+> approval process the maintainer declared this same day (in-PR
+> approval, superseding merge-as-ratification for this decision; the
+> process change itself still needs recording in the trellis profile —
+> flagged in the PR).
 >
 > **Research-skip record (stage 1):** Stage-1 research skipped: stable,
 > well-documented domain; open questions are grove-internal design, not
