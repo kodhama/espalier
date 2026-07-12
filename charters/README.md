@@ -12,7 +12,10 @@ One file, [`grove-status.md`](grove-status.md), charters a skill rather
 than an agent role — the shared runtime-telemetry contract every role
 composes into its own work. It has no `.claude/agents/` counterpart and
 no pipeline stage; its own charter says so explicitly rather than
-forcing the "one file, one agent" shape above onto it.
+forcing the "one file, one agent" shape above onto it. Another,
+[`lifecycle.md`](lifecycle.md), is the lifecycle companion (`adr-0008`)
+— the artifact state enum, stated once and shipped in the payload — not
+a role either.
 
 ## Artifact contract
 
@@ -23,7 +26,7 @@ YAML frontmatter:
 ---
 id: charter-role-slug     # kebab-case, prefixed by type
 type: charter
-status: draft | gated | approved | superseded
+status: ...               # ∈ the state enum in lifecycle.md (the lifecycle companion, adr-0008)
 depends_on: [...]         # ids of upstream artifacts this one builds on
 owner: agent | human
 updated: YYYY-MM-DD

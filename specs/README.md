@@ -14,23 +14,17 @@ with YAML frontmatter:
 ---
 id: spec-short-slug       # kebab-case, prefixed by type
 type: spec                # adr | spec | charter | plan | rubric | ...
-status: draft | gated | approved | superseded
+status: ...               # ∈ the state enum in charters/lifecycle.md (the lifecycle companion, adr-0008)
 depends_on: [adr-0000-...]   # ids of upstream artifacts this one builds on
 owner: agent | human
 updated: YYYY-MM-DD
 ---
 ```
 
-- `draft` — not yet self-checked; not a valid downstream input. An
-  `executor` agent never implements against a `draft` spec.
-- `gated` — self-checked against its rubric (if any); agent-consumable.
-  The `spec-adversary` agent runs against `gated` specs, before a human
-  ever sees them.
-- `approved` — ratified by human merge (the spec gate — ADR-0009-style
-  gate authority — is human, always). Never set by hand.
-- `superseded` — retired and replaced wholesale; a forward pointer names
-  the replacement. (Per-change edits are revise-in-place, not
-  supersession — see below.)
+What each `status` value means, and who moves an artifact between
+states, lives in [`charters/lifecycle.md`](../charters/lifecycle.md) —
+the lifecycle companion (`adr-0008`) — not restated here. (Per-change
+spec edits are revise-in-place, not supersession — see below.)
 
 Every spec must carry `## Acceptance criteria` (checkable) and
 `## Open questions` (may be empty, but must exist) — a spec that cannot

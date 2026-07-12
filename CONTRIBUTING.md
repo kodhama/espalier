@@ -18,7 +18,7 @@ YAML frontmatter:
 ---
 id: type-short-slug      # kebab-case, prefixed by type
 type: charter             # adr | spec | charter | plan | rubric | ...
-status: draft | gated | approved | superseded
+status: ...               # ∈ the state enum in charters/lifecycle.md (the lifecycle companion, adr-0008)
 depends_on: [...]         # ids of upstream artifacts this one builds on
 owner: agent | human
 updated: YYYY-MM-DD
@@ -29,27 +29,14 @@ updated: YYYY-MM-DD
 |---|---|
 | `id` | kebab-case, prefixed by type (`charter-executor`, `spec-0001-...`, `adr-0001-...`) |
 | `type` | `adr` \| `spec` \| `charter` \| `plan` \| `rubric` \| ... |
-| `status` | see the four values below |
+| `status` | ∈ the state enum in [`charters/lifecycle.md`](charters/lifecycle.md), the lifecycle companion (`adr-0008`) |
 | `depends_on` | ids of the upstream artifacts this one was built from — the bounded-context graph a cold-started agent reads, never the whole archive |
 | `owner` | `agent` (author) or `human` — who wrote it, not who's accountable for it |
 | `updated` | last-touched date |
 
-**The four `status` values, and who moves an artifact between them:**
-
-- **`draft`** — not yet self-checked; not a valid downstream input. A
-  `contract-author` never derives a spec from a draft decision; an
-  `executor` never implements against a draft spec.
-- **`gated`** — self-checked by its own author against the relevant
-  rubric/acceptance-grep. Agent-consumable, but not yet independently
-  reviewed. For specs, the `spec-adversary` role runs against `gated`
-  specs, before a human ever sees them.
-- **`approved`** — ratified by **human merge of the PR**. **Never set by
-  hand** — no author, agent or human, edits a `status:` field to
-  `approved` directly. The merge itself is the approval
-  (`floor-intent-gate`: the intent gate never opens to agents).
-- **`superseded`** — retired. A forward pointer at the top of the
-  superseded text names the replacement's `id` (see the append-only
-  rule below).
+What each `status` value means, and who moves an artifact between
+states, lives in [`charters/lifecycle.md`](charters/lifecycle.md) — the
+lifecycle companion (`adr-0008`) — not restated here.
 
 **Charters are the one exception worth naming explicitly.** As of this
 writing every charter in `charters/` sits at `status: gated` — its
@@ -64,39 +51,18 @@ reviewing a charter change, treat `gated` as "believe the self-check,
 verify it yourself before leaning on it," not as a human-reviewed
 state.
 
-## The draft → gated → approved → superseded lifecycle
+## The artifact lifecycle
 
-### `draft` → `gated`
-
-Who: the artifact's own author (agent or human), immediately after
-writing it. What must be true first: every required section for the
-artifact's type is present (a spec needs `## Acceptance criteria` and
-`## Open questions`, literally, even if the latter is empty; a charter
-needs `What this role is` / `Method` / `Boundaries` / `Placeholders`),
-and the author has run their own self-check against the artifact's
-rubric or acceptance criteria and recorded the result honestly — a
-failing self-check is *listed*, never silently passed
-(`charters/contract-author.md` step 4).
-
-### `gated` → `approved`
-
-Who: a human, and only via merging the PR. What must be true first: for
-a `specs/` artifact, a `spec-adversary` pass has run against the
-`gated` draft and converged on `APPROVE-READY` (see below); for a
-`decisions/` artifact, the shaping conversation with the maintainer has
-converged. The merge itself IS the approval — there is no separate
-"flip the status field" step, and no PR is merged by its own author
-when the artifact's contract requires human approval.
-
-### `approved` → `superseded`
-
-Who: whoever proposes the change that makes the old artifact obsolete.
-**Never edit a ratified (`approved`) decision in place.** Write a new
-artifact, mark the old one `status: superseded` (or `superseded in
-part`), and add a one-line forward pointer at the top of the superseded
-artifact's text naming the new artifact's `id`. No reader should ever
-land on stale text with no link forward — this is how "why is it this
-way?" stays answerable later (`decisions/README.md`).
+The lifecycle itself — the state enum, what each state means, and who
+moves an artifact between states — lives in
+[`charters/lifecycle.md`](charters/lifecycle.md), the lifecycle
+companion (`adr-0008`); this guide deliberately does not restate it.
+Two contribution-facing notes on top of it: what must be true *before*
+each promotion is type-specific and covered in the proposal sections
+below (required sections and an honest self-check before an author
+gates their own artifact; for specs, a converged `spec-adversary` pass
+before a human sees the PR), and the append-only supersession mechanics
+for decisions live in `decisions/README.md`.
 
 ## How to propose a new charter
 

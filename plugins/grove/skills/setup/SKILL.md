@@ -30,7 +30,11 @@ traceable to grove's own canonical copy; the file Claude Code loads as a subagen
 its `---` frontmatter delimiter, not a comment above it).
 
 Also copy `reference/agents/README.md` into `.claude/agents/README.md` (same header-stripping),
-adapted in step 3 below along with everything else. If any chosen role's file already exists at the
+adapted in step 3 below along with everything else. And copy
+`${CLAUDE_PLUGIN_ROOT}/reference/lifecycle.md` into `.claude/agents/lifecycle.md` (same
+header-stripping) — the lifecycle companion (`adr-0008`): the artifact-lifecycle state enum, stated
+once, that every role and the `corpus-reviewer`'s lifecycle check source. It is not an agent role
+and is not optional per role — every install gets it. If any chosen role's file already exists at the
 destination, **never overwrite it silently** — ask the user whether to overwrite, skip, or diff
 first, and honor their answer per file.
 
@@ -90,10 +94,12 @@ tokens that no longer exist in it).
 
 If this project has no `decisions/README.md` or `specs/README.md`, seed minimal ones — model:
 grove's own (`decisions/README.md`, `specs/README.md` in the grove repo). Each should cover: the
-shared artifact frontmatter (`id/type/status/depends_on/owner/updated`), the four `status` values
-(`draft → gated → approved (→ superseded)`) and who moves an artifact between them, and — for
-`decisions/` — the append-only rule (never edit a ratified decision in place; supersede with a
-forward pointer). Adapt, don't invent a heavier process than grove's own.
+shared artifact frontmatter (`id/type/status/depends_on/owner/updated`) and — for `decisions/` —
+the append-only rule (never edit a ratified decision in place; supersede with a forward pointer).
+Do **not** seed the lifecycle state enum or its state semantics — those live in the lifecycle
+companion this install already landed at `.claude/agents/lifecycle.md` (step 2, `adr-0008`); a
+seeded README points there instead of restating them. Adapt, don't invent a heavier process than
+grove's own.
 
 ## 6. Compose the managed block into `CLAUDE.md`
 
