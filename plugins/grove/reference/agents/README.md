@@ -11,6 +11,12 @@ Copy the ones you need into your own project's `.claude/agents/`, then
 fill in each file's placeholders (angle-bracketed tokens like
 `<TEST_CMD>`).
 
+**The lifecycle companion is not an agent role and does not live
+here.** The artifact-lifecycle state enum — stated once, sourced by
+every role and the `corpus-reviewer`'s lifecycle check — is installed
+by setup to **`.grove/lifecycle.md`** (grove's own namespace, not this
+loader directory; `adr-0008` as amended) on every install.
+
 **`dispatcher.md` is scoped, not a full peer of the rest.** ADR-0030
 charters head-gardener as "cold-started: the interactive session (v0)"
 — sequencing a whole run requires state that survives across dozens of

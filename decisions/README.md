@@ -13,17 +13,16 @@ YAML frontmatter:
 ---
 id: adr-000x-short-slug   # kebab-case, prefixed by type
 type: adr                 # adr | spec | charter | plan | rubric | ...
-status: draft | gated | approved | superseded
+status: ...               # ∈ the state enum in charters/lifecycle.md (the lifecycle companion, adr-0008)
 depends_on: [adr-0000-...]   # ids of upstream artifacts this one builds on
 owner: agent | human
 updated: YYYY-MM-DD
 ---
 ```
 
-- `draft` — not yet self-checked; not a valid downstream input.
-- `gated` — self-checked against its rubric (if any); agent-consumable.
-- `approved` — ratified by human merge. Never set by hand.
-- `superseded` — retired; a forward pointer names the replacement.
+What each `status` value means, and who moves an artifact between
+states, lives in [`charters/lifecycle.md`](../charters/lifecycle.md) —
+the lifecycle companion (`adr-0008`) — not restated here.
 
 ## Decisions are append-only
 

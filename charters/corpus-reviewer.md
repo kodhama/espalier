@@ -1,8 +1,8 @@
 ---
 id: charter-corpus-reviewer
 type: charter
-status: approved  # ratified by PR #6 (2026-07-08); amended 2026-07-12 for adr-0006 duties (re-ratified on this PR's merge)
-depends_on: [adr-0001-corpus-reviewer-lift, adr-0006-operational-conformance-mechanism]
+status: approved  # ratified by PR #6 (2026-07-08); amended 2026-07-12 for adr-0006 duties (re-ratified on this PR's merge); amended 2026-07-12 per adr-0008 (lifecycle check sources the companion)
+depends_on: [adr-0001-corpus-reviewer-lift, adr-0006-operational-conformance-mechanism, adr-0008-lifecycle-enum-companion]
 owner: agent
 updated: 2026-07-12
 ---
@@ -41,10 +41,10 @@ from whoever produced the artifacts. The family core, in every repo:
 
 1. **Frontmatter** present on every artifact; `id` / `type` / `status` /
    `depends_on` / `owner` present and well-typed (`depends_on` a list).
-2. **Lifecycle membership:** `status` ∈ the lifecycle this project
-   declares (family standard: `draft → gated → approved (→ superseded)`,
-   per the project's `.trellis/profile.md` lifecycle mapping or its
-   decisions README).
+2. **Lifecycle membership:** `status` ∈ the state enum declared in the
+   lifecycle companion (`.grove/lifecycle.md` in a consuming project;
+   the canonical `charters/lifecycle.md` in grove itself — `adr-0008`
+   as amended), never a per-repo restatement.
 3. **Id uniqueness** across the corpus.
 4. **Reference resolution:** every `depends_on` entry resolves to an
    existing artifact `id` or a declared external-reference prefix.
