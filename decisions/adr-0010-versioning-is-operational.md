@@ -1,7 +1,7 @@
 ---
 id: adr-0010-versioning-is-operational
 type: adr
-status: gated  # self-checked by author 2026-07-12, revised after adversary round 1; the maintainer's intent act is the gate to approved
+status: approved  # maintainer's intent act 2026-07-12 ("approved", on grove#50 after ruling Q1/Q2) — in-PR flip recording the act (charters/lifecycle.md, adr-0007 precedent); the #50 merge performs the delivery
 depends_on: [adr-0006-operational-conformance-mechanism, adr-0008-lifecycle-enum-companion, trellis/decision-0045, kodhama/kodhama-0008-family-inheritance-restate-nothing]
 owner: agent
 updated: 2026-07-12
