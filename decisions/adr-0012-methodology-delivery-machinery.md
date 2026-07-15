@@ -190,63 +190,43 @@ of the decision here.
   (`spec-adversary.md` §Method 5). Two channels: the **SHA-bound verdict
   status** is the machine channel to the check; the **findings** (the *why*
   of a non-pass) travel as PR records/comments back to the producer.
+- **Division of labor: the maintainer owns the effects; the shaper owns the
+  mechanics** (maintainer, 2026-07-15). "I don't actually know how the
+  handoffs work… I should focus on the effect I want and let you figure out
+  mechanics." This is grove's own principle applied to this conversation —
+  the human backstops *judgment*, not plumbing. So the decision is anchored
+  on `## Intended effects` (maintainer-owned); the mechanical forms serve
+  them and are the shaper's to finalize at spec-altitude.
+- **O5/O6/O7 resolved as reversible shaper defaults** (2026-07-15, per the
+  division of labor above — each veto-able):
+  - **O5 → a standalone decision-only PR rests on human shaping.** The
+    phase-1 decision-adversary stand-in is coverage-where-a-spec-exists, not
+    a blocker; a spec-less decision (adr-0012 itself) owes no bot adversary,
+    exactly as today. The phase-2 dedicated agent is what closes the
+    standalone gap.
+  - **O6 → slot-driven auto-dispatch** (not producer-named handoff). A
+    producer declares only that its output owes a *slot*; the dispatcher runs
+    whichever agent registered to fill it. Producers stay ignorant of their
+    reviewers — gate≠agent (D9) end to end; adding/swapping a reviewer is a
+    one-line registration.
+  - **O7 → subject-content-hash freshness** (not whole-commit SHA). A verdict
+    binds to a hash of exactly what it certifies (artifact + upstream; code +
+    spec for conformance), so only a real change to that subject invalidates
+    it — no spurious re-reviews. Refines D4 (the skill computes a subject
+    hash; freshness is no longer literally free from the bare commit status).
 
 ### Open (the live questions)
 
-- **O2 — the `type` → owed-gate mapping table** (mostly closed from the
-  charters this turn; one open call). Each verdict must be *fresh on HEAD*:
-  - changed file is **code** (untyped / outside artifact dirs) →
-    **conformance (→ spec) + code-review**
-  - changed file `type: spec` → **spec-adversary** (checks spec → its
-    decision *and* soundness; `spec-adversary.md` §Method 2–3)
-  - changed file `type: charter` → **conformance-reviewer** (charter → ADR,
-    `conformance-reviewer.md` §Method 8); **+ code-review** in grove's
-    collapsed case where a charter also carries code
-  - changed file `type: adr` (decision) → **human intent gate** (interactive
-    shaping is the in-loop check). **The one open call → see O5.**
-- **O5 — the standalone decision-only PR (the one wrinkle in the phase-1
-  stand-in).** Direction settled in Decided (gate now via `spec-adversary`
-  stand-in, dedicated agent spun out). Remaining: a decision that ships with
-  no spec (adr-0012 itself) has no spec-adversary to stand in. Proposed:
-  the phase-1 gate is **coverage-where-a-spec-exists**, not a blocker — a
-  standalone decision PR owes no bot adversary and rests on human shaping
-  (as today); closing that standalone gap is exactly the phase-2 dedicated
-  agent's job. Confirm, or handle the standalone case in phase 1 too.
-- **O6 — how reviewers/adversaries are wired into the topology** (the
-  maintainer's open question, 2026-07-15: "not sure how the validation from
-  the adversaries would be added"). Proposed **demand/supply** model, for
-  confirmation:
-  - **Producers declare demand** — an agent's output owes named **slots**
-    (`shaper`: an `adr` owes the decision-adversary slot; `contract-author`:
-    a `spec` owes the spec-adversary slot; `executor`: code owes conformance
-    + code-review). This is the owed-set (rides the artifact `type`, D7).
-  - **Reviewers/adversaries declare supply** — each registers **which slot
-    it fills** and its verdict grammar (`spec-adversary` fills the
-    spec-adversary slot, and phase-1 the decision-adversary stand-in slot,
-    O5; emits APPROVE-READY / NEEDS-REVISION / UNSOUND). Its output *is* a
-    verdict, recorded via the gate-verdict skill (D4).
-  - **The setup skill compiles both sides** → the check (every demanded slot
-    must carry a fresh matching verdict on HEAD) + a thin `slot → supplier`
-    dispatch registry.
-  - **The one real sub-fork — how the adversary is *dispatched*:**
-    **slot-driven auto-dispatch** (an unfilled owed-slot on HEAD → the
-    dispatcher runs whatever agent registered for that slot; the producer
-    never names its reviewer — fully decoupled, matches gate≠agent D9;
-    shaper's lean) vs **producer-named handoff** (the producer declares
-    "hand to `spec-adversary` next"). Slot-driven makes adding/swapping a
-    reviewer a one-line registration with zero producer edits.
-- **O7 — freshness granularity (surfaced by the "is it the diff?" question).**
-  D4 said "SHA-bound." But binding a verdict to the **whole-commit SHA**
-  means *any* commit — even a typo in an unrelated file — invalidates *every*
-  verdict and forces spurious re-reviews. The alternative binds each verdict
-  to a **content-hash of its subject-set** (the artifact + upstream it
-  certifies; for conformance, code + the spec). Fork:
-  - **whole-commit SHA** — cheapest, literally free from GitHub's per-SHA
-    commit statuses; over-invalidates (friction on every unrelated edit).
-  - **subject-content-hash** *(shaper's lean)* — precise, no spurious
-    re-reviews; a refinement of D4 (the skill computes a subject hash rather
-    than using the bare SHA — a modest cost, still machine-checkable, but no
-    longer literally free from the commit status).
+- **Only one thing left, and it is yours: confirm the `## Intended effects`
+  section.** The maintainer chose (2026-07-15) to own the *effects* and
+  delegate the *mechanics* to the shaper — the handoff plumbing (input
+  prompts, output messages, what the HEAD diff carries) is spec-altitude and
+  the shaper's to resolve. All prior mechanical forks are now resolved as
+  **reversible shaper defaults** (see Decided: O5/O6/O7 resolutions); veto
+  any. So the live question is not a mechanism — it is whether the
+  Intended-effects list below is the right *effect-set*: complete, correctly
+  prioritized, nothing wrong. Confirm or adjust it, and the design has
+  converged.
 
 ### Parked (deferred, with why)
 
@@ -286,6 +266,36 @@ acting as the backstop for *"did the process run,"* not for *judgment*.
 The methodology's own goal is that the human is the backstop for judgment.
 This decision asks what machinery or structural default moves those three
 guarantees off the human's shoulders.
+
+## Intended effects (maintainer-owned — the layer of intent)
+
+These are the observable effects the design must produce. The maintainer
+owns this list; every mechanism in `## Decision state` exists to serve it,
+and is the shaper's to finalize. If a mechanism does not serve one of these,
+it does not belong.
+
+- **E1 — No unreviewed work merges.** Every artifact reaching the final
+  state carries a fresh, independent review appropriate to what it is
+  (spec → adversary; code → conformance + code-review; charter → conformance;
+  decision → human). "Did the review run?" is never a human's job to check.
+- **E2 — Iteration is free; only the endpoint is gated.** Authors, builders,
+  and reviewers churn mid-flow without ceremony; the gate judges only the
+  final state. No fixed pipeline is imposed on how the work gets there.
+- **E3 — Specialists stay separate.** Author, builder, and reviewer run as
+  distinct cold specialists by default; fusing them is a visible, disclosed
+  deviation — protected for the *quality* of specialized runs, not only for
+  independence.
+- **E4 — A stale verdict is never trusted.** A review is bound to what it
+  reviewed; change the reviewed thing and the review stops counting —
+  automatically, never by someone remembering.
+- **E5 — No one holds "the workflow."** The pipeline emerges from simple
+  local rules on agents/artifacts, and the enforcing machinery is generated
+  from those same rules. Adding or swapping an agent recomposes the system
+  with no central flow to edit.
+- **E6 — The human backstops judgment, not bookkeeping.** Everything above
+  is mechanically enforced, so the maintainer spends attention only on
+  intent — approving a decision, or overriding a block with recorded
+  rationale — never on "did the process run."
 
 ## Worked trace (the anti-pattern the proposals prevent)
 
