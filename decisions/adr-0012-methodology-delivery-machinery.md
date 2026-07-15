@@ -531,6 +531,63 @@ framing overstated readiness. Findings, with the shaper's own honest triage:
 the must-fixes above. E0's "holds under an adversarial pass" claim is
 **retracted** (F9). The completeness verdict is qualified by F11.
 
+## Rework v2 — resolving the findings, ambitious version retained (2026-07-15)
+
+Maintainer chose to push the emergent design through, not retrench. Proposed
+resolution directions — **marked proposed, NOT verified; to be re-run through
+an adversarial pass before any gate** (learning from F11: no self-declared
+"verified" this time). Several fatal findings unify:
+
+- **R1 (F3 + un-parks O1) — a verdict is harness-attested, run-identified,
+  and non-vacuous.** The gate-verdict skill is the *sole* emitter and stamps
+  the **harness-attested run-id** of the reviewing run (not self-reported) +
+  requires attached evidence (the reviewer's derived checklist / `file:line`,
+  which the conformance & spec-adversary charters already produce). The
+  terminal check requires, per owed slot: a fresh verdict whose emitting
+  run-id **≠ the artifact's producer run-id**, evidence non-empty. Forgery
+  needs the skill's credential (a GitHub App token agents don't hold); a
+  producer cannot green-paint its own review. **F3 (anti-forgery) and O1
+  (separation) are the *same* signal — run identity — so one mechanism closes
+  both**, and it supplies the "vacuity detection" `dispatcher.md` demands.
+- **R2 (F2 + F12 + F13) — bounds are computed from the durable verdict
+  history, not held in a stateless matcher.** The append-only verdict record
+  already exists (the skill records every verdict). Cascade-generation,
+  intra-PR oscillation, and failed-run re-dispatch counts are all *functions
+  over that history*; exceeding a bound → loud human stop. The dispatcher
+  stays stateless; **the record carries the state.** The bound lives in data,
+  not memory — which is where the homeless bound the adversary found belongs.
+- **R3 (F1) — the check derives owed-set + `slot→supplier` LIVE from the
+  declarations at PR time.** Nothing durable is compiled-and-trusted; setup
+  installs a check that *reads the declarations live*, so there is no derived
+  artifact to drift. (Any cache carries a declarations-hash stamp and
+  re-derives on mismatch — the adr-0006 §8 stamp, applied to the compiler
+  output, not skipped.)
+- **R4 (F5) — restate D5: an *upstream-conformance check* is always owed,
+  instrumented per layer** (`spec-adversary` for specs; `conformance-reviewer`
+  for code/charter) — removing the "conformance-reviewer always" conflation
+  that made the spec-only owed-set contradictory. Reconcile with **approved
+  adr-0006** explicitly: verify clarification vs. change, and add a
+  supersession/amends edge if it is a change (append-only).
+- **R5 (F9) — bound E0 honestly:** recursive TDD for the **spec↔code** layers,
+  bottoming out at a **human-intent base case** at the decision layer; a
+  decision-layer repair is **supersede** (append-only), not edit-in-place. E0
+  is the generative core *below intent*, not a universal.
+- **R6 (F4) — mechanize the intent gate:** dispatch-on-`approved` requires the
+  approval be backed by a **human PR-review** (the signal grove#38 already
+  proposes as the verifiable approval guard); an agent-set `approved` with no
+  human review is rejected. Ties this decision to grove#38.
+- **R7 (F7/F8) — freshness:** the check **independently recomputes** the
+  subject-hash from HEAD (the emitter does not get to assert it), and **E4
+  explicitly inherits adr-0006 §6's undeclared-dependency blind spot** —
+  disclosed, degrading exactly where adr-0006 already degrades.
+
+**Still a genuine intent question, not mechanics → F6/O5 reopened:** does the
+decision layer get a *real* independent adversary (making E0's base case
+"decision owes an independent soundness adversary **plus** the human intent
+gate"), or is "rests on human shaping" accepted-and-disclosed? The stand-in
+demonstrably misses plausible-but-wrong decisions — and adr-0012 itself is
+that case. **Maintainer's call.**
+
 ## Constraints (carried from the brief — bounds on any resolution)
 
 - The fix must be **machinery or a structural default**, not more
