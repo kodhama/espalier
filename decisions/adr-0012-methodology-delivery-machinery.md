@@ -217,21 +217,20 @@ of the decision here.
 
 ### Open (the live questions)
 
-- **O8 — does the emergence claim (E5) cover W3's bug-triage procedure, or
-  scope it out?** (surfaced by the completeness check.) `reproduce →
-  root-cause → classify` is a multi-step *procedure*, not an
-  artifact-triggered rule; today it lives in `dispatcher.md`. Two ways:
-  **(a)** re-home it as a **named agent's local method** (a triage entry, or
-  fold code-bug triage into the `executor`'s test-first method + route by
-  root layer) — then it emerges and E5 stays universal; or **(b)** scope it
-  out — E5's emergence claim covers the *forward review pipeline* (W1/W2/W5/
-  W6) and the interrupt-style flows (W3 triage, and the procedural parts of
-  W4) keep their existing charter treatment. This is a genuine intent/scope
-  call — the maintainer's.
-- **Then confirm the effect-set.** After O8, the one remaining maintainer
-  question is whether E1–E7 (with the two sharpenings) is the right, complete
-  effect-set. All mechanical forks are resolved as reversible shaper defaults
-  (Decided: O5/O6/O7). Confirm E1–E7 + settle O8 → the design has converged.
+- **O8 — CLOSED (dissolved by E0, not decided).** The W3 triage "procedure"
+  was the last thing that didn't emerge; the maintainer's recursive-TDD
+  insight (E0) shows it *is* TDD red-first + the upstream-vs-local diagnosis
+  every conformance check performs, so it emerges after all. No scope-out
+  needed; E5's emergence claim stays universal. (Kept as a closed entry for
+  the reasoning trail — the completeness check found a real gap and E0 filled
+  it.)
+- **The one thing left, and it is yours: confirm the effect-set E0–E7.**
+  Every mechanical fork is resolved as a reversible shaper default (Decided:
+  O5/O6/O7); the completeness check passes with all six workflows emerging;
+  O8 is closed. So the sole remaining question is the intent one — is
+  **E0–E7** the right, complete set (nothing missing, correctly rooted at E0,
+  nothing you'd cut)? Confirm and the design has converged; I converge the
+  draft (Consequences + AC + rubric self-check) and hand it to your gate.
 
 ### Parked (deferred, with why)
 
@@ -279,6 +278,30 @@ owns this list; every mechanism in `## Decision state` exists to serve it,
 and is the shaper's to finalize. If a mechanism does not serve one of these,
 it does not belong.
 
+- **E0 — Recursive TDD is the generative core** (maintainer's insight,
+  2026-07-15; verified by the shaper, holds under an adversarial pass). The
+  root the other effects grow from, not a peer — listed first. Development is
+  TDD applied recursively down the layers: each artifact is built
+  **test-first against its upstream**, where the **upstream's acceptance
+  criteria ARE the test** (the decision is the spec's test; the spec is the
+  code's test). From this single principle:
+  - **Forward construction (W1)** = build each layer to pass its
+    upstream-test.
+  - **Backprop, amendment, bug (W4/W2/W3) are ONE branch** — "a test failed;
+    fix it at the layer it indicts": *locally* if this layer is wrong
+    (`NEEDS-REVISION` → immediate producer), **upstream if the test itself is
+    wrong** (backprop — `UNSOUND` → `shaper`; conformance's
+    "faithful-but-wrong"). Already latent in the non-pass verdict routing and
+    the conformance charter; the insight is that it *subsumes* three
+    chartered workflows instead of reproducing them.
+  - **Dissolves O8:** W3's `reproduce → root-cause → classify` is TDD
+    red-first (`executor` is test-first, `adr-0005`) + the upstream-vs-local
+    diagnosis every conformance check already performs + route-to-indicted-
+    layer. It emerges.
+  - **Caveat (verified, not glossed):** this explains the *shape* of the
+    interrupts; it does not remove the E7 bound — a fix-the-test cascade can
+    still ping-pong across layers and needs the generation-2 stop. Shape from
+    TDD, safety from E7.
 - **E1 — No unreviewed work merges, and none builds on thin air.** Every
   artifact reaching the final state (a) carries a fresh, independent review
   appropriate to what it is (spec → adversary; code → conformance +
@@ -324,7 +347,7 @@ it does not belong.
   shaper-owned (spec-altitude); the *effect* — bounded, escalating, never
   infinite — is the maintainer's.
 
-## Completeness check — do W1–W6 emerge from E1–E7? (2026-07-15)
+## Completeness check — do W1–W6 emerge from the effects? (2026-07-15)
 
 Run at the maintainer's request, as a falsification test of E5: if a
 chartered workflow cannot emerge from the local rules, an effect is missing.
@@ -347,19 +370,20 @@ invariants.
   (decision-layer → human) + E7 (cascade bound) + a trigger (repair merged →
   `validator` audit scoped by `depends_on`). Motivates the E5 composition
   clarification.
-- **W3 bug — the hard case.** *Classify-and-route* (code → `executor`; spec
-  gap → `contract-author`; decision gap → `shaper`) emerges from routing
-  rules, and *reproduce-as-failing-test* is the `executor`'s existing
-  test-first method. **But** the `reproduce → root-cause → classify`
-  *ordering* is a **procedure** that does not reduce to artifact
-  trigger/owed rules — today it lives in `dispatcher.md` as a method. Under
-  E5 it has no home. → **O8.**
+- **W3 bug — initially the hard case, then dissolved by E0.** *Classify-and-
+  route* (code → `executor`; spec gap → `contract-author`; decision gap →
+  `shaper`) emerges from routing rules. The `reproduce → root-cause →
+  classify` *ordering* first looked like a rogue procedure (→ the old O8) —
+  but under **E0 (recursive TDD)** it is TDD red-first + the upstream-vs-local
+  diagnosis every conformance check already performs + route-to-indicted-
+  layer. It emerges; O8 is closed.
 
-**Verdict:** E1–E7 are sufficient as the *new* effect layer — every workflow
-emerges from them **composed with grove's existing local invariants** —
-after two sharpenings the check forced (E1(b) build-on-approved-upstream;
-E5 three-kinds/composition). One genuine open call remains: W3's triage
-procedure (O8).
+**Verdict:** E0–E7 are sufficient — **every** chartered workflow emerges,
+composed with grove's existing local invariants. The check forced three
+improvements (E1(b) build-on-approved-upstream; E5 three-kinds/composition;
+and, prompted by the W3 hold-out, **E0 recursive-TDD**, which unified
+W2/W3/W4 into one "fix-the-test" branch and closed the last open call). No
+workflow fails to emerge.
 
 ## Worked trace (the anti-pattern the proposals prevent)
 
