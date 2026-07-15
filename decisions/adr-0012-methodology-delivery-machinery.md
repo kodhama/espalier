@@ -126,6 +126,29 @@ of the decision here.
   decision. Phase 2: a dedicated **decision-adversary agent**, spun out to
   its own `[consider]` issue, swaps into the same slot. (Open sub-point: how
   the standalone decision-only PR is treated — see O5.)
+- **Workflows are EMERGENT from local rules — never authored as full flows**
+  (maintainer, 2026-07-15; a load-bearing constraint on the whole design).
+  Nothing may encode a complete workflow, and no role — the dispatcher
+  included — "knows the flow." The pipeline is composed from **simple local
+  rules** of two kinds: a **trigger** rule (an artifact-state dispatches the
+  next agent — `decision → shaper`, `approved decision → contract-author`,
+  `approved spec → executor`) and an **owed** rule (an agent's output owes
+  its gates before it is done — a spec owes `spec-adversary`, a build owes
+  conformance + code-review). grove's W1 is then whatever *emerges* from
+  following the rules — descriptive, not prescriptive. **This is
+  architecture C (D3) applied to the entire pipeline:** the local rules are
+  the *default layer* (agents self-dispatch and self-gate), and the terminal
+  check is the *machinery layer* that re-derives the owed-set from the
+  **artifacts** (never trusting "which agent ran") and goes red if a rule
+  was not followed. The check needs no knowledge of the workflow — only of
+  each artifact's owed set — which is *why* the workflow can be emergent
+  without a skipped rule hiding.
+- **The exact rule-set is spec-altitude, deliberately left open here**
+  (maintainer: "not sure these are the exact rules"). adr-0012 settles the
+  *architecture* (emergent local trigger + owed rules, machinery-checked on
+  artifacts); the precise per-agent triggers and owed-sets — and whether
+  each rides the artifact or the agent — are pinned by the spec this
+  decision authorizes, not by the decision itself.
 
 ### Open (the live questions)
 
@@ -148,14 +171,26 @@ of the decision here.
   standalone decision PR owes no bot adversary and rests on human shaping
   (as today); closing that standalone gap is exactly the phase-2 dedicated
   agent's job. Confirm, or handle the standalone case in phase 1 too.
-- **O4 — landing surface.** Under C the decision now has three homes to
-  assign: the **dispatcher charter** (the tightened default + owed-set
-  derivation), a **gate-verdict skill** (emission), and **`pr-contract.yml`
-  / adr-0006 machinery** (the terminal red check). Open: confirm that
-  split, and confirm any charter text **consolidates or replaces, never
-  accretes**. (Former O3's trellis-vs-dispatcher question is moot — the
-  unified invariant is machinery + a skill, not a new invariant; nothing
-  is proposed for trellis.)
+- **O4 (reshaped by the emergent-workflow principle) — where the local
+  rules live.** The old framing — owed-set + default "in the dispatcher
+  charter" — is retired: it would make the dispatcher a workflow-holder,
+  against the principle. Proposed decomposition, for confirmation:
+  - **owed-set rides the artifacts** — the machinery re-derives it from each
+    changed file's frontmatter `type` (D7); the *check* never trusts an
+    agent's word. The enforcement half.
+  - **trigger/routing rides the agent charters** — each agent declares its
+    own precondition and hand-off (the `contract-author` knows an approved
+    spec is the `executor`'s cue; a producer knows to hand to its
+    adversary). The dispatcher becomes a **thin stateless matcher** over
+    these declarations, holding minimal state — not a keeper of W1–W6.
+  - **the dispatcher's W1–W6 demote from prescriptive to descriptive** — a
+    worked example of what the local rules emit, not the source of truth (a
+    *consolidation*, honoring "replace, don't accrete").
+  - **gate-verdict skill (emission) + `pr-contract.yml` (terminal check)**
+    unchanged. Nothing proposed for trellis.
+  Open: confirm this decomposition — especially routing-on-agents vs. some
+  residual on a thin dispatcher — and whether W1–W6 truly demote to
+  descriptive rather than being superseded outright.
 
 ### Parked (deferred, with why)
 
