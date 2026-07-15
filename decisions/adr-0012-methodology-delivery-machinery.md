@@ -79,29 +79,36 @@ of the decision here.
   they do **not** recover the *depth/quality* lost by not letting each
   specialist run cold. So the reframe does not subsume Proposal 1 (1a,
   "drop it," rejected); the open part is only its *enforcement shape*.
+- **Owed-set derivation keys off frontmatter `type`; code is the default**
+  (maintainer, 2026-07-15). The check does not need a content-classifier:
+  for each changed file it reads the artifact-contract frontmatter `type`
+  (`spec` / `adr` / `charter` / …); a file with no artifact frontmatter (or
+  outside the artifact dirs) **is code**. Type → owed gates. This reuses the
+  existing artifact contract rather than inventing a parser. *Sharpens D5:*
+  because owed-gates is derived from what changed, "conformance always"
+  resolves to "conformance whenever the change carries **code implementing a
+  contract**" — a pure-artifact PR (no code) owes its artifact's gate, not
+  conformance. (Flagged, not silently overwriting D5 — see O2 for the
+  mapping table that pins this.)
 
 ### Open (the live questions)
 
-- **O2 — owed-set derivation (what remains of former O2+O3, now unified).**
-  The terminal check needs to compute *which gates a diff owes* from what
-  changed. Open: the content→owed-gate mapping — e.g. diff touches code →
-  code-review + conformance; touches `specs/` → spec-adversary (+
-  conformance); touches `decisions/` → …; and how "conformance always"
-  composes with it. This is the derivation rule the check and the
-  gate-verdict skill both read.
-- **O1 — Proposal 1's enforcement shape: default-only (1b) or
-  default + check (1c)?** Separation is settled as owed (Decided above);
-  the question is whether a mechanical backstop enforces it. The tension:
-  the **default** (dispatcher cold-starts separate specialist runs) is what
-  delivers the specialization quality; a **check** can only verify
-  separation *happened* (author ≠ builder, via role-stamped commits) — a
-  structural proxy, since it cannot measure the depth the default buys.
-  **But** 1b (default, no check) is *B-alone wearing a new hat* — a default
-  the agent can silently skip — which the C decision above already rejected
-  for exactly this failure. If separation matters (it does), C-consistency
-  points to **1c**. Sub-question deferred to 1c: what attribution signal the
-  check reads (role-stamped commit trailers? the gate-verdict skill
-  recording the acting role? ledger run-ids?).
+- **O2 — the `type` → owed-gate mapping table** (derivation *mechanism*
+  settled in Decided; this is the table it drives). Proposed, for
+  confirmation:
+  - changed file `type: spec` → **spec-adversary** (+ **conformance** if the
+    PR also carries code implementing it)
+  - changed file is **code** (untyped / outside artifact dirs) →
+    **code-review + conformance**
+  - changed file `type: adr` (decision) → **no automated gate** — decisions
+    are shaped + human-gated (the intent gate), not adversaried by a bot
+  - changed file `type: charter` → maintainer's call: in grove's collapsed
+    case a charter *is* spec+code (`adr-0006` §7), so it plausibly owes the
+    full set; in a consuming project it may differ
+  - The one judgment call inside the table: how "conformance always" (D5)
+    resolves for a **pure-artifact PR** — proposal above is *conformance is
+    owed only when code is present*, so a decisions-only PR owes nothing
+    mechanical. Confirm or adjust.
 - **O4 — landing surface.** Under C the decision now has three homes to
   assign: the **dispatcher charter** (the tightened default + owed-set
   derivation), a **gate-verdict skill** (emission), and **`pr-contract.yml`
@@ -113,8 +120,31 @@ of the decision here.
 
 ### Parked (deferred, with why)
 
-- *(none yet — items land here as the maintainer defers them, with the
-  one-line why.)*
+- **O1 — role separation's enforcement shape (default-only vs. a check).**
+  Parked for more thought (maintainer, 2026-07-15); **not** dropped —
+  separation stays owed (D6). Constraints and options captured so it
+  resumes cold:
+  - **Constraint:** do *not* force separation *per commit* — squash /
+    rebase / co-authorship make git commit-authorship a bad signal
+    (maintainer). So a "author ≠ committer" git check is out.
+  - **Option floated (maintainer):** an **author tag in doc frontmatter**
+    (which agent authored the artifact) + a **comment header in code
+    files**. Assessment: the **doc frontmatter tag is cheap and doubles as
+    provenance** (sits by the existing `owner:` field) — viable; the **code
+    comment header is the brittle half** (refactored away, noisy, and
+    file-granular for a property that is really about *runs*, not files).
+  - **Deeper reliability caveat:** any *hand-written* tag is self-reported
+    by the agent — the same vigilance the whole decision exists to escape (a
+    fused author+builder could stamp two tags or just forget). A
+    **harness-stamped run signal is more trustworthy and the right
+    granularity**: the gate-verdict skill (D4) already knows the *acting
+    run* at emission, and the findings ledger has run-ids — so "was the
+    builder a different run than the author" can be checked at run-level
+    without touching code files at all.
+  - **Where it leans (not decided):** if a check lands, prefer the
+    run-level signal (skill/ledger run-ids) over embedded tags; the doc
+    frontmatter author-tag is worth keeping regardless for its provenance
+    value. Resume here.
 
 ## The problem this decision frames
 
@@ -170,6 +200,14 @@ math-quest PR #278 (C1-S2), read as what should not happen:
   each deliver; a fused pass runs blended instructions and is a worse
   author *and* builder. Separation earns its keep independently of the
   gates.
+- **Per-commit separation enforcement (author ≠ git committer)** — rejected
+  (maintainer, 2026-07-15): squash/rebase/co-authorship make commit
+  authorship an unreliable signal; forcing separation at commit granularity
+  is the wrong instrument. Any separation check must key off a run-level
+  signal, not git commit metadata (see the O1 park note).
+- **A content-classifier for owed-set derivation** — rejected in favour of
+  reading the artifact-contract frontmatter `type` (a file with no such
+  frontmatter is code): reuses the existing contract, no parser invented.
 
 ## Consequences
 
