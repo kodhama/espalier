@@ -581,12 +581,21 @@ an adversarial pass before any gate** (learning from F11: no self-declared
   explicitly inherits adr-0006 §6's undeclared-dependency blind spot** —
   disclosed, degrading exactly where adr-0006 already degrades.
 
-**Still a genuine intent question, not mechanics → F6/O5 reopened:** does the
-decision layer get a *real* independent adversary (making E0's base case
-"decision owes an independent soundness adversary **plus** the human intent
-gate"), or is "rests on human shaping" accepted-and-disclosed? The stand-in
-demonstrably misses plausible-but-wrong decisions — and adr-0012 itself is
-that case. **Maintainer's call.**
+- **R8 (F6/O5, maintainer's call 2026-07-15) — the decision layer gets a
+  REAL independent adversary.** E0's base case becomes honest: **a decision
+  owes an independent soundness-adversary *plus* the human intent gate.** The
+  decision-adversary cannot validate "is this what the human wants" (the
+  human's act) but breaks internal coherence, contradiction with standing
+  decisions, argument soundness, and build-on-settled-ground — exactly what
+  the 2026-07-15 pass did to adr-0012. This retires the phase-1 spec-adversary
+  *stand-in* (it demonstrably missed plausible-but-wrong decisions) and
+  promotes the decision-adversary from the spun-out `[consider]` into this
+  decision. New role to charter; slots into the same demand/supply model
+  (`adr` owes the `decision-adversary` slot).
+
+**Status: reworked (R1–R8), NOT verified.** Next step is a SECOND adversarial
+pass on the reworked design — do R1–R8 actually close F1–F13, and what new
+holes did the rework introduce? No gate until that pass runs.
 
 ## Constraints (carried from the brief — bounds on any resolution)
 
