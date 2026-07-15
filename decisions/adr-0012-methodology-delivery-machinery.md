@@ -111,6 +111,21 @@ of the decision here.
     authors specs, so independence is structural, not author-self-check; and
     (b) a double-count of a separate conformance run for specs — the spec's
     upstream check is the `spec-adversary`'s job.
+- **Gate ≠ agent: the owed-set names gate *slots*; the agent filling a slot
+  is swappable, including by a stand-in** (maintainer, 2026-07-15 — extends
+  D4). A gate is "an independent adversary examined this layer"; which agent
+  satisfies it is an implementation detail, exactly as D4's gate-verdict
+  skill emits a verdict for a slot agnostic to its producer. This lets a
+  slot ship before its dedicated agent exists, filled by a stand-in.
+- **O5 direction — scope the decision-adversary *agent* out (phase 2); keep
+  its *gate* in adr-0012, stand-in-filled (phase 1)** (maintainer's
+  (a)+twist, 2026-07-15). Phase 1: the decision layer gets an
+  adversary *gate slot* in the owed-set, satisfied by the **`spec-adversary`
+  as a stand-in** — it already reads the upstream decision and can return
+  `UNSOUND` on it, so a spec-adversary run *transitively* covers the
+  decision. Phase 2: a dedicated **decision-adversary agent**, spun out to
+  its own `[consider]` issue, swaps into the same slot. (Open sub-point: how
+  the standalone decision-only PR is treated — see O5.)
 
 ### Open (the live questions)
 
@@ -125,16 +140,14 @@ of the decision here.
     collapsed case where a charter also carries code
   - changed file `type: adr` (decision) → **human intent gate** (interactive
     shaping is the in-loop check). **The one open call → see O5.**
-- **O5 — does `type: adr` owe an independent adversary of its own?**
-  (surfaced by the maintainer this turn). Specs get `spec-adversary`;
-  decisions get only the interactive human + a *late* backstop (a flawed
-  decision surfaces downstream when `spec-adversary` returns `UNSOUND`,
-  and only if a spec is ever written on it). A real asymmetry. Open: **(a)**
-  keep decisions on human co-shaping + the UNSOUND backstop (smallest thing;
-  a decision-adversary is arguably *out of scope* — this ADR is about making
-  the *three named failures'* existing gates fire, not adding a new
-  decision-layer gate), and spin the idea to its own `[consider]` issue; or
-  **(b)** fold a decision-adversary gate into this decision.
+- **O5 — the standalone decision-only PR (the one wrinkle in the phase-1
+  stand-in).** Direction settled in Decided (gate now via `spec-adversary`
+  stand-in, dedicated agent spun out). Remaining: a decision that ships with
+  no spec (adr-0012 itself) has no spec-adversary to stand in. Proposed:
+  the phase-1 gate is **coverage-where-a-spec-exists**, not a blocker — a
+  standalone decision PR owes no bot adversary and rests on human shaping
+  (as today); closing that standalone gap is exactly the phase-2 dedicated
+  agent's job. Confirm, or handle the standalone case in phase 1 too.
 - **O4 — landing surface.** Under C the decision now has three homes to
   assign: the **dispatcher charter** (the tightened default + owed-set
   derivation), a **gate-verdict skill** (emission), and **`pr-contract.yml`
