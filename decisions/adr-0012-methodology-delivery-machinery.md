@@ -224,13 +224,22 @@ of the decision here.
   needed; E5's emergence claim stays universal. (Kept as a closed entry for
   the reasoning trail — the completeness check found a real gap and E0 filled
   it.)
-- **The one thing left, and it is yours: confirm the effect-set E0–E7.**
-  Every mechanical fork is resolved as a reversible shaper default (Decided:
-  O5/O6/O7); the completeness check passes with all six workflows emerging;
-  O8 is closed. So the sole remaining question is the intent one — is
-  **E0–E7** the right, complete set (nothing missing, correctly rooted at E0,
-  nothing you'd cut)? Confirm and the design has converged; I converge the
-  draft (Consequences + AC + rubric self-check) and hand it to your gate.
+- **NOT converged — the adversarial pass sent it back for mechanics.** The
+  earlier "confirm E0–E7 → converged" checkpoint was premature (F10/F11). The
+  live open list is now the adversary's must-fixes, and three of them reopen
+  *intent*-level questions the shaper had filed as "mechanics":
+  - **F3 + un-park O1** — what does a verdict *prove*, and how does the check
+    verify an independent (non-producer) run performed it? Without this, E1 is
+    not delivered. This is not purely mechanical — it is "what is a gate."
+  - **F2/F13** — where does the stateful loop-bound live? The "thin stateless
+    matcher" claim is wrong; grove's bounds are cross-run state. Either the
+    dispatcher keeps that state (not stateless) or the bound lives elsewhere.
+  - **F6** — does the decision layer get a *real* independent adversary, or is
+    "rests on human shaping" accepted (knowing adr-0012 itself is the weak
+    case)? This is the O5 question, reopened with teeth.
+  Plus mechanical fixes (F1 live-vs-compiled check; F5 owed-set contradiction
+  + adr-0006 supersession; F7/F8 freshness recompute & blind spot). **Awaiting
+  the maintainer's call on how to proceed (below).**
 
 ### Parked (deferred, with why)
 
@@ -279,8 +288,12 @@ and is the shaper's to finalize. If a mechanism does not serve one of these,
 it does not belong.
 
 - **E0 — Recursive TDD is the generative core** (maintainer's insight,
-  2026-07-15; verified by the shaper, holds under an adversarial pass). The
-  root the other effects grow from, not a peer — listed first. Development is
+  2026-07-15). **⚠ Partly holed by the adversarial pass (F9): it has no base
+  case at the decision layer (a decision is not built test-first against
+  human intent), and "fix the test" is lossy where the decision-layer
+  operation is *supersede*, not edit-in-place. Treat E0 as a strong framing
+  for the spec/code layers, not a verified universal.** The root the
+  spec/code effects grow from — listed first. Development is
   TDD applied recursively down the layers: each artifact is built
   **test-first against its upstream**, where the **upstream's acceptance
   criteria ARE the test** (the decision is the spec's test; the spec is the
@@ -424,6 +437,99 @@ rules. `c1…c4` are commits; each row shows the terminal check's state.
 Convergence took two fix-the-test rounds; had it ping-ponged, the **E7**
 generation-2 bound fires a loud stop. Every catch that was a *human* in the
 real #278 (steps 5, 8 of the anti-pattern trace) is here a *mechanism*.
+*(Caveat, post-adversary: this trace assumes verdicts prove a review ran and
+that freshness/bounds work as described — findings F2/F3/F12 below show those
+assumptions are not yet delivered by the mechanics.)*
+
+## Independent adversarial pass — findings (2026-07-15)
+
+Run at the maintainer's request (a fresh agent, not the shaper who drafted
+this — "the builder does not grade itself"). It broke the design. **Verdict:
+NOT gateable as drafted — send back for mechanics, not to the approval gate.**
+The intent (E1–E6) is sound; the *mechanics do not yet produce the effects
+they claim*, and the shaper's "converged / E0-verified / all-workflows-emerge"
+framing overstated readiness. Findings, with the shaper's own honest triage:
+
+**Load-bearing (fatal as drafted — must fix before any gate):**
+
+- **F3 — the terminal check is forgeable.** It counts a slot filled on "a
+  fresh PASS status bound to HEAD"; it cannot verify a review actually ran,
+  and gate≠agent (D9) lets *any* emitter satisfy a slot. A producer can
+  emit its own three PASS statuses → GREEN, no reviewer ran — the reported
+  A2 reproduced, with the human given *less* signal than before. `dispatcher.md`
+  already requires "vacuity detection at every gate"; this has none.
+  **Delivering E1 requires the run-level identity signal that O1 parked — so
+  O1 is not parkable; it is load-bearing.** *(Shaper: agree, fatal.)*
+- **F2 — E7's governor has no home.** The gen-2 loop bound is stateful and
+  cross-run; the architecture is HEAD-only + "thin stateless matcher." A
+  stateless matcher cannot count cascade generations. The one thing that makes
+  free iteration (E2) safe has no component to live in — and this is the real
+  W4 counterexample the completeness check hand-waved. *(Shaper: agree,
+  fatal — I removed the substrate my own safety property needs.)*
+- **F1 — the compiled `pr-contract` check drifts.** E5's "recompose with no
+  central flow to edit" is false: the setup skill commits a *derived* check
+  that lags the topology with no generation stamp and no recompile trigger —
+  reintroducing exactly the drift adr-0006 §8 already solved (and which
+  `/grove:setup` does not do today — it's a new, unspecified capability).
+  *(Shaper: agree — either the check re-derives live at PR time, or the
+  compiled artifact needs a stamp + gated recompile.)*
+
+**Real must-answers (holes, not necessarily fatal):**
+
+- **F5 — internal contradiction.** "Conformance is **always** owed" (D5 +
+  rejected-list) vs "spec → spec-adversary, *not* a conformance run" (the
+  layer-instrument decision). The commonest PR (a spec edit) has an undefined
+  owed-set. *(Shaper: agree — I conflated "conformance the concept" with
+  "conformance-reviewer the code gate." Restate: an *upstream check* is always
+  owed, instrumented per layer.)* Plus: the conformance-scope change touches
+  **approved adr-0006** and was written inline as a "correction" with no
+  supersession edge — an append-only violation to fix.
+- **F6 — the decision-adversary stand-in doesn't cover its own class.** The
+  spec-adversary only catches a decision flaw that makes the *spec*
+  incoherent (`UNSOUND`); a *plausible-but-wrong* decision yields a coherent
+  spec → APPROVE-READY → the flaw is invisible (the grove#20 "faithful
+  implementation of the wrong design"). And a spec-less decision — **adr-0012
+  itself** — gets zero independent adversary, only its author-partner
+  maintainer. *(Shaper: agree, and this is why "hard to be sure" was right.)*
+- **F4 — the human intent gate is unmechanized.** Dispatch trusts
+  `status: approved`, which adr-0005 says must never be hand-set; nothing in
+  the owed-set/check verifies the approval was a genuine human act. *(Agree.)*
+- **F7/F8 — freshness holes.** E4 inherits adr-0006 §6's undeclared-dependency
+  blind spot (undeclared upstream changes → subject-hash unchanged → stale
+  reads fresh); and if the emitter computes the subject-hash and the checker
+  trusts it, freshness is forgeable — the check must independently recompute,
+  which needs a deterministic upstream-set resolution the ADR never specifies.
+  *(Agree — must specify.)*
+- **F9 — E0 is holed.** (a) No base case: the decision layer is *not* built
+  test-first (human intent is not a written test), so "recursive TDD all the
+  way down" fails at the root E0 calls the root. (b) "Fix the test" is lossy
+  at the decision layer, where the operation is *supersede* (append-only), not
+  edit-in-place. *(Shaper: agree on (a) — I oversold E0 as fully general; (b)
+  is a framing imprecision more than a mechanism, but E0 must distinguish
+  revise-spec-in-place from supersede-decision.)*
+- **F10 — A1 has no mechanism.** Separation (E3), the *lead* anti-pattern, is
+  enforced only by parked O1; presenting the design as "converged" while A1
+  is unsolved overstates readiness. *(Shaper: agree — a fair hit on my
+  framing.)*
+
+**Fair epistemic notes:**
+
+- **F11 — the completeness check was self-confirming.** When W3/W4 didn't
+  emerge, the effect-set was *widened* (E0 added, E5 broadened) until they
+  fit, then credited as passing. Read the verdict as "we adjusted the effects
+  until the workflows fit," not "the effects independently predicted them."
+  *(Shaper: agree — honest and important.)*
+- **F12/F13 — bounding gaps.** Intra-PR oscillation between two gates with
+  overlapping subjects is "free iteration" (E2, unbounded) and never trips
+  E7's cross-merge counter → a PR can fail to reach all-fresh HEAD; and
+  failed/max-turns runs re-dispatch with no bound. Same homeless-bound pattern
+  as F2. *(Agree on the livelock; "iteration is free" also needs softening —
+  it is free of *ceremony*, not of *cost*.)*
+
+**Consequence for this canvas:** the design is **NOT converged** — the prior
+"confirm E0–E7 → converged" checkpoint was premature. The real open list is
+the must-fixes above. E0's "holds under an adversarial pass" claim is
+**retracted** (F9). The completeness verdict is qualified by F11.
 
 ## Constraints (carried from the brief — bounds on any resolution)
 
