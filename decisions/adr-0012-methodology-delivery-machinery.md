@@ -149,6 +149,25 @@ of the decision here.
   artifacts); the precise per-agent triggers and owed-sets — and whether
   each rides the artifact or the agent — are pinned by the spec this
   decision authorizes, not by the decision itself.
+- **W1–W6 demote to descriptive, not superseded** (maintainer's (i),
+  2026-07-15). The dispatcher charter keeps W1–W6 as *worked examples of
+  what the local rules emit*; the per-agent trigger/owed rules become the
+  source of truth. A relabel + consolidation, not an append-only
+  supersession.
+- **The O4 landing decomposition is accepted** (maintainer, 2026-07-15):
+  owed-set rides the artifacts (the check re-derives from `type`, D7);
+  trigger/routing rides the agent charters; the dispatcher is a thin
+  stateless matcher; the gate-verdict skill emits, `pr-contract.yml` checks.
+- **The CI check is EMITTED from the agent topology by a setup skill — not
+  hand-authored** (maintainer, 2026-07-15). A `/grove:setup`-class skill for
+  GitHub (riding grove setup or a sibling) reads the agents' declared rules
+  (the topology) and *generates* the `pr-contract` check — so even the
+  machinery is a product of the local rules, not a separately authored
+  workflow; the single source of truth is the agent declarations.
+  *Reconciles with D7:* the agents author the rules (author-time); the setup
+  skill compiles them into the `type → owed-slots` mapping; the check reads
+  each changed artifact's `type` at PR time (run-time, never trusting an
+  agent's word).
 
 ### Open (the live questions)
 
@@ -171,26 +190,29 @@ of the decision here.
   standalone decision PR owes no bot adversary and rests on human shaping
   (as today); closing that standalone gap is exactly the phase-2 dedicated
   agent's job. Confirm, or handle the standalone case in phase 1 too.
-- **O4 (reshaped by the emergent-workflow principle) — where the local
-  rules live.** The old framing — owed-set + default "in the dispatcher
-  charter" — is retired: it would make the dispatcher a workflow-holder,
-  against the principle. Proposed decomposition, for confirmation:
-  - **owed-set rides the artifacts** — the machinery re-derives it from each
-    changed file's frontmatter `type` (D7); the *check* never trusts an
-    agent's word. The enforcement half.
-  - **trigger/routing rides the agent charters** — each agent declares its
-    own precondition and hand-off (the `contract-author` knows an approved
-    spec is the `executor`'s cue; a producer knows to hand to its
-    adversary). The dispatcher becomes a **thin stateless matcher** over
-    these declarations, holding minimal state — not a keeper of W1–W6.
-  - **the dispatcher's W1–W6 demote from prescriptive to descriptive** — a
-    worked example of what the local rules emit, not the source of truth (a
-    *consolidation*, honoring "replace, don't accrete").
-  - **gate-verdict skill (emission) + `pr-contract.yml` (terminal check)**
-    unchanged. Nothing proposed for trellis.
-  Open: confirm this decomposition — especially routing-on-agents vs. some
-  residual on a thin dispatcher — and whether W1–W6 truly demote to
-  descriptive rather than being superseded outright.
+- **O6 — how reviewers/adversaries are wired into the topology** (the
+  maintainer's open question, 2026-07-15: "not sure how the validation from
+  the adversaries would be added"). Proposed **demand/supply** model, for
+  confirmation:
+  - **Producers declare demand** — an agent's output owes named **slots**
+    (`shaper`: an `adr` owes the decision-adversary slot; `contract-author`:
+    a `spec` owes the spec-adversary slot; `executor`: code owes conformance
+    + code-review). This is the owed-set (rides the artifact `type`, D7).
+  - **Reviewers/adversaries declare supply** — each registers **which slot
+    it fills** and its verdict grammar (`spec-adversary` fills the
+    spec-adversary slot, and phase-1 the decision-adversary stand-in slot,
+    O5; emits APPROVE-READY / NEEDS-REVISION / UNSOUND). Its output *is* a
+    verdict, recorded via the gate-verdict skill (D4).
+  - **The setup skill compiles both sides** → the check (every demanded slot
+    must carry a fresh matching verdict on HEAD) + a thin `slot → supplier`
+    dispatch registry.
+  - **The one real sub-fork — how the adversary is *dispatched*:**
+    **slot-driven auto-dispatch** (an unfilled owed-slot on HEAD → the
+    dispatcher runs whatever agent registered for that slot; the producer
+    never names its reviewer — fully decoupled, matches gate≠agent D9;
+    shaper's lean) vs **producer-named handoff** (the producer declares
+    "hand to `spec-adversary` next"). Slot-driven makes adding/swapping a
+    reviewer a one-line registration with zero producer edits.
 
 ### Parked (deferred, with why)
 
