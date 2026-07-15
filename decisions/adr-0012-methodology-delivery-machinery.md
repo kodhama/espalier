@@ -597,6 +597,69 @@ an adversarial pass before any gate** (learning from F11: no self-declared
 pass on the reworked design — do R1–R8 actually close F1–F13, and what new
 holes did the rework introduce? No gate until that pass runs.
 
+## Second adversarial pass — findings (2026-07-15)
+
+A fresh agent, grounded in grove's actual code. **Verdict: still NOT
+gateable, and the rework made two things worse.** Tally of R1–R8 against
+F1–F13: **CLOSED 2** (F7, F9 — both disclosure/framing only, no new
+mechanism); **PARTIAL 3** (F5, F6, F8); **NOT-CLOSED 7** (F1, F2, F3, F4,
+F10, F12, F13).
+
+**The load-bearing, structural finding — this is not "tighten the mechanics":
+the ambitious design presupposes platform infrastructure grove does not
+have.** Each fatal fix leaned on a primitive that does not exist in this repo,
+verified against source:
+
+- **R1/F3 (still open, CRITICAL).** "Harness-attested run-id" is fiction. The
+  only emitter primitive that exists, `grove-status`, takes the **run-id and
+  role as self-reported CLI arguments** (`grove-status/SKILL.md:42-45`: "the
+  run identifier the dispatcher gave you", `--agent <your-role>`). One agent
+  can present as four run-ids and emit its own four PASS verdicts → GREEN, no
+  reviewer ran. The check's "reviewer-run ≠ producer-run" is **uncomputable**
+  — nothing records "artifact X was produced by run-A" in a store agents can't
+  write. F3 and F10/O1 both rest on this fiction.
+- **NEW, CRITICAL — confused deputy.** Worse: if the gate-verdict skill *does*
+  hold a real credential, it is invoked *by the very agents it gates* and is
+  *told* the run-id, so it emits any verdict for any slot under a **trusted**
+  identity — forgery that now looks authoritative. The rework's keystone makes
+  F3 worse than the openly-forgeable draft.
+- **R3/F1 (regressed, CRITICAL) — self-amending gate.** "Derive live from the
+  declarations at PR time" reads the policy from **the PR branch the PR
+  controls**. A PR can weaken its own owed-set (edit the rule, flip a
+  `type:`, drop frontmatter) in the same commit the check reads. Trades a
+  staleness bug for an authorization bug.
+- **R2/F2 (still open, HIGH) — the "durable append-only verdict record" does
+  not exist.** The only candidate is the wisp bus, which its own skill
+  disclaims as "**telemetry, NOT truth**" (`grove-status/SKILL.md:12-13`);
+  any SHA-keyed history **resets on rebase/squash**, zeroing the E7 cascade
+  counter — the governor defeated by `git rebase`.
+- **R6/F4 (still open, HIGH).** Mechanizes the intent gate on **grove#38, an
+  unbuilt parked idea** — building on unsettled ground, which `lifecycle.md`
+  and `profile.md` forbid.
+- **R8/F6 (PARTIAL).** The decision-adversary closes the *incoherent*-decision
+  sub-case but **not** the plausible-but-wrong class F6 actually named (a
+  plausible-but-wrong decision is coherent by definition — the axis R8 says it
+  *cannot* judge). And it is an **unanchored gate** — no approved artifact
+  upstream to derive ground truth from; nobody adversaries its criteria.
+
+**What the passes together establish:** the minimum bar for the ambitious
+version to be gateable requires machinery grove does not have and this
+decision cannot conjure — (1) real out-of-process run **attestation** an agent
+can't forge + a trusted producer→run record; (2) policy resolved from a
+**protected location** (default branch), not PR HEAD; (3) a **forge-resistant,
+force-push-stable** verdict store with a defined lineage rule; (4) an intent
+guard that **exists** (not grove#38-as-idea). These are a platform program
+(runner-hosted dispatcher/emitter, a real store, auth/identity separation) —
+`dispatcher.md:26` already notes v0 has no runner-hosted dispatcher. **The
+ambitious design is blocked on infrastructure, not on another paper rework.**
+
+**Honest meta-note (F11 territory, now doubled):** the shaper has twice
+produced mechanisms that felt sound and did not survive independent grounded
+review. A third solo rework would repeat the loop the profile warns against
+("re-run the failing step and move on"). The decision now needs a *strategic*
+call by the maintainer — retrench to what is buildable today, commit to the
+infrastructure program, or park — not another shaper patch.
+
 ## Constraints (carried from the brief — bounds on any resolution)
 
 - The fix must be **machinery or a structural default**, not more
