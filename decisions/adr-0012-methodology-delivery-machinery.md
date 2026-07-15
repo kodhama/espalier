@@ -217,16 +217,21 @@ of the decision here.
 
 ### Open (the live questions)
 
-- **Only one thing left, and it is yours: confirm the `## Intended effects`
-  section.** The maintainer chose (2026-07-15) to own the *effects* and
-  delegate the *mechanics* to the shaper — the handoff plumbing (input
-  prompts, output messages, what the HEAD diff carries) is spec-altitude and
-  the shaper's to resolve. All prior mechanical forks are now resolved as
-  **reversible shaper defaults** (see Decided: O5/O6/O7 resolutions); veto
-  any. So the live question is not a mechanism — it is whether the
-  Intended-effects list below is the right *effect-set*: complete, correctly
-  prioritized, nothing wrong. Confirm or adjust it, and the design has
-  converged.
+- **O8 — does the emergence claim (E5) cover W3's bug-triage procedure, or
+  scope it out?** (surfaced by the completeness check.) `reproduce →
+  root-cause → classify` is a multi-step *procedure*, not an
+  artifact-triggered rule; today it lives in `dispatcher.md`. Two ways:
+  **(a)** re-home it as a **named agent's local method** (a triage entry, or
+  fold code-bug triage into the `executor`'s test-first method + route by
+  root layer) — then it emerges and E5 stays universal; or **(b)** scope it
+  out — E5's emergence claim covers the *forward review pipeline* (W1/W2/W5/
+  W6) and the interrupt-style flows (W3 triage, and the procedural parts of
+  W4) keep their existing charter treatment. This is a genuine intent/scope
+  call — the maintainer's.
+- **Then confirm the effect-set.** After O8, the one remaining maintainer
+  question is whether E1–E7 (with the two sharpenings) is the right, complete
+  effect-set. All mechanical forks are resolved as reversible shaper defaults
+  (Decided: O5/O6/O7). Confirm E1–E7 + settle O8 → the design has converged.
 
 ### Parked (deferred, with why)
 
@@ -274,10 +279,15 @@ owns this list; every mechanism in `## Decision state` exists to serve it,
 and is the shaper's to finalize. If a mechanism does not serve one of these,
 it does not belong.
 
-- **E1 — No unreviewed work merges.** Every artifact reaching the final
-  state carries a fresh, independent review appropriate to what it is
-  (spec → adversary; code → conformance + code-review; charter → conformance;
-  decision → human). "Did the review run?" is never a human's job to check.
+- **E1 — No unreviewed work merges, and none builds on thin air.** Every
+  artifact reaching the final state (a) carries a fresh, independent review
+  appropriate to what it is (spec → adversary; code → conformance +
+  code-review; charter → conformance; decision → human), and (b) was built
+  against an **approved upstream**, never a conversation or a draft — a
+  change with no reviewable contract fails by construction (`adr-0005`
+  dec 3). "Did the review run?" and "was there anything to review against?"
+  are never a human's job to check. *(Facet (b) added by the W1–W6
+  completeness check, 2026-07-15 — W2/W4 both lean on it.)*
 - **E2 — Iteration is free; only the endpoint is gated.** Authors, builders,
   and reviewers churn mid-flow without ceremony; the gate judges only the
   final state. No fixed pipeline is imposed on how the work gets there.
@@ -291,7 +301,13 @@ it does not belong.
 - **E5 — No one holds "the workflow."** The pipeline emerges from simple
   local rules on agents/artifacts, and the enforcing machinery is generated
   from those same rules. Adding or swapping an agent recomposes the system
-  with no central flow to edit.
+  with no central flow to edit. **"Local rules" spans three kinds:** trigger
+  rules (routing), owed rules (gates), and **agent method/boundary rules**
+  (test-first, surface-upstream-don't-patch, build-on-approved-upstream) —
+  the new adr-0012 rules **compose with grove's existing local invariants**;
+  the emergence is of the two together, not the new rules alone. *(The
+  three-kinds clarification added by the W1–W6 completeness check,
+  2026-07-15 — W3/W4 emerge only with it.)*
 - **E6 — The human backstops judgment, not bookkeeping.** Everything above
   is mechanically enforced, so the maintainer spends attention only on
   intent — approving a decision, or overriding a block with recorded
@@ -307,6 +323,43 @@ it does not belong.
   (`dispatcher.md` W4; `run-resumer`). The bound's *number and form* are
   shaper-owned (spec-altitude); the *effect* — bounded, escalating, never
   infinite — is the maintainer's.
+
+## Completeness check — do W1–W6 emerge from E1–E7? (2026-07-15)
+
+Run at the maintainer's request, as a falsification test of E5: if a
+chartered workflow cannot emerge from the local rules, an effect is missing.
+Each traced against the rules the effects imply (trigger, owed,
+verdict-grammar routing, the E7 bound) composed with grove's existing local
+invariants.
+
+- **W1 new requirement — emerges cleanly.** The stage *ordering* falls out
+  of trigger *preconditions* (the `executor` is triggered by an *approved*
+  spec — the precondition IS the order); conformance ∥ code-review are
+  parallel because they are two owed slots on one artifact with no ordering
+  (E2), not by decree.
+- **W5 feedback / W6 research — emerge trivially** as single trigger rules.
+- **W2 spec amendment — emerges** via owed + boundary rules: an in-scope
+  amendment owes a delta-scoped `spec-adversary` pass (E1/E4); scope beyond
+  the decision is caught and routes to shaping; contradiction of a standing
+  decision → human (E6). Leans on E1(b) (build-on-approved-upstream).
+- **W4 backpropagation — emerges**, but *not from E1–E7 alone*: it rests on
+  grove's existing *surface-upstream-don't-patch* invariant + E6
+  (decision-layer → human) + E7 (cascade bound) + a trigger (repair merged →
+  `validator` audit scoped by `depends_on`). Motivates the E5 composition
+  clarification.
+- **W3 bug — the hard case.** *Classify-and-route* (code → `executor`; spec
+  gap → `contract-author`; decision gap → `shaper`) emerges from routing
+  rules, and *reproduce-as-failing-test* is the `executor`'s existing
+  test-first method. **But** the `reproduce → root-cause → classify`
+  *ordering* is a **procedure** that does not reduce to artifact
+  trigger/owed rules — today it lives in `dispatcher.md` as a method. Under
+  E5 it has no home. → **O8.**
+
+**Verdict:** E1–E7 are sufficient as the *new* effect layer — every workflow
+emerges from them **composed with grove's existing local invariants** —
+after two sharpenings the check forced (E1(b) build-on-approved-upstream;
+E5 three-kinds/composition). One genuine open call remains: W3's triage
+procedure (O8).
 
 ## Worked trace (the anti-pattern the proposals prevent)
 
