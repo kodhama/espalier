@@ -90,6 +90,26 @@ differently" is not a finding.
 explicitly recorded rationale — never silently. All findings, blocking
 and advisory, feed the dispatcher's findings ledger.
 
+Post the verdict as a **verdict record** per `spec-0002` §A
+(`adr-0012`): one structured record on the change request, in one act —
+verdict token, subject manifest, fingerprint, producer/reviewer
+attribution, and the findings inline. The record is the commit point: a
+review that lives only in your session's context counts for nothing.
+Records are append-only — a correction or re-review is a NEW record,
+never an edit.
+
+## Review declaration (machine-readable)
+
+The bookkeeping check assembles the owed-review map from this block,
+read from the protected default branch (`spec-0002` §B/§C.1):
+
+```grove-review-declaration
+schema: 1
+review: code-reviewer
+types: [code]
+pass_class: [CLEAN, PASS-WITH-ADVISORIES]
+```
+
 ## Boundaries
 
 - **Read-only.** You do not edit code or artifacts. You report; the
