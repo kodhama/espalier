@@ -949,8 +949,21 @@ These are named, not pretended. Authenticity and policy changes remain
    tags **optional provenance only**. The cross-check is deleted (§C.4);
    no frontmatter field name needs pinning here because the check never
    reads one.
-7. **The policy/declaration carrier (NEW, parked).** The verdict-record
-   carrier is pinned (§A.1); the **policy side is not**: the concrete
+7. **The policy/declaration carrier — RESOLVED (2026-07-16) by the
+   `adr-0012` execution wave 1 (the charter wave), exactly per this
+   question's named default.** (a) Each reviewer charter now carries a
+   fenced `grove-review-declaration` block (fields: `schema`, `review`,
+   `types`, `pass_class`) — `charters/conformance-reviewer.md`,
+   `charters/decision-adversary.md`, `charters/spec-adversary.md`,
+   `charters/code-reviewer.md`; (b) the non-charter inputs live in one
+   policy file on the protected branch, `charters/review-policy.md`
+   (fenced `grove-review-policy` block): the artifact-dir list, the
+   positive reviewless declarations (`research`, `feedback`), and the
+   non-behavioral allowlist + prose-extension set — the record-poster
+   allowlist deliberately absent, falling to the §A.4
+   `author_association` default. The original park text follows as
+   provenance. *The verdict-record
+   carrier is pinned (§A.1); the policy side is not: the concrete
    schema and location of (a) each reviewer charter's machine-readable
    declaration (what types it reviews + its verdict grammar/PASS-class)
    and (b) the non-charter policy inputs — reviewless-type declarations,
@@ -959,15 +972,14 @@ These are named, not pretended. Authenticity and policy changes remain
    declarations to the same-wave charter updates; pinning their format
    here would invent charter structure. **Named default:** declarations
    live in each reviewer charter as a fenced machine-readable block; the
-   non-charter inputs live in one policy file on the protected branch.
-   **Fail-closed interims, each named:** absent reviewer declaration →
-   its types are unclaimed → full set (INV7); absent reviewless
-   declaration → `research`/`feedback` owe the full set (§B, disclosed
-   divergence from the intended projection until the declaration ships);
+   non-charter inputs live in one policy file on the protected branch.*
+   **The fail-closed interims stay operative as check behavior for any
+   input absent at check time — they were never a gap:** absent reviewer
+   declaration → its types are unclaimed → full set (INV7); absent
+   reviewless declaration → `research`/`feedback` owe the full set (§B);
    absent allowlist → nothing exempt; absent artifact-dir list → the
    stated default (§A.3); absent record-poster allowlist → the
-   `author_association` default (§A.4, flagged). No interim is a silent
-   gap.
+   `author_association` default (§A.4, flagged).
 8. **The test-deps ledger's concrete convention (NEW, parked).**
    `adr-0006` dec 4 pins the ledger's *concept* and the `executor`'s
    duty — not its location, format, or file→package mapping; its own AC

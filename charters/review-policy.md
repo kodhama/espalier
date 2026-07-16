@@ -54,9 +54,22 @@ reviewless_types: [research, feedback]
 # only (never a class, glob, or directory), each honored only if it
 # also passes the prose predicate below (INV14/AC5). README-class
 # orientation prose only — never a review-free zone for code.
+#
+# Deliberately NOT listed: CONTRIBUTING.md — it declares (in prose)
+# that it implements spec-0001, so it is a spec-implementing artifact,
+# not orientation; its honest state is the fail-closed red until it
+# carries a frontmatter `implements:` declaration (conformance
+# finding, 2026-07-16).
+#
+# Disclosed judgment: charters/README.md and decisions/README.md
+# restate the artifact contract and the append-only rule alongside
+# orientation prose. They stay listed because — unlike CONTRIBUTING.md
+# — they declare no upstream they implement (the normative homes are
+# lifecycle.md, adr-0004, and the decisions themselves), so no
+# reviewable implements edge exists for a fidelity review to bind to.
+# If either ever gains a declared upstream, delist it the same way.
 non_behavioral_allowlist:
   - README.md
-  - CONTRIBUTING.md
   - charters/README.md
   - decisions/README.md
   - specs/README.md
