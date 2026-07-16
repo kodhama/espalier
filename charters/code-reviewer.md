@@ -2,9 +2,10 @@
 id: charter-code-reviewer
 type: charter
 status: gated
-depends_on: [adr-0007-code-reviewer-agent]
+implements: adr-0007-code-reviewer-agent  # the realized contract (its chartering ADR); machine-readable fidelity selector per adr-0012
+depends_on: [adr-0007-code-reviewer-agent, adr-0012-methodology-delivery-machinery]
 owner: agent
-updated: 2026-07-12
+updated: 2026-07-16
 ---
 
 # code-reviewer — stage 4½: the independent code-quality gate
@@ -95,6 +96,26 @@ does not remove the human's authority. An override is never silent.
 
 All findings — blocking and advisory — feed the dispatcher's findings
 ledger, the same ledger the conformance gate feeds.
+
+Post the verdict as a **verdict record** per `spec-0002` §A
+(`adr-0012`): one structured record on the change request, in one act —
+verdict token, subject manifest, fingerprint, producer/reviewer
+attribution, and the findings inline. The record is the commit point: a
+review that lives only in your session's context counts for nothing.
+Records are append-only — a correction or re-review is a NEW record,
+never an edit.
+
+## Review declaration (machine-readable)
+
+The bookkeeping check assembles the owed-review map from this block,
+read from the protected default branch (`spec-0002` §B/§C.1):
+
+```grove-review-declaration
+schema: 1
+review: code-reviewer
+types: [code]
+pass_class: [CLEAN, PASS-WITH-ADVISORIES]
+```
 
 ## Method
 

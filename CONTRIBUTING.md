@@ -137,6 +137,13 @@ human spec-gate pipeline:
    contribution), do this pass deliberately and separately from
    writing the spec — don't let self-checking and adversarial review
    collapse into the same pass.
+   *(Update pending: `adr-0012` moved fidelity review — including
+   "silent scope beyond the source decision" — to the
+   `conformance-reviewer`; the pre-approval adversary now judges
+   intrinsic quality on the spec alone. This guide implements
+   `spec-0001`, so the text above is not silently rewritten here; a
+   `spec-0001` amendment and re-derivation of this guide are to follow
+   — see PR #63.)*
 4. **Record the adversarial round in the spec file itself** — a short
    note (what you tried to break, what you found, what you changed, or
    that nothing load-bearing was found) — not only in PR comments. PR

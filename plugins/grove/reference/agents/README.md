@@ -31,10 +31,11 @@ file's own "Why this file is narrower" section and
 |---|---|---|
 | `divergent-researcher.md` | 1 | research discipline; loud abort |
 | `shaper.md` | 2 | decision canvases; never decides (interactive) |
+| `decision-adversary.md` | 2½ | breaks `gated` decisions on soundness before human approval — never on intent |
 | `contract-author.md` | 3 | specs from approved intent; never implements |
-| `spec-adversary.md` | 3½ | breaks `gated` specs before human approval |
+| `spec-adversary.md` | 3½ | breaks `gated` specs on intrinsic quality before human approval (the spec alone) |
 | `executor.md` | 4 | test-first implementation from artifacts only |
-| `conformance-reviewer.md` | 4½ | build gate vs. approved upstream |
+| `conformance-reviewer.md` | 3½ / 4½ | fidelity gate at every layer vs. the approved `implements:` upstream |
 | `code-reviewer.md` | 4½ | code-quality gate vs. the project's declared standards; blocking ≥ high (objective harm only), rest advisory |
 | `validator.md` | 5 | per-PR critique + triggered drift audits |
 | `run-resumer.md` | remediation | resumes a run that died at its turn cap |

@@ -19,14 +19,18 @@ the same door pattern Trellis uses for its own overlay.
 
 ## The team
 
-Grove charters eight agent roles across the stages of the pipeline —
-one per stage, except stage 4½, where two independent gates
-(conformance and code quality) ask their own questions of the same
-finished build — plus the dispatcher that sequences them (it holds live
+Grove charters nine agent roles across the stages of the pipeline —
+one per stage, except the review gates, where two independent questions
+are asked of the same finished artifact: **fidelity** ("does it derive
+faithfully from what it implements?" — the conformance-reviewer, at
+every layer with an artifact upstream) and **quality** ("is it good,
+judged as the thing it is?" — a specialist per layer:
+decision-adversary, spec-adversary, code-reviewer; `adr-0012`) — plus
+the dispatcher that sequences them (it holds live
 run state across every stage rather than occupying one, so it carries
 no stage number of its own), plus two remediation roles that keep runs
 from silently dying, plus one standing audit role over the artifact
-record itself — twelve roles in all. Every role except the dispatcher
+record itself — thirteen roles in all. Every role except the dispatcher
 and the shaper is a **stateless cold start**: all context travels
 through artifacts and their
 `depends_on` graph, never through conversation history. A floundering cold
@@ -36,10 +40,11 @@ role is evidence about the artifacts it was given, not just the agent.
 |---|---|---|---|
 | divergent-researcher | 1 | research discipline; loud abort on missing tools | yes |
 | shaper | 2 | decision canvases; never decides | interactive |
+| decision-adversary | 2½ | breaks `gated` decisions on soundness before human approval — never on intent; verdict grammar `SOUND / NEEDS-REVISION / UNSOUND` | yes |
 | contract-author | 3 | specs from approved intent; never implements | yes |
-| spec-adversary | 3½ | breaks `gated` specs before human approval; verdict grammar `APPROVE-READY / NEEDS-REVISION / UNSOUND` | yes |
+| spec-adversary | 3½ | breaks `gated` specs on intrinsic quality before human approval (the spec alone — fidelity is conformance's); verdict grammar `APPROVE-READY / NEEDS-REVISION` | yes |
 | executor | 4 | test-first implementation from artifacts only; under-specification is a surfaced finding, never a silent choice | yes |
-| conformance-reviewer | 4½ | build gate vs. approved upstream, multi-round; drift taxonomy | yes |
+| conformance-reviewer | 3½ / 4½ | the fidelity gate at every layer — spec→decision, code→spec, charter→ADR — vs. the approved `implements:` upstream; verdict grammar `PASS / FAIL / UPSTREAM-INDICTED` | yes |
 | code-reviewer | 4½ | code-quality gate vs. the project's own declared standards; severity-graded, blocking ≥ high (objective harm only), rest advisory; read-only | yes |
 | validator | 5 | per-PR critique + triggered drift audits; report-only | yes |
 | dispatcher | — | dispatch, sequencing, findings ledger, checkpoint-resume | the interactive session (v0) |
@@ -89,7 +94,7 @@ The canonical route is the Claude Code plugin (kodhama-0002 §3):
 ```
 
 `/grove:setup` is a composing interview: it asks which agent roles to
-install (default: all twelve), copies their definitions into your project's
+install (default: all thirteen), copies their definitions into your project's
 `.claude/agents/`, and resolves every placeholder (test/typecheck
 commands, your VCS/issue-tracker conventions, your parked-item store,
 your spec/research rubric paths) to your project's real values —
