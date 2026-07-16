@@ -69,8 +69,15 @@ with *judgment*. Ship this now (the buildable part, "Layer A"):
 each artifact is built to satisfy the acceptance criteria of the one above it
 (code satisfies the spec; the spec satisfies the decision), and a failed review
 routes the fix to whichever layer is actually wrong. Nobody hand-writes "the
-workflow" — it *emerges* from each artifact declaring what review it owes, and
-the automated check is generated from those same declarations.
+workflow" — it *emerges* from each artifact declaring what review it owes.
+
+A general principle runs through all of it: **anything derivable from the
+artifacts is computed at check-time, never stored** — so it cannot drift from
+its source. The owed-map is *assembled* from the charters' declarations (not a
+generated file); the status view is *rendered* from the verdict files (not a
+stored ledger); freshness is *recomputed* from HEAD (not trusted from the
+record). Only irreducible inputs are stored: the artifacts themselves, and the
+human's intent acts.
 
 **How we know it isn't hand-waving.** This decision was run through **four
 independent adversarial reviews** — the discipline it prescribes. The first two
@@ -170,11 +177,18 @@ approval:
   store, no serializer needed. **The check renders a single read-only status
   view** from these files (the "which steps ran + status" surface for the
   human) — nothing an agent mutates. The owed reviews are derived from what the
-  PR changed (the owed-map, pinned here):
+  PR changed. **The owed-map is not a stored file** — the check *assembles* it
+  at run-time from the charters' machine-readable declarations (each reviewer
+  charter declares what it reviews), read from the protected default branch. So
+  changing what a type owes is a **charter** edit, nothing to regenerate or
+  keep in sync. The assembly currently yields (this list is the *expected
+  projection*, not an authored artifact):
   - research / feedback-only change → **nothing owed**;
   - a decision (shaping) → **decision-adversary**;
   - a spec → **spec-adversary + conformance**;
   - code → **code-reviewer + conformance**;
+  - a **charter** → **conformance** (charter→ADR, per `adr-0006` dec 8 — the
+    `conformance-reviewer` already owns this; it falls out of its declaration);
   - a new/undefined `type` → **the full set** (fail-closed, AC4).
 - **A PR may touch anything — no single-stage rule.** It can carry several
   research passes, shaping runs, specs, code, in any mix. The owed-set is the
@@ -195,8 +209,10 @@ approval:
   policy from the protected default branch and enforces completeness,
   freshness, coverage, and separation — on existing GitHub primitives
   (protected branches + Actions), no new platform infrastructure.
-- **The setup skill** gains a step that generates that check from the agent
-  declarations (replacing its current "check by hand" fallback).
+- **The setup skill** installs the check *harness* (a thin CI runner) once —
+  but the *policy* it applies is not baked in; the harness assembles the
+  owed-map live from the charters at run-time (above). Replaces the setup
+  skill's current "check by hand" fallback.
 - **Reviewer charters** (`conformance-reviewer`, `code-reviewer`,
   `spec-adversary`) gain: emit your verdict as a verdict file. **Producers /
   artifact types** declare the reviews they owe.
