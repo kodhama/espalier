@@ -140,27 +140,39 @@ fresh by recording a manifest that omits a frontmatter-declared upstream.
 
 ---
 
-## §B — The owed-map (pinned, `adr-0012` Consequences + AC4)
+## §B — The owed-map (assembled at run-time, `adr-0012` Consequences + AC4)
 
 `type` is read from the changed file's **frontmatter `type` at HEAD**;
-**no frontmatter ⇒ `code`** (`adr-0012`, considered-and-rejected: reuse
-the frontmatter contract, no classifier invented).
+**no frontmatter ⇒ `code`** (`adr-0012`: reuse the frontmatter contract,
+no classifier invented).
 
-| `type` (at HEAD) | Owed reviews |
+**The owed-map is not a stored table.** The check **assembles** it at
+run-time from the **reviewer charters' machine-readable declarations** —
+each reviewer charter declares which `type`(s) it reviews — read from the
+**protected branch** (§C, AC5), never PR HEAD (`adr-0012`: *compute f(A) at
+run-time, never store it*). Changing what a `type` owes is a **charter**
+edit; there is no map file to regenerate or keep in sync. The assembly
+currently yields (the *expected projection*, not an authored artifact):
+
+| `type` (at HEAD) | Owed reviews (from the reviewers' declarations) |
 |---|---|
-| `research`, `feedback` | *(none)* |
+| `research`, `feedback` | *(none — no reviewer declares them)* |
 | `adr` / decision | `decision-adversary` **+ human intent gate** (§C.6, AC9) |
 | `spec` | `spec-adversary`, `conformance` |
+| `charter` | `conformance` (charter→ADR, `adr-0006` dec 8 — falls out of the `conformance-reviewer`'s declaration) |
 | *no frontmatter* ⇒ `code` | `code-reviewer`, `conformance` |
-| **any other / undefined `type`** | **full set**: `decision-adversary`, `spec-adversary`, `conformance`, `code-reviewer` (fail-closed, AC4) |
 
-- The owed-map **table itself** is resolved from the protected branch,
-  never PR HEAD (§C, AC5).
-- `charter` is **not** a pinned row; it therefore falls to the
-  fail-closed **full set** (Open Q4 — flagged against `adr-0006`, not
-  silently given a bespoke row).
+- **Fail-closed override (INV7/AC4) is a check rule, not an assembly
+  output.** Pure assembly would leave an *unknown* `type` with an empty
+  owed-set (no reviewer claims it) — i.e. fail-**open**. So the check
+  applies an explicit rule on top: a changed file whose `type` is claimed by
+  **no** reviewer declaration owes the **full set**, never nothing.
 - A PR's owed-set is the **union** over all changed files of each file's
   owed reviews (S12); green requires every element satisfied at HEAD.
+- *(Former Open Q4 resolved: `charter` needs no bespoke row — its
+  conformance requirement is the `conformance-reviewer`'s own declaration,
+  grounded in `adr-0006` dec 8. Dispatcher edit, 2026-07-16; spec-adversary
+  to confirm.)*
 
 ---
 
@@ -170,7 +182,7 @@ the frontmatter contract, no classifier invented).
 
 | Value | Source | Trusted? |
 |---|---|---|
-| owed-map, PASS-class table, allowlist, artifact dirs | policy files on **protected branch** | policy, not agent |
+| owed-map (**assembled** from reviewer-charter declarations), PASS-class table, allowlist, artifact dirs | charters + policy on **protected branch** | policy, not agent-at-PR-HEAD |
 | diff, `type` of each changed file | **HEAD** content | recomputed |
 | fingerprint | recomputed via `grove-fp-1` over `S ∪ U(S,HEAD)` | **never trusted** (AC2) |
 | upstream set `U` | derived from HEAD frontmatter | derived, not read from verdict |
@@ -181,8 +193,9 @@ the frontmatter contract, no classifier invented).
 
 ### C.1 Resolve policy (AC5)
 
-Load the owed-map, PASS-class table, artifact-dir list, and the
-non-behavioral **allowlist** from the **protected branch** commit, not
+**Assemble** the owed-map from the reviewer charters' declarations, and load
+the PASS-class table, artifact-dir list, and the
+non-behavioral **allowlist** — all from the **protected branch** commit, not
 from PR HEAD. A PR that edits these policy files on its own branch does
 **not** change the rules its own gate runs under (S6).
 
