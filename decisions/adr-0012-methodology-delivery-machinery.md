@@ -707,6 +707,47 @@ Layer B is a later infra increment."** Effects E0–E7 stand as the target;
 Layer A is the mechanized subset that needs no infra. Proposed — to be
 re-adversaried on the *narrow* Layer-A claim before any gate.
 
+### The Layer-A claim, stated for adversarial test
+
+1. **Verdict artifact.** A reviewing agent writes `.grove/verdicts/<slot>`
+   into the PR branch containing: slot, verdict (PASS-class or not),
+   checklist + evidence (`file:line`), the **subject-manifest** (the file
+   set it certified) and the **subject-hash** (content hash of those files at
+   the reviewed commit), and disclosed self-reported attribution (producing /
+   reviewing run). Verdicts are **resources in git**, not credentialed
+   statuses — no emitter secret, no external store.
+2. **Policy from the protected default branch.** The `type → owed-slots`
+   mapping + slot declarations are compiled by the setup skill and the CI
+   check **resolves them from the default branch**, never PR HEAD.
+3. **The check is deterministic, zero agent-trust.** For each changed file
+   at HEAD: derive owed slots from its `type`; for each, find the verdict
+   artifact; **recompute the subject-hash from HEAD** and compare (mismatch =
+   stale = RED); require PASS-class + non-empty evidence. RED if any owed slot
+   is missing, stale, non-pass, or vacuous. CI computes all of this; it trusts
+   no agent-emitted signal.
+4. **Explicitly OUT of Layer A (honest limits, disclosed):**
+   - *Authenticity* — CI checks present+fresh, **not genuine**; a verdict
+     file can be fabricated. Human owns genuineness at merge (reads the
+     artifacts). (F3 conceded to Layer B.)
+   - *A1 forgery-proof separation* — attribution is disclosed + human-visible,
+     not a forgery-proof check. (F10 → Layer B.)
+   - *Autonomous loop-bound* — a human bounds non-convergence (a stuck PR is
+     visible); autonomous bounding is Layer B. (F2/F12/F13 → Layer B.)
+   - *Undeclared-dependency* — subject-manifest = declared upstream; inherits
+     adr-0006 §6 blind spot, disclosed. (F7.)
+5. **Known sharp edge to probe (not claimed solved):** a PR that mutates an
+   artifact's own `type` (or deletes its frontmatter) to dodge an owed slot —
+   since owed-set derives from the file's type at HEAD. Candidate mitigation:
+   cross-check the type against the file's identity on the default branch and
+   treat a type-change/frontmatter-deletion as itself owing review. Adversary
+   should judge whether this holds.
+6. **Still owed regardless (F5):** reconcile the owed-set restatement with
+   **approved adr-0006** as an explicit supersede/amend edge, in this change.
+
+**Claim under test:** Layer A is buildable on grove today with no new infra,
+is internally coherent, honestly bounded, and **deterministically delivers
+A2 (completeness) and A3 (freshness)** — the two failures that started #59.
+
 ## Constraints (carried from the brief — bounds on any resolution)
 
 - The fix must be **machinery or a structural default**, not more
