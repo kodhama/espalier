@@ -10,9 +10,9 @@ only what grove added, asking before any deletion, and preserve everything else 
 
 ## 1. Find what was composed
 
-List the agent files present in `.claude/agents/` (the twelve possible roles:
-`divergent-researcher`, `shaper`, `contract-author`, `spec-adversary`, `executor`,
-`conformance-reviewer`, `code-reviewer`, `validator`, `dispatcher`, `run-resumer`,
+List the agent files present in `.claude/agents/` (the thirteen possible roles:
+`divergent-researcher`, `shaper`, `decision-adversary`, `contract-author`, `spec-adversary`,
+`executor`, `conformance-reviewer`, `code-reviewer`, `validator`, `dispatcher`, `run-resumer`,
 `propagation-remediator`, `corpus-reviewer`, plus their `README.md`), and check whether
 `.claude/skills/grove-status/` exists.
 
