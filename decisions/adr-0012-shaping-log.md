@@ -1171,3 +1171,27 @@ Two re-derivations, recommendations pending the maintainer's call:
    recompute from HEAD, reason grammar, owed-assembly from charters) are
    storage-agnostic. Amending the decision's "verdict files / .grove/verdicts"
    wording is why it was left gated.
+
+## Amendments applied + decision-adversary confirmed shipped (2026-07-16)
+
+Maintainer confirmed both re-derivations: (1) the fidelity/quality split —
+conformance-reviewer = fidelity instrument at every layer + graph integrity;
+spec-adversary narrows to intrinsic quality; (2) verdict records =
+structured, append-only PR comments (the commit point; session context is
+working memory and does not count). Both amended into the lean ADR in place
+(legal while gated); the superseded interim choices (per-verdict files;
+fused spec-adversary) moved to Considered-and-rejected with why-nots.
+
+On the maintainer's "should we ship the decision-adversary with this?": it
+already ships — the phase-2 spin-out (O5) was superseded by the maintainer's
+own R8 call, and the split makes it structurally required (a narrowed
+spec-adversary loses the UNSOUND backstop, so without the decision-adversary
+the decision layer would have NO adversary). Recorded in Consequences as
+load-bearing: the split and the role ship together.
+
+Next: contract-author revises spec-0002 to the amended decision (verdict
+records, one-rule owed-map + fail-closed override, reason-grammar view,
+narrowed spec-adversary semantics); in parallel, a fifth adversarial pass on
+the amended ADR (a would-be decision-adversary run — fitting); then the
+chartered spec-adversary agent on the revised spec. Fifth-pass status is
+disclosed in the ADR's self-check — the amendments claim no pass-validation.

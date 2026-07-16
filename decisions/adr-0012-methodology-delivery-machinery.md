@@ -5,7 +5,7 @@ status: gated
 depends_on: [adr-0005-tdd-and-artifact-gated-dispatch, adr-0006-operational-conformance-mechanism]
 informed_by: [adr-0007-code-reviewer-agent]
 owner: agent
-updated: 2026-07-15
+updated: 2026-07-16
 ---
 
 > **Provenance.** Opened from grove#59: an agent with the full grove roster +
@@ -17,13 +17,13 @@ updated: 2026-07-15
 > A **delivery** finding — the principles were loaded and did not fire — so the
 > fix must be machinery, **not more prose**.
 >
-> The full shaping conversation and all three independent adversarial reviews
-> are preserved in [`adr-0012-shaping-log.md`](adr-0012-shaping-log.md)
+> The full shaping conversation and every adversarial review are
+> preserved in [`adr-0012-shaping-log.md`](adr-0012-shaping-log.md)
 > (provenance, deliberately *not* in the dependency graph — agents consuming
 > this decision do not load it). This file is the decision; that file is the
 > *why*.
 
-# ADR-0012: reviews become checkable artifacts — mechanize the review bookkeeping, leave judgment to humans
+# ADR-0012: reviews become checkable records — mechanize the review bookkeeping, leave judgment to humans
 
 ## Decision in brief (plain language)
 
@@ -37,15 +37,18 @@ bookkeeping**, not judgment.
 **What we're deciding.** Make the *bookkeeping* mechanical so the human is left
 with *judgment*. Ship this now (the buildable part, "Layer A"):
 
-1. **One verdict file per review; one status view for the human.** Each
-   reviewer (conformance, code-review, spec-adversary, or the new
-   **decision-adversary**) writes its own small **verdict file**
-   (`.grove/verdicts/<review>`: the verdict, a fingerprint of exactly what it
-   reviewed, and who produced vs. reviewed) — disjoint paths, so parallel
-   reviewers never contend for one file and git is the store. The "which steps
-   ran, and did they pass?" summary you'd read is a **single status view the
-   check renders from those files**, not a file any agent mutates. Detailed
-   findings stay in PR comments, pointed to from the verdict file.
+1. **Reviews become records on the pull request — the session is only working
+   memory.** Each reviewer (conformance, code-review, spec-adversary, or the
+   new **decision-adversary**) posts its verdict as a **structured comment on
+   the PR**: the verdict, a fingerprint of exactly what it reviewed, who
+   produced vs. who reviewed, and its findings — one act, one channel, in the
+   place humans already read. The comment is the **commit point**: a review
+   that lives only in a session's context does not count (a session
+   "remembering" its reviews is precisely what failed in #278). Records are
+   **append-only** — a re-review posts a new record, nothing is overwritten —
+   so a FAIL quietly "becoming" a PASS is visible by construction. The "which
+   steps ran, and did they pass?" summary is a **status view the check
+   renders** from the records — computed, never stored.
 2. **An automated check does the bookkeeping.** On every PR a check — reading
    its rules from the protected main branch, so a PR can't weaken its own gate
    — asks and goes red on any "no": *completeness* (does everything that owes a
@@ -55,7 +58,7 @@ with *judgment*. Ship this now (the buildable part, "Layer A"):
    *separation* (was the reviewer a different agent than the producer?). It
    recomputes the fingerprints itself and trusts no agent's word.
 3. **What the machine does NOT do — and says so out loud.** It cannot tell
-   whether a review was *genuine* (an agent could write a fake verdict file),
+   whether a review was *genuine* (an agent could post a fake verdict record),
    and the separation check reads *self-reported* author/reviewer tags — so it
    catches the **accidental** fusion that actually happened, but not a
    **deliberate** forgery. And it does not run unattended. **A green check
@@ -71,13 +74,27 @@ each artifact is built to satisfy the acceptance criteria of the one above it
 routes the fix to whichever layer is actually wrong. Nobody hand-writes "the
 workflow" — it *emerges* from each artifact declaring what review it owes.
 
+Reviews split into **two orthogonal questions**. **Fidelity** — "does it
+faithfully derive from its upstream?" — is asked by ONE instrument, the
+`conformance-reviewer`, at every layer with an artifact upstream
+(spec→decision, code→spec, charter→ADR), together with graph integrity (pins
+resolve, propagation claims true). **Quality** — "is it good, judged as the
+thing it is?" — is asked by a specialist per layer (`decision-adversary`,
+`spec-adversary`, `code-reviewer`). The code layer already worked exactly this
+way (`adr-0007`); this decision extends the same split up the stack, narrowing
+the `spec-adversary` to pure intrinsic quality — its old fused fidelity duty
+was compensation for the missing decision-adversary, which this decision
+charters. Efficiency falls out: a quality verdict's subject is the artifact
+alone, so an upstream edit invalidates only the fidelity verdict, never the
+quality one.
+
 A general principle runs through all of it: **anything derivable from the
 artifacts is computed at check-time, never stored** — so it cannot drift from
 its source. The owed-map is *assembled* from the charters' declarations (not a
-generated file); the status view is *rendered* from the verdict files (not a
+generated file); the status view is *rendered* from the verdict records (not a
 stored ledger); freshness is *recomputed* from HEAD (not trusted from the
-record). Only irreducible inputs are stored: the artifacts themselves, and the
-human's intent acts.
+record). Only irreducible inputs are stored: the artifacts, the verdict
+records, and the human's intent acts.
 
 **How we know it isn't hand-waving.** This decision was run through **four
 independent adversarial reviews** — the discipline it prescribes. The first two
@@ -85,8 +102,12 @@ broke earlier, more ambitious versions; the third validated the
 per-verdict-file Layer A ("blocked on finishing the spec, not on
 infrastructure"); a fourth caught a later repackaging (one shared ledger) that
 regressed it on write-concurrency and drove the revert to the validated
-per-file model + rendered view above. The design here is the version that
-survived. (Full trail: the shaping-log companion.)
+per-record model + rendered view. **Two structural amendments postdate the
+fourth pass** — the fidelity/quality split, and verdict-records-as-PR-comments
+replacing per-verdict *files* (deleting their merge-residue and exempt-path
+warts) — made on the maintainer's calls (2026-07-16) and now under a **fifth
+adversarial pass** before any approval. (Full trail: the shaping-log
+companion.)
 
 ## The problem this decision frames
 
@@ -111,7 +132,10 @@ the human's shoulders onto machinery.
   **supersede** (append-only), not edit-in-place.
 - **E1 — No unreviewed work merges, and none builds on thin air.** Every
   artifact reaching the final state carries a fresh, independent review
-  appropriate to what it is, and was built against an **approved upstream**,
+  appropriate to what it is — **fidelity** to its upstream (the
+  `conformance-reviewer`, wherever an artifact upstream exists) plus its
+  layer's **quality** gate (`decision-adversary` / `spec-adversary` /
+  `code-reviewer`) — and was built against an **approved upstream**,
   never a conversation or a draft. "Did the review run?" and "was there
   anything to review against?" are never a human's job to check.
 - **E2 — Iteration is free of ceremony; only the endpoint is gated.** Authors,
@@ -151,8 +175,25 @@ the human's shoulders onto machinery.
   not the specialization *depth* a cold author + cold builder each deliver.
 - **Per-commit separation (author ≠ git committer)** — rejected: squash /
   rebase / co-authorship make commit authorship an unreliable signal; the
-  separation signal is the verdict-file's self-reported producer vs. reviewer,
-  not git metadata.
+  separation signal is the verdict record's self-reported producer vs.
+  reviewer, not git metadata.
+- **Per-review verdict FILES committed to the branch** (the interim model,
+  passes 3–4) — superseded (maintainer, 2026-07-16) by
+  verdict-records-as-PR-comments: files accumulated merge residue in `main`,
+  required an exempt tree path that two adversarial passes attacked as a
+  review-free zone, split the reviewer's output across two channels (file +
+  findings comment), and still contended on the branch push. Append-only
+  records have none of these, and make overwrite-gaming visible by
+  construction. Cost accepted: a platform-coupled read path — symmetric with
+  grove's existing "any tracker with threaded comments plus reviewable
+  change-requests" portability baseline.
+- **The fused spec-adversary (fidelity + quality in one gate)** — superseded
+  (maintainer, 2026-07-16): the fusion was compensation for the missing
+  decision-adversary (its `UNSOUND` verdict was the only decision-layer
+  backstop); with the decision-adversary chartered here, the fusion's reason
+  is gone — and it over-invalidated (a decision edit spuriously voided the
+  spec's *quality* verdict, not just its fidelity one). Fidelity moves to the
+  `conformance-reviewer`, uniformly, at every layer.
 - **A content-classifier for owed reviews** — rejected for reading the
   artifact `type` from frontmatter (no-frontmatter = code): reuses the existing
   contract, no parser invented.
@@ -168,28 +209,33 @@ the human's shoulders onto machinery.
 This decision **authorizes a spec**; it does not implement the machinery. On
 approval:
 
-- **A spec is written** defining the verdict-file format, the
-  `type → owed-review` map, and the check's logic.
-- **A per-verdict-file convention** is introduced — each reviewer writes its
-  own `.grove/verdicts/<review>` (verdict + subject-fingerprint +
-  producer/reviewer attribution; detailed findings pointed to, in PR
-  comments). Disjoint paths → parallel reviewers never contend, git is the
-  store, no serializer needed. **The check renders a single read-only status
-  view** from these files (the "which steps ran + status" surface for the
-  human) — nothing an agent mutates. The owed reviews are derived from what the
-  PR changed. **The owed-map is not a stored file** — the check *assembles* it
-  at run-time from the charters' machine-readable declarations (each reviewer
-  charter declares what it reviews), read from the protected default branch. So
-  changing what a type owes is a **charter** edit, nothing to regenerate or
-  keep in sync. The assembly currently yields (this list is the *expected
-  projection*, not an authored artifact):
+- **A spec is written** defining the verdict-record format, the owed-review
+  derivation, and the check's logic.
+- **A verdict-record convention** is introduced — each reviewer posts one
+  **structured comment on the PR** per review: verdict token +
+  subject-manifest + fingerprint + producer/reviewer attribution + findings,
+  in one act. Records are **append-only** (a re-review posts a new record; the
+  latest per review counts; the full sequence stays visible — no silent
+  FAIL→PASS). **The check renders a read-only status view** from the records,
+  per (file × owed review) *with the reason* anything is un-green
+  (never-reviewed / changed-since-review / upstream-X-changed /
+  review-failed→findings / self-reviewed). Nothing lands in the repo tree: no
+  merge residue, no exempt verdict path to defend.
+- **The owed reviews derive from what the PR changed, by ONE rule** — *every
+  changed artifact owes fidelity-conformance iff it has an artifact upstream,
+  plus its layer's quality gate.* The rule's inputs are **assembled at
+  run-time from the charters' machine-readable declarations** (each reviewer
+  declares what it reviews), read from the protected default branch — changing
+  what a type owes is a charter edit, nothing to regenerate. Projection today:
   - research / feedback-only change → **nothing owed**;
-  - a decision (shaping) → **decision-adversary**;
-  - a spec → **spec-adversary + conformance**;
-  - code → **code-reviewer + conformance**;
-  - a **charter** → **conformance** (charter→ADR, per `adr-0006` dec 8 — the
-    `conformance-reviewer` already owns this; it falls out of its declaration);
-  - a new/undefined `type` → **the full set** (fail-closed, AC4).
+  - a decision → **decision-adversary** + the human intent gate (no artifact
+    upstream to conform to);
+  - a spec → **conformance (→ its decision) + spec-adversary**;
+  - a charter → **conformance (→ its ADR)**;
+  - code → **conformance (→ its spec, resolved via the `adr-0006` test-deps
+    ledger) + code-reviewer**;
+  - a new/undefined `type` → **the full set** — an explicit fail-closed check
+    rule (AC4), since pure assembly would fail *open* for an unclaimed type.
 - **A PR may touch anything — no single-stage rule.** It can carry several
   research passes, shaping runs, specs, code, in any mix. The owed-set is the
   **union** of what *everything* it changed owes; the check goes green only
@@ -213,18 +259,29 @@ approval:
   but the *policy* it applies is not baked in; the harness assembles the
   owed-map live from the charters at run-time (above). Replaces the setup
   skill's current "check by hand" fallback.
-- **Reviewer charters** (`conformance-reviewer`, `code-reviewer`,
-  `spec-adversary`) gain: emit your verdict as a verdict file. **Producers /
-  artifact types** declare the reviews they owe.
+- **Reviewer charters are updated (consolidate, not accrete):** every reviewer
+  posts verdict records; the **`conformance-reviewer` is stated once as the
+  fidelity instrument at every layer** — spec→decision joins its existing
+  code→spec and charter→ADR duties (an extension with precedent: `adr-0006`
+  already has it re-derive *any* flagged consumer against its upstream) —
+  **plus graph integrity** (pins resolve, propagation claims true); the
+  **`spec-adversary` narrows to intrinsic quality** (testability, internal
+  consistency, ambiguity an executor would guess at, edge coverage).
+  **Producers / artifact types** declare the reviews they owe.
 - **A `decision-adversary` role is chartered** — the real independent
   soundness-adversary for decisions (retiring the spec-adversary stand-in); a
-  decision owes its verdict *plus* the human intent gate.
+  decision owes its verdict *plus* the human intent gate. **Load-bearing for
+  the split:** with the spec-adversary narrowed, this is the decision layer's
+  only adversary — the split and this role ship together.
 - **The dispatcher charter's W1–W6 are demoted** from prescriptive workflows to
   descriptive examples; the per-artifact owed/trigger rules become the source
   of truth (a consolidation, not new prose).
 - **No existing decision is superseded.** adr-0006's conformance scope is
-  *clarified* (per-layer instrumentation), consistent with it — a forward
-  pointer, not a supersession (verified against adr-0006 this sitting).
+  *extended, consistently*: the `conformance-reviewer` becomes the fidelity
+  instrument at all layers — adr-0006 already treats it as the general
+  re-derivation instrument for any flagged consumer and assigns spec→decision
+  to no one else — recorded as a forward pointer, not a supersession (verified
+  against its text this sitting).
 - **Explicitly deferred to Layer B** (a separate future program, gated on
   infrastructure grove lacks, relates to grove#38): run-attestation so a
   verdict proves a genuine non-producer review ran; forgery-proof separation; a
@@ -242,15 +299,14 @@ approval:
   requires the verdicts' manifests to **cover** it, not merely to exist.
 - **AC4 — fail-closed.** A changed file of a new or undefined `type` owes the
   **full** review set, never nothing.
-- **AC5 — policy integrity.** The owed-review policy resolves from the
-  protected default branch, never PR HEAD; the exemption for the verdict
-  directory (`.grove/verdicts/`, structured data only — the check rejects
-  non-verdict content there) and declared non-behavioral paths is an explicit
-  allowlist, never a review-free zone for code (code-bearing paths still owe
-  code-review, fail-closed).
-- **AC6 — green is non-authorizing.** A green check surfaces the verdict files
-  for human reading and is presented as "bookkeeping done," never "reviewed /
-  safe to merge."
+- **AC5 — policy integrity.** The owed-review policy (the charters' review
+  declarations) resolves from the protected default branch, never PR HEAD; the
+  only path exemption is the declared **non-behavioral allowlist** (README-class
+  files), never a review-free zone for code — with verdicts living as PR
+  records, **no verdict path exists in the tree to exempt or defend**.
+- **AC6 — green is non-authorizing.** A green check surfaces the verdict
+  records (with per-item reasons when un-green) for human reading and is
+  presented as "bookkeeping done," never "reviewed / safe to merge."
 - **AC7 — separation (accidental case).** Produced artifacts carry a
   self-reported author tag; the check goes red if a review's reviewer tag
   equals the produced artifact's author tag. Deliberate forgery of the tag is
@@ -261,8 +317,9 @@ approval:
 - **AC9 — decision-adversary.** The `decision-adversary` role exists; a
   decision's owed set includes its verdict plus the human intent gate.
 - **AC10 — no infra pretence.** Nothing depends on unbuilt infrastructure:
-  verdicts are git files, the store is git, the check uses existing GitHub
-  primitives.
+  verdicts are append-only records on the change-request, artifacts and their
+  history live in git, and the check uses existing platform primitives
+  (protected branches + CI + the PR record stream).
 - **AC11 — adr-0006 pointer.** A forward pointer records the per-layer
   conformance clarification as consistent with adr-0006 (no supersession).
 
@@ -288,10 +345,14 @@ approval:
 - **Required sections:** Decision-in-brief, Context, Intended effects,
   Considered-and-rejected, Consequences, Acceptance criteria, Open questions
   (2, ≤3), Self-check — present. PASS.
-- **Append-only:** new artifact; no ratified decision superseded. adr-0006's
-  conformance scope is *clarified*, verified against its text (it assigns
-  `conformance-reviewer` code→spec and charter→ADR, never spec→decision) — a
-  forward pointer, not an in-place edit. PASS.
+- **Append-only:** new artifact; no ratified decision superseded; in-place
+  amendment is legal while `gated` (append-only binds ratified decisions), and
+  the superseded interim choices (verdict files; fused spec-adversary) are
+  recorded in Considered-and-rejected with their why-nots, not erased.
+  adr-0006's conformance scope is *extended consistently* (it already has the
+  `conformance-reviewer` re-derive any flagged consumer, and assigns
+  spec→decision to no one else) — a forward pointer, not an in-place edit.
+  PASS.
 - **Naming register (`adr-0002`):** defining text uses `agent`/role names; no
   `druid`/`archdruid`. PASS.
 - **Independent review — four passes, honestly reported:** FOUR independent
@@ -308,21 +369,20 @@ approval:
 - **Scope discipline:** delivers completeness and freshness (the two reported
   failures mechanizable without infrastructure) and the accidental-fusion case
   of separation; no infrastructure pretended. PASS.
-- **What is validated vs. disclosed (honest, not glossed):** the *core* —
-  per-verdict files + CI-computed completeness/freshness/coverage — is the
-  pass-3-validated version. Three later increments (the CI-rendered status
-  view, the author-tag separation check, and F-L5's ordering-via-existing-gates)
-  have **not** had a dedicated adversarial pass; they are small and
-  risk-reducing (the rendered view fixes the ledger's stale-row seam), and the
-  maintainer re-gated accepting that (2026-07-15). Their remaining mechanism
-  detail is independently checked when the spec is written (grove's own
-  `spec-adversary`). DISCLOSED.
+- **What is validated vs. amended (honest, not glossed):** the *mechanics
+  core* — CI-computed completeness/freshness/coverage over agent-posted
+  verdict records, policy from the protected branch — is the pass-3-validated
+  shape. **Two structural amendments postdate every pass** (2026-07-16,
+  maintainer's calls): the fidelity/quality split and
+  verdict-records-as-PR-comments. Both are **under a fifth adversarial pass
+  now** (this decision + its spec), launched at the maintainer's request,
+  before any approval. NOT claiming pass-validation for the amendments.
 - **Human-approval boundary:** promoted `draft → gated` on this self-check.
   `approved` is the maintainer's intent act — an in-PR flip or merge — **never
   set by the agent** (`lifecycle.md`, `floor-intent-gate`). The design being
   gated is itself subject to the human intent gate it prescribes.
 
 **Overall: internally sound, honestly bounded, independently stress-tested
-across four adversarial passes (with the core validated and three small
-increments disclosed as not-separately-adversaried) — `gated`, awaiting the
-maintainer's intent gate. Not approved by the author.**
+across four adversarial passes, with the 2026-07-16 amendments under a fifth —
+`gated`, awaiting that pass and the maintainer's intent gate. Not approved by
+the author.**
