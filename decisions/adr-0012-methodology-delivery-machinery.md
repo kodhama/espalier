@@ -1,7 +1,7 @@
 ---
 id: adr-0012-methodology-delivery-machinery
 type: adr
-status: draft
+status: gated
 depends_on: [adr-0005-tdd-and-artifact-gated-dispatch, adr-0006-operational-conformance-mechanism]
 informed_by: [adr-0007-code-reviewer-agent]
 owner: agent
@@ -292,11 +292,21 @@ approval:
 - **Scope discipline:** delivers completeness and freshness (the two reported
   failures mechanizable without infrastructure) and the accidental-fusion case
   of separation; no infrastructure pretended. PASS.
+- **What is validated vs. disclosed (honest, not glossed):** the *core* —
+  per-verdict files + CI-computed completeness/freshness/coverage — is the
+  pass-3-validated version. Three later increments (the CI-rendered status
+  view, the author-tag separation check, and F-L5's ordering-via-existing-gates)
+  have **not** had a dedicated adversarial pass; they are small and
+  risk-reducing (the rendered view fixes the ledger's stale-row seam), and the
+  maintainer re-gated accepting that (2026-07-15). Their remaining mechanism
+  detail is independently checked when the spec is written (grove's own
+  `spec-adversary`). DISCLOSED.
 - **Human-approval boundary:** promoted `draft → gated` on this self-check.
   `approved` is the maintainer's intent act — an in-PR flip or merge — **never
   set by the agent** (`lifecycle.md`, `floor-intent-gate`). The design being
   gated is itself subject to the human intent gate it prescribes.
 
 **Overall: internally sound, honestly bounded, independently stress-tested
-three times — `gated`, awaiting the maintainer's intent gate. Not approved by
-the author.**
+across four adversarial passes (with the core validated and three small
+increments disclosed as not-separately-adversaried) — `gated`, awaiting the
+maintainer's intent gate. Not approved by the author.**
