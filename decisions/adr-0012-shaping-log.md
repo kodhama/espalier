@@ -1046,3 +1046,50 @@ approval:
 **Overall: internally sound, honestly bounded, and independently
 stress-tested three times — `gated`, awaiting the maintainer's intent gate.
 Not approved by the author.**
+
+## Fourth adversarial pass — the ledger regression (2026-07-15)
+
+After the third pass validated the **per-verdict-file** Layer A, the shaper
+repackaged verdicts as **one shared status ledger per PR** (at the maintainer's
+"do we need a file per review?" prompt). A fourth grounded pass reviewed the
+ledger version — its *first* independent review — and **broke it**. Verdict:
+**NOT gateable; the ledger is unambiguously worse than the per-file model.**
+
+- **F-L1 (CRITICAL, provenance).** The ledger swap happened *after* the third
+  pass, yet the ADR kept certifying "three passes validated this version." A
+  later repackaging inherited an earlier version's credential — a
+  "don't-grade-your-own-work" violation. Corrected: the ADR now says four
+  passes and is honest that the ledger was an unreviewed repackaging that
+  failed its first pass.
+- **F-L2 (CRITICAL, concurrency — the maintainer's own doubt).** The per-file
+  model is race-free by construction (disjoint `.grove/verdicts/<review>`
+  paths). One shared ledger forces N cold stateless agents to serialize writes
+  to one file; the two named fixes both fail against this repo — git does not
+  auto-merge two appends to the same file tail, and there is no runner-hosted
+  dispatcher in v0 to serialize (`dispatcher.md:18–31`, the same primitive the
+  second pass ruled fatal). Under the ADR's own parallel dispatch the PR cannot
+  reliably reach green.
+- **F-L3 (HIGH).** CI derives the owed-set from the diff and recomputes
+  fingerprints itself (AC2/AC3), so completeness+freshness come from CI, not
+  the ledger — which works identically over a pile of files. The ledger bought
+  **zero** guarantee and cost the race: a presentation preference dressed as a
+  mechanism.
+- **F-L4 (HIGH).** The `.grove/ledger.*` wildcard carve-out is wider than the
+  file model's fixed `.grove/verdicts/` data directory — `.grove/ledger.sh`
+  would be exempt executable code. Reverted to the fixed verdict directory.
+- **F-L5 (HIGH, unresolved intent).** "A PR may touch anything" + "all at HEAD"
+  does not preserve E1's build-on-*approved*-upstream: a bundled draft decision
+  + spec built on it means the spec is reviewed against an un-approved
+  decision, the human approving the whole stack at merge. Surfaced as an open
+  question for the maintainer (accept vs. restrict).
+- **F-L6/F-L7 (MEDIUM/LOW).** Aggregating rows into the one human-read surface
+  widens the stale-row false-confidence seam; single-file writes give a
+  row-writer reach over other rows' attribution. Both dissolve under the
+  per-file model + CI-rendered view.
+
+**Resolution (applied to the ADR, draft):** revert storage to per-verdict
+files (the validated, race-free version); make the status "ledger" a
+**read-only view the check renders** from those files, never a file agents
+mutate — which gives the maintainer the single status surface they wanted
+without the write race. F-L5 (free-form PRs vs approved-upstream) is the one
+open intent call remaining.

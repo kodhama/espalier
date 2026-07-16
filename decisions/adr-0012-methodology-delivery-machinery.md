@@ -37,12 +37,15 @@ bookkeeping**, not judgment.
 **What we're deciding.** Make the *bookkeeping* mechanical so the human is left
 with *judgment*. Ship this now (the buildable part, "Layer A"):
 
-1. **A work-item keeps a status ledger, not a pile of files.** Each PR carries
-   one **status ledger** — a row per review it owes (from a reviewer:
-   conformance, code-review, spec-adversary, or the new **decision-adversary**)
-   recording the verdict, a fingerprint of exactly what was reviewed, and who
-   produced vs. reviewed. One record per work-item, not a file per review;
-   detailed findings stay in PR comments, pointed to from the row.
+1. **One verdict file per review; one status view for the human.** Each
+   reviewer (conformance, code-review, spec-adversary, or the new
+   **decision-adversary**) writes its own small **verdict file**
+   (`.grove/verdicts/<review>`: the verdict, a fingerprint of exactly what it
+   reviewed, and who produced vs. reviewed) — disjoint paths, so parallel
+   reviewers never contend for one file and git is the store. The "which steps
+   ran, and did they pass?" summary you'd read is a **single status view the
+   check renders from those files**, not a file any agent mutates. Detailed
+   findings stay in PR comments, pointed to from the verdict file.
 2. **An automated check does the bookkeeping.** On every PR a check — reading
    its rules from the protected main branch, so a PR can't weaken its own gate
    — asks and goes red on any "no": *completeness* (does everything that owes a
@@ -52,7 +55,7 @@ with *judgment*. Ship this now (the buildable part, "Layer A"):
    *separation* (was the reviewer a different agent than the producer?). It
    recomputes the fingerprints itself and trusts no agent's word.
 3. **What the machine does NOT do — and says so out loud.** It cannot tell
-   whether a review was *genuine* (an agent could write a fake ledger row),
+   whether a review was *genuine* (an agent could write a fake verdict file),
    and the separation check reads *self-reported* author/reviewer tags — so it
    catches the **accidental** fusion that actually happened, but not a
    **deliberate** forgery. And it does not run unattended. **A green check
@@ -69,11 +72,14 @@ routes the fix to whichever layer is actually wrong. Nobody hand-writes "the
 workflow" — it *emerges* from each artifact declaring what review it owes, and
 the automated check is generated from those same declarations.
 
-**How we know it isn't hand-waving.** This decision was run through **three
+**How we know it isn't hand-waving.** This decision was run through **four
 independent adversarial reviews** — the discipline it prescribes. The first two
-broke earlier, more ambitious versions and forced the honest split above; the
-third confirmed this version is sound in shape and "blocked on finishing the
-spec, not on infrastructure." (Full trail: the shaping-log companion.)
+broke earlier, more ambitious versions; the third validated the
+per-verdict-file Layer A ("blocked on finishing the spec, not on
+infrastructure"); a fourth caught a later repackaging (one shared ledger) that
+regressed it on write-concurrency and drove the revert to the validated
+per-file model + rendered view above. The design here is the version that
+survived. (Full trail: the shaping-log companion.)
 
 ## The problem this decision frames
 
@@ -157,12 +163,14 @@ approval:
 
 - **A spec is written** defining the verdict-file format, the
   `type → owed-review` map, and the check's logic.
-- **A status-ledger convention** is introduced — **one ledger per PR** (e.g.
-  `.grove/ledger.*`), a row per owed review carrying verdict + subject-
-  fingerprint + producer/reviewer attribution, with detailed findings pointed
-  to (PR comments), not inlined. Concurrent updates are handled by append-
-  structured rows or dispatcher-serialized writes (spec detail). The owed rows
-  are derived from what the PR changed (the owed-map, pinned here):
+- **A per-verdict-file convention** is introduced — each reviewer writes its
+  own `.grove/verdicts/<review>` (verdict + subject-fingerprint +
+  producer/reviewer attribution; detailed findings pointed to, in PR
+  comments). Disjoint paths → parallel reviewers never contend, git is the
+  store, no serializer needed. **The check renders a single read-only status
+  view** from these files (the "which steps ran + status" surface for the
+  human) — nothing an agent mutates. The owed reviews are derived from what the
+  PR changed (the owed-map, pinned here):
   - research / feedback-only change → **nothing owed**;
   - a decision (shaping) → **decision-adversary**;
   - a spec → **spec-adversary + conformance**;
@@ -172,11 +180,11 @@ approval:
   research passes, shaping runs, specs, code, in any mix. The owed-set is the
   **union** of what *everything* it changed owes; the check goes green only
   when all of it is present, fresh, covering, passed, and — for any
-  decision-layer artifact — human-approved, **all at HEAD**. "Build on an
-  approved upstream" (E1) holds at the terminal state: at merge the whole
-  stack is in its approved, conformant form. The only natural consequence of a
-  bigger PR is a bigger human judgment load at merge; nothing escapes its
-  guardrails.
+  decision-layer artifact — human-approved, **all at HEAD**. One unresolved
+  tension: a bundled *draft* upstream + a downstream built on it in the same
+  PR weakens E1's "build on an *approved* upstream" (the downstream is reviewed
+  before the upstream is approved). Freshness catches a *revision* of the
+  upstream during approval, not the ordering weakening — see Open questions.
 - **Each produced artifact carries a self-reported author tag** (which agent
   produced it); the check verifies author ≠ reviewer for each owed review.
 - **A new automated check** is added (grove has none today) that reads its
@@ -215,10 +223,11 @@ approval:
 - **AC4 — fail-closed.** A changed file of a new or undefined `type` owes the
   **full** review set, never nothing.
 - **AC5 — policy integrity.** The owed-review policy resolves from the
-  protected default branch, never PR HEAD; the ledger file and declared
-  non-behavioral paths are an explicit exemption allowlist (so the ledger
-  doesn't itself owe reviews), and that allowlist is not a review-free zone for
-  code (code-bearing paths still owe code-review, fail-closed).
+  protected default branch, never PR HEAD; the exemption for the verdict
+  directory (`.grove/verdicts/`, structured data only — the check rejects
+  non-verdict content there) and declared non-behavioral paths is an explicit
+  allowlist, never a review-free zone for code (code-bearing paths still owe
+  code-review, fail-closed).
 - **AC6 — green is non-authorizing.** A green check surfaces the verdict files
   for human reading and is presented as "bookkeeping done," never "reviewed /
   safe to merge."
@@ -248,6 +257,12 @@ approval:
   verifier (possibly the `decision-adversary`) + append-only guardrails, so
   older decisions can be trimmed the way this one's trail was split out.
   Surfaced during this decision's own restructure; its own `[consider]`.
+- **Free-form PRs vs. build-on-approved-upstream** (unresolved intent call). A
+  PR may touch anything, but bundling a *draft* upstream with a downstream
+  built on it means the downstream is reviewed against an un-approved upstream,
+  the human approving the whole stack at merge. Resolve: **accept** it (rely on
+  freshness re-review + the human's bundled judgment) or **restrict** (a
+  downstream artifact may not be bundled with a not-yet-approved upstream).
 
 ## Self-check (gate)
 
@@ -265,11 +280,14 @@ approval:
   forward pointer, not an in-place edit. PASS.
 - **Naming register (`adr-0002`):** defining text uses `agent`/role names; no
   `druid`/`archdruid`. PASS.
-- **Independent review — unusually strong, honestly reported:** THREE
-  independent adversarial passes ran (preserved in the shaping-log companion).
-  The first two returned NOT-gateable and broke earlier versions — including
-  the shaper's own retracted overclaims; the third validated the Layer-A
-  reframe. The builder did **not** grade its own work. PASS.
+- **Independent review — four passes, honestly reported:** FOUR independent
+  adversarial passes ran (preserved in the shaping-log companion). The first
+  two broke earlier ambitious versions; the third validated the
+  per-verdict-file Layer A; the fourth caught a one-shared-ledger repackaging
+  that regressed write-concurrency (and caught this file briefly carrying the
+  third pass's validation onto that unreviewed repackaging — corrected) and
+  drove the revert to the validated per-file model + rendered view. The builder
+  did **not** grade its own work. PASS.
 - **Honest limits disclosed, not buried:** Layer B (genuineness, forgery-proof
   separation, autonomy) is out of scope; "green is non-authorizing" is a stated
   principle (AC6); separation is disclosed as accidental-case only (AC7). PASS.
