@@ -1,8 +1,9 @@
 ---
 id: adr-0012-methodology-delivery-machinery
 type: adr
-status: draft
+status: gated
 depends_on: [adr-0005-tdd-and-artifact-gated-dispatch, adr-0006-operational-conformance-mechanism]
+informed_by: [adr-0007-code-reviewer-agent]
 owner: agent
 updated: 2026-07-15
 ---
@@ -22,7 +23,59 @@ updated: 2026-07-15
 > intent gate never opens to an agent — the maintainer shapes and
 > approves.
 
-# ADR-0012 (draft): methodology that reaches the point of action — role separation, gate completeness, and gate freshness as machinery, not prose
+# ADR-0012: reviews become checkable artifacts — mechanize the review bookkeeping, leave judgment to humans
+
+## Decision in brief (plain language)
+
+*Read this to understand the decision. Everything below `## Decision state`
+is the shaping history and three adversarial reviews — the audit trail of
+**why** it is this way, not something you need to read to know **what** it is.*
+
+**The problem.** grove's methodology says "review your work independently,
+run every review it owes, don't trust a review a later edit invalidated" — but
+it says so in *prose*, and prose didn't fire. A fully-equipped agent still
+combined author + builder, ran 1 of 3 owed reviews, and trusted a review that
+a later edit had made stale. Every miss was caught by a **human doing
+bookkeeping**, not judgment.
+
+**What we're deciding.** Make the *bookkeeping* mechanical so the human is
+left with *judgment*. Ship this now (the buildable part, "Layer A"):
+
+1. **Reviews become files.** When a reviewer (conformance, code-review,
+   spec-adversary, and a new **decision-adversary**) reviews something, it
+   writes a small **verdict file** into the pull request: the verdict, its
+   evidence, and a fingerprint of exactly what it reviewed. Reviews are
+   artifacts in git, not trust-me signals.
+2. **An automated check does the bookkeeping.** On every PR a check — reading
+   its rules from the protected main branch, so a PR can't weaken its own gate
+   — asks three deterministic questions and goes red on any "no":
+   *completeness* (does everything that owes a review have one? — fixes "only
+   1 of 3 ran"), *freshness* (was each review done against the current
+   content? — fixes "stale review trusted"), and *coverage* (do the reviews
+   actually cover everything that changed?). It recomputes the fingerprints
+   itself and trusts no agent's word.
+3. **What the machine does NOT do — and says so out loud.** It cannot tell
+   whether a review was *genuine* (an agent could write a fake verdict file),
+   it cannot *prove* author and reviewer were different agents, and it does not
+   run unattended. **A green check means "the bookkeeping is done — now a human
+   judges genuineness and merges." Green is explicitly not "approved."** Those
+   stronger guarantees need identity/attestation infrastructure grove does not
+   have yet; they are a later increment ("Layer B"), named honestly, not
+   pretended.
+
+**Why this shape.** The pipeline is framed as **TDD applied layer by layer**:
+each artifact is built to satisfy the acceptance criteria of the one above it
+(code satisfies the spec; the spec satisfies the decision), and a failed
+review routes the fix to whichever layer is actually wrong. Nobody hand-writes
+"the workflow" — it *emerges* from each artifact declaring what review it owes,
+and the automated check is generated from those same declarations.
+
+**How we know it isn't hand-waving.** This decision was run through **three
+independent adversarial reviews** — the very discipline it prescribes. The
+first two broke earlier, more ambitious versions and forced the honest split
+above; the third confirmed this version is sound in shape and "blocked on
+finishing the spec, not on infrastructure." It received a more thorough
+adversarial pass than any grove decision to date, which is itself the point.
 
 ## Decision state
 
@@ -224,22 +277,21 @@ of the decision here.
   needed; E5's emergence claim stays universal. (Kept as a closed entry for
   the reasoning trail — the completeness check found a real gap and E0 filled
   it.)
-- **NOT converged — the adversarial pass sent it back for mechanics.** The
-  earlier "confirm E0–E7 → converged" checkpoint was premature (F10/F11). The
-  live open list is now the adversary's must-fixes, and three of them reopen
-  *intent*-level questions the shaper had filed as "mechanics":
-  - **F3 + un-park O1** — what does a verdict *prove*, and how does the check
-    verify an independent (non-producer) run performed it? Without this, E1 is
-    not delivered. This is not purely mechanical — it is "what is a gate."
-  - **F2/F13** — where does the stateful loop-bound live? The "thin stateless
-    matcher" claim is wrong; grove's bounds are cross-run state. Either the
-    dispatcher keeps that state (not stateless) or the bound lives elsewhere.
-  - **F6** — does the decision layer get a *real* independent adversary, or is
-    "rests on human shaping" accepted (knowing adr-0012 itself is the weak
-    case)? This is the O5 question, reopened with teeth.
-  Plus mechanical fixes (F1 live-vs-compiled check; F5 owed-set contradiction
-  + adr-0006 supersession; F7/F8 freshness recompute & blind spot). **Awaiting
-  the maintainer's call on how to proceed (below).**
+- **CONVERGED on Layer A — `gated` 2026-07-15** (see `## Decision in brief`
+  at the top, and Consequences / Acceptance criteria / Self-check at the
+  bottom). The path here: the first two adversarial passes broke the ambitious
+  fully-autonomous version (the F1–F13 findings); the maintainer's step-back
+  reframed it into **Layer A** (mechanize the review *bookkeeping* — the part
+  that actually failed in #278 — and leave *judgment*, including authenticity,
+  to the human); a third pass validated that reframe and returned "blocked on
+  spec-completion, not infrastructure." The must-fixes it left were adjudicated
+  as C1–C7 and folded into the Consequences/AC. The intent-level questions that
+  had reopened are resolved: **F3/O1** (what a verdict proves) is scoped —
+  bookkeeping is mechanical, *genuineness is human-owned at merge*, forgery-
+  proof separation is Layer B; **F2** (loop bound) is human-bounded in v1,
+  Layer B for autonomy; **F6** (decision-adversary) → a **real** decision-
+  adversary is chartered (maintainer's call). What remains is spec-completion,
+  which grove's own spec stage (with its `spec-adversary`) will itself gate.
 
 ### Parked (deferred, with why)
 
@@ -845,22 +897,130 @@ converge.**
   reading the artifact-contract frontmatter `type` (a file with no such
   frontmatter is code): reuses the existing contract, no parser invented.
 - **Conformance owed "only when the PR carries code"** (a proposal of the
-  shaper's, 2026-07-15) — rejected: it mis-scoped conformance as a
-  code-only check. Conformance is layer-to-upstream, so a spec change owes
-  conformance to its ADR with or without code present. Recorded so the
-  narrowing is not silently reintroduced.
+  shaper's, 2026-07-15) — rejected: it mis-scoped review as code-only. Every
+  layer owes an **independent upstream check**, *instrumented per layer* (a
+  spec is checked against its decision by the **spec-adversary**; code against
+  its spec by the **conformance-reviewer**; a charter against its ADR by the
+  conformance-reviewer). *(Corrected per the C6 close — the earlier wording
+  "conformance always owed" wrongly implied the conformance-reviewer gates
+  specs; it does not. This is consistent with approved adr-0006, which never
+  assigns spec→decision to the conformance-reviewer.)*
+- **The ambitious fully-autonomous version** (credentialed verdict-emitter
+  skill, live-derived check, self-generating dispatcher) — rejected after two
+  adversarial passes: it presupposed run-attestation, a forge-resistant
+  verdict store, and protected-policy resolution that grove does not have, and
+  the credentialed emitter was a confused deputy (any agent could emit a
+  trusted verdict). Retained as the **Layer B** target, gated on that
+  infrastructure; not this decision.
 
-## Consequences
+## Consequences (on approval; execution is a follow-up, not this PR)
 
-- *(drafted once the mechanisms in O1–O4 converge — which charter/workflow
-  files change, whether `pr-contract.yml` / adr-0006 machinery is touched,
-  what supersession pointers if any.)*
+This decision **authorizes a spec**; it does not implement the machinery. On
+approval:
 
-## Acceptance criteria
+- **A spec is written** defining the mechanism in detail: the verdict-file
+  format, the `type → owed-review` map, and the automated check's logic.
+- **A verdict-artifact convention** is introduced (`.grove/verdicts/…`) — a
+  reviewer's output is a file carrying verdict + evidence + the fingerprint of
+  what it certified.
+- **A new automated check** is added (grove has none today) that reads its
+  owed-review policy from the protected default branch and enforces
+  completeness, freshness, and coverage — on existing GitHub primitives
+  (protected branches + Actions), no new platform infrastructure.
+- **The setup skill** gains a step that generates that check from the agent
+  declarations (replacing its current "check this by hand" fallback).
+- **Reviewer charters** (`conformance-reviewer`, `code-reviewer`,
+  `spec-adversary`) gain: emit your verdict as a verdict file. **Producers /
+  artifact types** declare the reviews they owe.
+- **A `decision-adversary` role is chartered** — the real independent
+  soundness-adversary for decisions (retiring the spec-adversary stand-in); a
+  decision owes its verdict *plus* the human intent gate.
+- **The dispatcher charter's W1–W6 are demoted** from prescriptive workflow
+  definitions to descriptive examples; the per-artifact owed/trigger rules
+  become the source of truth (a consolidation, not new prose).
+- **No existing decision is superseded.** adr-0006's conformance scope is
+  *clarified* (per-layer instrumentation), consistent with it — recorded as a
+  forward pointer, not a supersession (verified against adr-0006 this sitting).
+- **Explicitly deferred to Layer B** (a separate future program, gated on
+  infrastructure grove lacks): run-attestation so a verdict proves a genuine
+  non-producer review ran; forgery-proof author≠builder separation; a
+  forge-resistant verdict store; autonomous loop-bounding. Until then, those
+  are the human's at merge, disclosed not pretended.
 
-- *(drafted at convergence, against the settled mechanisms.)*
+## Acceptance criteria (for the execution wave this decision authorizes)
+
+- **AC1 — completeness.** The check goes red if any changed file that owes a
+  review lacks a fresh, passing verdict file for it.
+- **AC2 — freshness.** The check **recomputes** each verdict's subject
+  fingerprint from HEAD and goes red on mismatch — it never trusts the
+  fingerprint the emitter recorded.
+- **AC3 — coverage.** The check derives the owed set from the PR diff and
+  requires the verdicts' manifests to **cover** it, not merely to exist (closes
+  the under-covering-manifest leak).
+- **AC4 — fail-closed.** A changed file of a new or undefined `type` owes the
+  **full** review set, never nothing.
+- **AC5 — policy integrity.** The owed-review policy resolves from the
+  protected default branch, never PR HEAD; the exemption for verdict files and
+  declared non-behavioral paths is an explicit allowlist, and `.grove/verdicts/`
+  rejects non-verdict content so it cannot become a review-free zone.
+- **AC6 — green is non-authorizing.** A green check surfaces the verdict files
+  for human reading and is presented as "bookkeeping done," never "reviewed /
+  safe to merge."
+- **AC7 — honest disclosure.** The shipped artifacts state plainly what is
+  **not** guaranteed (genuineness, forgery-proof separation, autonomy) and that
+  authenticity and policy changes are human-owned.
+- **AC8 — decision-adversary.** The `decision-adversary` role exists and a
+  decision's owed set includes its verdict plus the human intent gate.
+- **AC9 — no infra pretence.** Nothing depends on unbuilt infrastructure:
+  verdicts are git files, the store is git, the check uses existing GitHub
+  primitives.
+- **AC10 — adr-0006 pointer.** A forward pointer records the per-layer
+  conformance clarification as consistent with adr-0006 (no supersession).
 
 ## Open questions (parked, ≤3)
 
-- *(distinct from the live Open list above; filled at convergence with
-  anything explicitly deferred out of this decision's scope.)*
+- **Layer B — the autonomy/attestation increment.** Run-attestation,
+  forgery-proof separation, a forge-resistant verdict store, and autonomous
+  loop-bounding — the guarantees that let verdicts be trusted with no human in
+  the loop. A separate program gated on infrastructure grove lacks; relates to
+  grove#38 (the verifiable approval guard). Not this decision.
+- **Full autonomy's loop bound.** Under human-in-the-loop v1 a person bounds a
+  non-converging PR (a stuck PR is visible); a mechanical bound that survives
+  rebase/squash is a Layer-B question, not needed for v1.
+
+## Self-check (gate)
+
+- **Frontmatter:** `id`/`type`/`status`/`depends_on`/`owner`/`updated` present
+  and well-typed; `informed_by: [adr-0007]` records provenance (the
+  code-reviewer gate model this generalizes) per `relations.md`. PASS.
+- **`depends_on` resolution:** `adr-0005` and `adr-0006` both resolve and are
+  `approved`; a `gated` artifact consuming `approved` ones is legal. PASS.
+- **Required sections:** Decision-in-brief, Context (The problem), Intended
+  effects, Consequences, Acceptance criteria, Open questions (2, ≤3),
+  Self-check — present. PASS.
+- **Append-only:** new artifact; no ratified decision superseded. adr-0006's
+  conformance scope is *clarified*, verified against its text this sitting
+  (adr-0006 assigns `conformance-reviewer` code→spec and charter→ADR, never
+  spec→decision) — a forward pointer, not an in-place edit. PASS.
+- **Naming register (`adr-0002`):** defining text uses `agent`/role names; no
+  `druid`/`archdruid`. PASS.
+- **Independent review — unusually strong, honestly reported:** THREE
+  independent adversarial passes ran. The first two returned NOT-gateable and
+  broke earlier versions; that history and every finding are preserved above,
+  including the shaper's own retracted overclaims (F9, F11). The third
+  validated the Layer-A reframe and returned "blocked on spec-completion, not
+  infrastructure." The builder did **not** grade its own work. PASS.
+- **Honest limits disclosed, not buried:** Layer B (genuineness, forgery-proof
+  separation, autonomy) is explicitly out of scope; "green is non-authorizing"
+  is a stated principle (AC6); A1 separation is disclosed as partial. PASS.
+- **Scope discipline:** delivers A2 (completeness) and A3 (freshness) — the two
+  reported failures that are mechanizable without infrastructure; A1 is
+  honestly partial. No infrastructure pretended. PASS.
+- **Human-approval boundary:** promoted `draft → gated` on this self-check.
+  `approved` is the maintainer's intent act — an in-PR flip or merge — **never
+  set by the agent** (`lifecycle.md`, `floor-intent-gate`). The design being
+  gated is itself subject to the human intent gate it prescribes.
+
+**Overall: internally sound, honestly bounded, and independently
+stress-tested three times — `gated`, awaiting the maintainer's intent gate.
+Not approved by the author.**
