@@ -1195,3 +1195,53 @@ narrowed spec-adversary semantics); in parallel, a fifth adversarial pass on
 the amended ADR (a would-be decision-adversary run — fitting); then the
 chartered spec-adversary agent on the revised spec. Fifth-pass status is
 disclosed in the ADR's self-check — the amendments claim no pass-validation.
+
+## Fifth pass (decision-adversary prototype) + spec revision (2026-07-16)
+
+**Fifth pass verdict: NEEDS-REVISION — not UNSOUND** (premise held; the
+Layer-A core mechanics survived; every must-fix was amendment-induced or
+amendment-exposed, which is what a fifth pass on two unreviewed amendments
+was for). Findings F1–F12, full text in the pass output; must-fixes:
+- **F1 (HIGH):** the bundling "needs no new rule" argument rested on the
+  *fused* spec-adversary (retired by the split) and MISQUOTED adr-0005 dec 3
+  (which accepts a gated upstream). Fixed: the approved-upstream gate is now
+  an explicit check rule (AC12); adr-0005 citation corrected; E1 wording
+  covers gated.
+- **F2 (HIGH):** "append-only… visible by construction" was a convention
+  dressed as a platform property (comments are editable/deletable; v0 shares
+  one identity). Fixed: claim retracted; check rejects edited records +
+  restricts record authors (AC14); deletion conceded, disclosed.
+- **F3 (HIGH):** the split orphaned the upstream-indictment route (old
+  UNSOUND). Fixed: conformance-reviewer grammar gains **UPSTREAM-INDICTED**,
+  routing to the upstream's layer (decision-layer → human).
+- **F4 (HIGH):** "human-approved" uncomputable/undisclosed. Fixed: reads
+  frontmatter status, disclosed as conceded-class; binding to a verifiable
+  human act = Layer B (grove#38).
+- **F5–F8 (MEDIUM):** implements-edge definition (the one-rule misfired on
+  adr-0012's own depends_on — fixed + pins-resolve moved into the check,
+  AC13); quality-input horn chosen explicitly (artifact alone); separation
+  authority unified on record fields (AC7 rewritten; frontmatter author-tag
+  demoted to optional provenance); decision-adversary remit + grammar
+  (SOUND/NEEDS-REVISION/UNSOUND) stated in-body.
+- **F9–F12 (LOW, noted):** "extension with precedent" softened to
+  "unassigned territory"; fused-design over-invalidation cost thinner than
+  presented (bites only pre-approval); README-class allowlist must be
+  by-explicit-path (spec altitude); comment-model platform edges (pagination,
+  schema versioning) to the spec.
+All revisions applied in-place (legal while gated), shaper-authored,
+disclosed in the self-check as not-yet-re-passed.
+
+**Spec revision (contract-author, cold, parallel):** spec-0002 rebased to
+the amended decision — records-as-comments (§A), one-rule owed-map (§B),
+class-split fingerprints (quality=artifact alone; fidelity=+upstream, §A.3),
+reason-grammar view (§D), carve-out deleted; 15 EARS + 15 GWT; PASS with
+disclosures (four flagged concretizations: carrier block, latest-covering
+selection, manifest_hashes, vacuous). Independently flagged the same
+editable-comments hole as F2 (convergent detection). Known lag: the spec
+predates the fifth-pass fixes (UPSTREAM-INDICTED, AC12–AC14, separation
+authority) — deliberately left for the split-pair review to enumerate.
+
+**Next (the decision's own split, applied to itself):** spec-0002 gets BOTH
+reviews in parallel — `spec-adversary` (intrinsic quality) + 
+`conformance-reviewer` (fidelity to the amended adr-0012 + graph integrity,
+including enumerating the fifth-pass deltas the spec doesn't carry yet).

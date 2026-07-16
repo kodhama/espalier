@@ -45,10 +45,14 @@ with *judgment*. Ship this now (the buildable part, "Layer A"):
    place humans already read. The comment is the **commit point**: a review
    that lives only in a session's context does not count (a session
    "remembering" its reviews is precisely what failed in #278). Records are
-   **append-only** — a re-review posts a new record, nothing is overwritten —
-   so a FAIL quietly "becoming" a PASS is visible by construction. The "which
-   steps ran, and did they pass?" summary is a **status view the check
-   renders** from the records — computed, never stored.
+   **append-only by convention, enforced where the platform allows** (fifth
+   pass, F2): a re-review posts a new record; the check **rejects any record
+   whose comment was edited** (platform edit-history) and restricts who may
+   post records — so a FAIL quietly *edited into* a PASS is caught; a
+   *deleted* record is undetectable and stays conceded to the human's
+   judgment, disclosed not denied. The "which steps ran, and did they pass?"
+   summary is a **status view the check renders** from the records —
+   computed, never stored.
 2. **An automated check does the bookkeeping.** On every PR a check — reading
    its rules from the protected main branch, so a PR can't weaken its own gate
    — asks and goes red on any "no": *completeness* (does everything that owes a
@@ -84,9 +88,15 @@ thing it is?" — is asked by a specialist per layer (`decision-adversary`,
 way (`adr-0007`); this decision extends the same split up the stack, narrowing
 the `spec-adversary` to pure intrinsic quality — its old fused fidelity duty
 was compensation for the missing decision-adversary, which this decision
-charters. Efficiency falls out: a quality verdict's subject is the artifact
-alone, so an upstream edit invalidates only the fidelity verdict, never the
-quality one.
+charters. **The quality reviewer's input is the artifact alone** (fifth pass,
+F6): scope-completeness against the upstream is fidelity's question, never
+quality's — so a quality verdict is honestly bound to exactly what it read.
+Efficiency falls out: an upstream edit invalidates only the fidelity verdict,
+never the quality one. One route the split must not orphan (F3): "the
+artifact is *faithful*, but its **upstream** is wrong" — the old fused
+`UNSOUND` — now lives in the fidelity instrument: the `conformance-reviewer`'s
+grammar gains an **`UPSTREAM-INDICTED`** verdict, routing to the upstream's
+layer (a decision-layer indictment always to the human).
 
 A general principle runs through all of it: **anything derivable from the
 artifacts is computed at check-time, never stored** — so it cannot drift from
@@ -101,13 +111,16 @@ independent adversarial reviews** — the discipline it prescribes. The first tw
 broke earlier, more ambitious versions; the third validated the
 per-verdict-file Layer A ("blocked on finishing the spec, not on
 infrastructure"); a fourth caught a later repackaging (one shared ledger) that
-regressed it on write-concurrency and drove the revert to the validated
-per-record model + rendered view. **Two structural amendments postdate the
-fourth pass** — the fidelity/quality split, and verdict-records-as-PR-comments
-replacing per-verdict *files* (deleting their merge-residue and exempt-path
-warts) — made on the maintainer's calls (2026-07-16) and now under a **fifth
-adversarial pass** before any approval. (Full trail: the shaping-log
-companion.)
+regressed it on write-concurrency and drove a revert. **Two structural
+amendments postdate the fourth pass** — the fidelity/quality split, and
+verdict-records-as-PR-comments replacing per-verdict *files* — made on the
+maintainer's calls (2026-07-16). A **fifth pass** (2026-07-16, run as the
+decision-adversary this decision charters) returned **NEEDS-REVISION** on
+those amendments; its must-fixes are revised into this text (the explicit
+approved-upstream gate, record-integrity enforcement over editable comments,
+the `UPSTREAM-INDICTED` route, the implements-edge definition, disclosure of
+the approval-field trust), findings preserved in the shaping log. (Full
+trail: the shaping-log companion.)
 
 ## The problem this decision frames
 
@@ -135,8 +148,9 @@ the human's shoulders onto machinery.
   appropriate to what it is — **fidelity** to its upstream (the
   `conformance-reviewer`, wherever an artifact upstream exists) plus its
   layer's **quality** gate (`decision-adversary` / `spec-adversary` /
-  `code-reviewer`) — and was built against an **approved upstream**,
-  never a conversation or a draft. "Did the review run?" and "was there
+  `code-reviewer`) — and was built against an **approved upstream**:
+  never a conversation, a draft, or a merely `gated` artifact. "Did the
+  review run?" and "was there
   anything to review against?" are never a human's job to check.
 - **E2 — Iteration is free of ceremony; only the endpoint is gated.** Authors,
   builders, and reviewers churn mid-flow; the gate judges only the final state.
@@ -183,8 +197,9 @@ the human's shoulders onto machinery.
   required an exempt tree path that two adversarial passes attacked as a
   review-free zone, split the reviewer's output across two channels (file +
   findings comment), and still contended on the branch push. Append-only
-  records have none of these, and make overwrite-gaming visible by
-  construction. Cost accepted: a platform-coupled read path — symmetric with
+  records have none of these, and edited records are rejectable via platform
+  edit-history (deletion stays conceded, disclosed). Cost accepted: a
+  platform-coupled read path — symmetric with
   grove's existing "any tracker with threaded comments plus reviewable
   change-requests" portability baseline.
 - **The fused spec-adversary (fidelity + quality in one gate)** — superseded
@@ -215,18 +230,28 @@ approval:
   **structured comment on the PR** per review: verdict token +
   subject-manifest + fingerprint + producer/reviewer attribution + findings,
   in one act. Records are **append-only** (a re-review posts a new record; the
-  latest per review counts; the full sequence stays visible — no silent
-  FAIL→PASS). **The check renders a read-only status view** from the records,
-  per (file × owed review) *with the reason* anything is un-green
+  latest per review counts; the full sequence stays visible; the check rejects
+  edited records — F2). **The check renders a read-only status view** from the
+  records, per (file × owed review) *with the reason* anything is un-green
   (never-reviewed / changed-since-review / upstream-X-changed /
-  review-failed→findings / self-reviewed). Nothing lands in the repo tree: no
-  merge residue, no exempt verdict path to defend.
+  review-failed→findings / self-reviewed / vacuous-evidence). Nothing lands in
+  the repo tree: no merge residue, no exempt verdict path to defend.
 - **The owed reviews derive from what the PR changed, by ONE rule** — *every
   changed artifact owes fidelity-conformance iff it has an artifact upstream,
-  plus its layer's quality gate.* The rule's inputs are **assembled at
-  run-time from the charters' machine-readable declarations** (each reviewer
-  declares what it reviews), read from the protected default branch — changing
-  what a type owes is a charter edit, nothing to regenerate. Projection today:
+  plus its layer's quality gate.* **"Artifact upstream" means the
+  *implements* edge** (fifth pass, F5) — the layer a type realizes: a spec
+  implements a decision; code implements a spec; a charter implements its
+  ADR. Mere *builds-on* citations are not it: a decision's `depends_on` names
+  decisions it builds on and owes **no** fidelity review (its upstream is
+  human intent) — without this distinction the rule would misfire on
+  decisions, this one included. The **mechanical half of graph integrity** —
+  every changed artifact's `depends_on` ids resolve — is computed by the
+  check itself for all types (pure f(A)); the judgment half (propagation
+  claims true) rides the fidelity review where owed, else the human. The
+  rule's inputs are **assembled at run-time from the charters'
+  machine-readable declarations** (each reviewer declares what it reviews),
+  read from the protected default branch — changing what a type owes is a
+  charter edit, nothing to regenerate. Projection today:
   - research / feedback-only change → **nothing owed**;
   - a decision → **decision-adversary** + the human intent gate (no artifact
     upstream to conform to);
@@ -239,21 +264,29 @@ approval:
 - **A PR may touch anything — no single-stage rule.** It can carry several
   research passes, shaping runs, specs, code, in any mix. The owed-set is the
   **union** of what *everything* it changed owes; the check goes green only
-  when all of it is present, fresh, covering, passed, and — for any
-  decision-layer artifact — human-approved, **all at HEAD**. This does **not**
-  weaken "build on an *approved* upstream" (E1), and needs **no new rule**
-  (maintainer, 2026-07-15): each layer's upstream-check already requires an
-  approved upstream (the spec-adversary reads *approved* decisions; conformance
-  FAILs a change with no approved upstream — adr-0005 dec 3). So a bundled
-  *draft* upstream simply keeps the downstream's gate red until the human
-  approves the upstream **in-PR** — the staged-approval ordering enforces
-  itself through the existing gates. Bundling is allowed; skipping an
-  upstream's approval by bundling is not.
-- **Each produced artifact carries a self-reported author tag** (which agent
-  produced it); the check verifies author ≠ reviewer for each owed review.
+  when all of it is present, fresh, covering, passed — and the
+  approved-upstream gate below holds — **all at HEAD**.
+- **The approved-upstream gate is an explicit check rule** (revised per the
+  fifth pass, F1 — the earlier "needs no new rule" derivation cited the
+  *fused* spec-adversary, which the split retired, and misread `adr-0005`
+  dec 3, which accepts a merely-`gated` upstream): **every owed fidelity
+  review's upstream artifact must be `status: approved` at HEAD** — a draft
+  or gated upstream keeps the downstream red until the human approves it,
+  in-PR or prior. Bundling is allowed; skipping an upstream's approval by
+  bundling is not. *Disclosed limit (F4):* the check reads approval from
+  frontmatter, a field an agent *could* flip; binding it to a verifiable
+  human act (platform required-review; grove#38) is Layer B — until then an
+  agent-flipped `approved` is the same conceded class as record genuineness,
+  judged by the human at merge.
+- **Separation is checked from the verdict record** (F7 — one authority at
+  every layer, code included): each record's self-reported `producer` and
+  `reviewer` fields must differ for an owed review. Artifact frontmatter MAY
+  carry an author tag as provenance; the record fields are what the check
+  reads.
 - **A new automated check** is added (grove has none today) that reads its
   policy from the protected default branch and enforces completeness,
-  freshness, coverage, and separation — on existing GitHub primitives
+  freshness, coverage, separation, the approved-upstream gate,
+  graph-resolution, and record integrity — on existing GitHub primitives
   (protected branches + Actions), no new platform infrastructure.
 - **The setup skill** installs the check *harness* (a thin CI runner) once —
   but the *policy* it applies is not baked in; the harness assembles the
@@ -262,26 +295,31 @@ approval:
 - **Reviewer charters are updated (consolidate, not accrete):** every reviewer
   posts verdict records; the **`conformance-reviewer` is stated once as the
   fidelity instrument at every layer** — spec→decision joins its existing
-  code→spec and charter→ADR duties (an extension with precedent: `adr-0006`
-  already has it re-derive *any* flagged consumer against its upstream) —
-  **plus graph integrity** (pins resolve, propagation claims true); the
+  code→spec and charter→ADR duties (an extension into territory `adr-0006`
+  leaves unassigned — verified: nothing assigns spec→decision elsewhere, and
+  its flagged-consumer route never fires for unversioned decisions — F9) —
+  **plus graph integrity's judgment half** (propagation claims true; the
+  mechanical pins-resolve half is the check's own, above); the
   **`spec-adversary` narrows to intrinsic quality** (testability, internal
   consistency, ambiguity an executor would guess at, edge coverage).
   **Producers / artifact types** declare the reviews they owe.
 - **A `decision-adversary` role is chartered** — the real independent
   soundness-adversary for decisions (retiring the spec-adversary stand-in); a
-  decision owes its verdict *plus* the human intent gate. **Load-bearing for
-  the split:** with the spec-adversary narrowed, this is the decision layer's
-  only adversary — the split and this role ship together.
+  decision owes its verdict *plus* the human intent gate. **Its remit,
+  normative here (F8):** break a decision on **internal coherence,
+  contradiction with standing decisions, argument soundness, and
+  build-on-settled-ground** — never "is this what the human wants" (the human
+  gate's axis). Verdict grammar: **SOUND / NEEDS-REVISION / UNSOUND**.
+  **Load-bearing for the split:** with the spec-adversary narrowed, this is
+  the decision layer's only adversary — the split and this role ship together.
 - **The dispatcher charter's W1–W6 are demoted** from prescriptive workflows to
   descriptive examples; the per-artifact owed/trigger rules become the source
   of truth (a consolidation, not new prose).
 - **No existing decision is superseded.** adr-0006's conformance scope is
-  *extended, consistently*: the `conformance-reviewer` becomes the fidelity
-  instrument at all layers — adr-0006 already treats it as the general
-  re-derivation instrument for any flagged consumer and assigns spec→decision
-  to no one else — recorded as a forward pointer, not a supersession (verified
-  against its text this sitting).
+  *extended into territory it leaves unassigned* (it assigns spec→decision to
+  no one, and is additive-silent on the extension — verified against its text;
+  "precedent" would overstate it, F9) — recorded as a forward pointer, not a
+  supersession.
 - **Explicitly deferred to Layer B** (a separate future program, gated on
   infrastructure grove lacks, relates to grove#38): run-attestation so a
   verdict proves a genuine non-producer review ran; forgery-proof separation; a
@@ -307,10 +345,12 @@ approval:
 - **AC6 — green is non-authorizing.** A green check surfaces the verdict
   records (with per-item reasons when un-green) for human reading and is
   presented as "bookkeeping done," never "reviewed / safe to merge."
-- **AC7 — separation (accidental case).** Produced artifacts carry a
-  self-reported author tag; the check goes red if a review's reviewer tag
-  equals the produced artifact's author tag. Deliberate forgery of the tag is
-  out of scope (Layer B), disclosed.
+- **AC7 — separation (accidental case).** Every verdict record carries
+  self-reported `producer` and `reviewer` fields — **the record is the single
+  separation authority at every layer** (fifth pass, F7; no code-file tags;
+  artifact frontmatter author tags are optional provenance only) — and the
+  check goes red when they match for an owed review. Deliberate forgery of the
+  fields is out of scope (Layer B), disclosed.
 - **AC8 — honest disclosure.** The shipped artifacts state plainly what is
   **not** guaranteed (genuineness, forgery-proof separation, autonomy) and that
   authenticity and policy changes are human-owned.
@@ -321,7 +361,19 @@ approval:
   history live in git, and the check uses existing platform primitives
   (protected branches + CI + the PR record stream).
 - **AC11 — adr-0006 pointer.** A forward pointer records the per-layer
-  conformance clarification as consistent with adr-0006 (no supersession).
+  conformance extension as entering territory adr-0006 leaves unassigned (no
+  supersession, no contradiction).
+- **AC12 — approved upstream.** The check goes red when any owed fidelity
+  review's upstream artifact is not `status: approved` at HEAD — a draft or
+  merely-`gated` upstream blocks its downstream. Disclosed limit: `status` is
+  frontmatter an agent could flip; binding approval to a verifiable human act
+  is Layer B (grove#38).
+- **AC13 — resolvable graph.** Every changed artifact's `depends_on` ids
+  resolve at HEAD — computed by the check itself; red otherwise.
+- **AC14 — record integrity.** The check rejects records whose comment was
+  edited (platform edit-history) and records from unauthorized authors;
+  record *deletion* is disclosed as undetectable (Layer B), never claimed
+  caught.
 
 ## Open questions (parked, ≤3)
 
@@ -372,17 +424,24 @@ approval:
 - **What is validated vs. amended (honest, not glossed):** the *mechanics
   core* — CI-computed completeness/freshness/coverage over agent-posted
   verdict records, policy from the protected branch — is the pass-3-validated
-  shape. **Two structural amendments postdate every pass** (2026-07-16,
-  maintainer's calls): the fidelity/quality split and
-  verdict-records-as-PR-comments. Both are **under a fifth adversarial pass
-  now** (this decision + its spec), launched at the maintainer's request,
-  before any approval. NOT claiming pass-validation for the amendments.
+  shape. The two 2026-07-16 structural amendments (fidelity/quality split;
+  records-as-comments) went through a **fifth adversarial pass** the same day:
+  verdict **NEEDS-REVISION** (not UNSOUND — premise held; core mechanics
+  survived). All four must-fixes and four needs-answers were revised into
+  this text (F1 approved-upstream gate + corrected adr-0005 citation; F2
+  append-only-as-convention + record-integrity rules; F3 UPSTREAM-INDICTED;
+  F4 approval-trust disclosure; F5 implements-edge; F6 quality-input horn;
+  F7 record-as-separation-authority; F8 decision-adversary remit in-body).
+  The revisions themselves are shaper-authored and NOT yet independently
+  re-passed — disclosed; the spec-side passes (spec-adversary + conformance,
+  per this decision's own split) run next. DISCLOSED.
 - **Human-approval boundary:** promoted `draft → gated` on this self-check.
   `approved` is the maintainer's intent act — an in-PR flip or merge — **never
   set by the agent** (`lifecycle.md`, `floor-intent-gate`). The design being
   gated is itself subject to the human intent gate it prescribes.
 
 **Overall: internally sound, honestly bounded, independently stress-tested
-across four adversarial passes, with the 2026-07-16 amendments under a fifth —
-`gated`, awaiting that pass and the maintainer's intent gate. Not approved by
-the author.**
+across five adversarial passes — the fifth's NEEDS-REVISION findings revised
+in (revisions disclosed as not-yet-re-passed) — `gated`, awaiting the
+spec-side passes and the maintainer's intent gate. Not approved by the
+author.**
