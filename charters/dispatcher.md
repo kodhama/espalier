@@ -2,9 +2,9 @@
 id: charter-dispatcher
 type: charter
 status: gated
-depends_on: []
+depends_on: [adr-0012-methodology-delivery-machinery]
 owner: agent
-updated: 2026-07-12
+updated: 2026-07-16
 ---
 
 # dispatcher — dispatch, sequencing, the findings ledger, checkpoint-resume
@@ -47,15 +47,55 @@ never silent. **Explicit workflow commands remain an override and a
 shortcut**, not the operating model — don't force the maintainer to
 learn a command surface when inference already works.
 
-## Workflows
+## Owed reviews — the local rules are the source of truth (`adr-0012`)
+
+No one holds "the workflow" — a run's gate structure **emerges** from
+per-artifact owed-review rules plus each agent's trigger and boundary
+rules, composed with the standing invariants (`adr-0012` E5). The rules
+the dispatcher sequences by:
+
+- **ONE owed-rule:** every changed artifact owes **fidelity-conformance
+  iff it has an implements upstream** (a spec its decision, a charter
+  its ADR — the `implements:` frontmatter edge; code its spec(s), via
+  the test-deps ledger), **plus its layer's quality gate**
+  (`decision-adversary` for decisions, `spec-adversary` for specs,
+  `code-reviewer` for code). A decision has no implements upstream (its
+  upstream is human intent): it owes the `decision-adversary` verdict
+  **plus the human intent gate**. Only a positively-declared reviewless
+  type (`research`, `feedback`) owes nothing; an unclaimed type owes the
+  full set, fail-closed.
+- **A review counts only as a posted verdict record** on the change
+  request (`spec-0002` §A) — verdict, subject manifest, fingerprint,
+  producer/reviewer, findings, in one act. A session's memory of a
+  review satisfies nothing; the bookkeeping check recomputes
+  completeness, freshness, coverage, and separation from the records and
+  goes red on any gap. Its green means "bookkeeping done — a human still
+  judges genuineness and merges," never approval.
+- **Failed reviews route by what they indict:** a `FAIL`/`BLOCK`/
+  `NEEDS-REVISION` routes to the subject's own producing layer; a
+  conformance `UPSTREAM-INDICTED` routes to the *upstream's* layer — a
+  decision-layer indictment always to the human (W4's rule, now carried
+  by the verdict grammar).
+- Iteration between gates is free of ceremony; only the endpoint is
+  gated (`adr-0012` E2). Adding or swapping an agent recomposes the run
+  with no central flow to edit.
+
+## Worked examples: W1–W6 (descriptive, not prescriptive)
+
+The labeled workflows below are **worked examples of what the local
+rules above emit** for common asks — kept for classification vocabulary
+and orientation, not as pipelines to enforce or edit. Where an example
+and the owed/trigger rules disagree, the rules win.
 
 - **W1 new requirement**: intent → [`divergent-researcher`] → `shaper` ↔
-  maintainer → `contract-author` → `spec-adversary` → HUMAN spec gate →
-  `executor` → conformance gate ∥ code-review gate → HUMAN merge →
-  `validator`. The two stage-4½ gates (`conformance-reviewer`,
-  `code-reviewer`) take the same finished build, ask independent
-  questions, and can run in parallel; both feed the findings ledger. A
-  `code-reviewer` `BLOCK` verdict returns the change to the `executor`
+  maintainer → (`decision-adversary` → HUMAN intent gate on the decision)
+  → `contract-author` → conformance gate ∥ `spec-adversary` → HUMAN spec
+  gate → `executor` → conformance gate ∥ code-review gate → HUMAN merge →
+  `validator` — i.e. at every layer, the owed-rule's fidelity gate plus
+  that layer's quality gate, then the human. The paired gates take the
+  same finished artifact, ask independent questions, and can run in
+  parallel; both feed the findings ledger. A `code-reviewer` `BLOCK`
+  verdict returns the change to the `executor`
   exactly like a conformance `FAIL`; its advisory findings ride to the
   human merge in the findings ledger; a human override of a `BLOCK` is
   recorded with its rationale, never silent (`adr-0007`).
@@ -142,6 +182,9 @@ floor or binary conformance-to-upstream.
 
 - The dispatcher sequences; it does not grade. Conformance and
   validation stay with their own roles.
+- **A review the dispatcher "remembers" ran does not count** — only its
+  posted verdict record does (`adr-0012`; `spec-0002` §A). Never mark an
+  owed review satisfied from session context.
 - Every skip is a recorded skip, never a silent one (`floor-transparency`).
 - The intent gate (decisions, specs) never fully opens to agents — human
   sign-off is mandatory there, whatever the dial says elsewhere.
