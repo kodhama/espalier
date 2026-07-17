@@ -119,8 +119,11 @@ test('buildTree loads artifact-dir files, changed files, and every test-deps.md 
 test('readProtectedPolicy reads charters + review-policy from origin/<default>, not HEAD', async () => {
   const branchContent = {
     'charters/review-policy.md': '```grove-review-policy\nschema: 1\nartifact_dirs: [decisions, specs]\n```',
-    'charters/conformance-reviewer.md': 'PROTECTED conformance charter',
-    'charters/spec-adversary.md': 'PROTECTED spec-adversary charter',
+    // charters/ wins the declaration-dir precedence by carrying a declaration.
+    'charters/conformance-reviewer.md':
+      'PROTECTED conformance charter\n```grove-review-declaration\nschema: 1\nreview: conformance\ntypes: [spec]\npass_class: [PASS]\n```',
+    'charters/spec-adversary.md':
+      'PROTECTED spec-adversary charter\n```grove-review-declaration\nschema: 1\nreview: spec-adversary\ntypes: [spec]\npass_class: [APPROVE-READY]\n```',
   };
   const gitRunner = fakeRunner((args) => {
     if (args[0] === 'ls-tree') {
@@ -214,4 +217,162 @@ test('makeExecGitRunner returns non-ASCII paths literal (core.quotepath=false), 
   const { readAt } = await import('../shell/git-adapter.mjs');
   const content = await readAt({ gitRunner, ref: head, path: changed[0] });
   assert.equal(content, 'body');
+});
+
+// --- Policy auto-discovery by PRECEDENCE (spec-0002 INV1 / §C.0) ---
+//   The reviewer-declaration dir is the FIRST of [charters/, .claude/agents/]
+//   that exists AND carries ≥1 grove-review-declaration block (precedence, NOT
+//   union — grove-self's canonical charters/ wins over its own vendored
+//   .claude/agents/ copies; a consumer with no charters/ falls to
+//   .claude/agents/). The review-policy.md is the FIRST of
+//   [charters/review-policy.md, .grove/review-policy.md] that exists. Env pair
+//   GROVE_POLICY_DIR / GROVE_REVIEW_POLICY_PATH is an escape hatch. Every read
+//   still targets the PROTECTED default branch, never PR HEAD.
+
+const DECL_BLOCK =
+  '```grove-review-declaration\nschema: 1\nreview: conformance\ntypes: [spec]\npass_class: [PASS]\n```';
+
+// A fake git-runner over an in-memory {path -> content} tree at a single ref.
+// ls-tree with a `-- <dir>` pathspec returns only files under that dir (an
+// absent dir yields '' — ls-tree exits 0 with no output, the genuine-absence
+// signal); `show <ref>:<path>` returns the content or undefined (a 404 that the
+// fakeRunner turns into a rejection, i.e. readAt -> null). Records every call.
+function treeRunner(files, { ref = 'origin/main' } = {}) {
+  return fakeRunner((args) => {
+    if (args[0] === 'ls-tree') {
+      assert.equal(args[3], ref, `ls-tree must target the protected ref, got ${args[3]}`);
+      const ddIdx = args.indexOf('--');
+      const dir = ddIdx >= 0 ? args[ddIdx + 1] : null;
+      const all = Object.keys(files);
+      const dd = dir ? dir.replace(/\/$/, '') : null;
+      const sel = dd ? all.filter((p) => p === dd || p.startsWith(dd + '/')) : all;
+      return sel.join('\n');
+    }
+    if (args[0] === 'show') {
+      const spec = args[1]; // <ref>:<path>
+      assert.ok(spec.startsWith(ref + ':'), `show must target the protected ref, got ${spec}`);
+      const path = spec.slice(spec.indexOf(':') + 1);
+      return files[path];
+    }
+    return undefined;
+  });
+}
+
+test('policy auto-discovery: grove-self — charters/ with a declaration wins; .claude/agents copies are ignored (precedence, not union)', async () => {
+  const files = {
+    'charters/review-policy.md': '```grove-review-policy\nschema: 1\n```',
+    'charters/conformance-reviewer.md': 'CANONICAL CHARTER\n' + DECL_BLOCK,
+    // A stale vendored copy under .claude/agents/ that must NOT be read.
+    '.claude/agents/conformance-reviewer.md': 'STALE COPY\n' + DECL_BLOCK,
+  };
+  const gitRunner = treeRunner(files);
+  const { reviewPolicyText, charterTexts } = await readProtectedPolicy({
+    gitRunner,
+    defaultBranch: 'main',
+    env: {},
+  });
+  assert.ok(reviewPolicyText.includes('grove-review-policy'));
+  assert.ok(charterTexts.some((t) => t.includes('CANONICAL CHARTER')));
+  assert.ok(!charterTexts.some((t) => t.includes('STALE COPY')), 'the .claude/agents copy is ignored when charters/ wins');
+  // Precedence, not union: .claude/agents was never even listed.
+  const listedAgents = gitRunner.calls.some((a) => a[0] === 'ls-tree' && a.includes('.claude/agents'));
+  assert.equal(listedAgents, false, 'a winning charters/ short-circuits the .claude/agents candidate');
+});
+
+test('policy auto-discovery: consumer — no charters/, .claude/agents/ carries the declarations; policy from .grove/', async () => {
+  const files = {
+    '.grove/review-policy.md': '```grove-review-policy\nschema: 1\n```',
+    '.claude/agents/conformance-reviewer.md': 'CONSUMER CHARTER\n' + DECL_BLOCK,
+    '.claude/agents/README.md': 'orientation, no declaration',
+  };
+  const gitRunner = treeRunner(files);
+  const { reviewPolicyText, charterTexts } = await readProtectedPolicy({
+    gitRunner,
+    defaultBranch: 'main',
+    env: {},
+  });
+  assert.ok(reviewPolicyText.includes('grove-review-policy'), 'review-policy discovered at .grove/review-policy.md');
+  assert.ok(charterTexts.some((t) => t.includes('CONSUMER CHARTER')));
+});
+
+test('policy auto-discovery: charters/ exists but is declaration-less — precedence falls THROUGH to .claude/agents (existence alone does not win)', async () => {
+  const files = {
+    // charters/ exists but carries no grove-review-declaration block.
+    'charters/README.md': 'orientation, no declaration',
+    '.grove/review-policy.md': '```grove-review-policy\nschema: 1\n```',
+    '.claude/agents/conformance-reviewer.md': 'CONSUMER CHARTER\n' + DECL_BLOCK,
+  };
+  const gitRunner = treeRunner(files);
+  const { charterTexts } = await readProtectedPolicy({
+    gitRunner,
+    defaultBranch: 'main',
+    env: {},
+  });
+  assert.ok(charterTexts.some((t) => t.includes('CONSUMER CHARTER')), 'a declaration-less charters/ does not win by mere existence');
+  assert.ok(!charterTexts.some((t) => t.includes('orientation')), 'the declaration-less charters/ text is not returned');
+});
+
+test('policy auto-discovery: neither dir yields a declaration — fail-closed to an empty policy (no throw)', async () => {
+  // charters/ absent; .claude/agents/ exists but carries no declaration block.
+  const files = {
+    '.claude/agents/README.md': 'just orientation prose, no grove-review-declaration',
+  };
+  const gitRunner = treeRunner(files);
+  const { reviewPolicyText, charterTexts } = await readProtectedPolicy({
+    gitRunner,
+    defaultBranch: 'main',
+    env: {},
+  });
+  assert.equal(reviewPolicyText, '');
+  assert.deepEqual(charterTexts, []);
+});
+
+test('policy auto-discovery: review-policy precedence — charters/review-policy.md wins over .grove/review-policy.md', async () => {
+  const files = {
+    'charters/review-policy.md': '```grove-review-policy\nschema: 1\n# CHARTERS POLICY\n```',
+    '.grove/review-policy.md': '```grove-review-policy\nschema: 1\n# GROVE POLICY\n```',
+    'charters/conformance-reviewer.md': 'CANONICAL\n' + DECL_BLOCK,
+  };
+  const gitRunner = treeRunner(files);
+  const { reviewPolicyText } = await readProtectedPolicy({
+    gitRunner,
+    defaultBranch: 'main',
+    env: {},
+  });
+  assert.ok(reviewPolicyText.includes('CHARTERS POLICY'));
+  assert.ok(!reviewPolicyText.includes('GROVE POLICY'), 'the .grove/ carrier is not read when charters/ exists');
+});
+
+test('policy auto-discovery: env override (GROVE_POLICY_DIR / GROVE_REVIEW_POLICY_PATH) redirects both reads to a non-standard layout', async () => {
+  const files = {
+    'custom/policy.md': '```grove-review-policy\nschema: 1\n# CUSTOM\n```',
+    'custom/agents/conformance-reviewer.md': 'CUSTOM CHARTER\n' + DECL_BLOCK,
+    // Standard locations exist too — the override must win and these stay unread.
+    'charters/review-policy.md': '```grove-review-policy\nschema: 1\n# STANDARD\n```',
+    'charters/conformance-reviewer.md': 'STANDARD CHARTER\n' + DECL_BLOCK,
+  };
+  const gitRunner = treeRunner(files);
+  const { reviewPolicyText, charterTexts } = await readProtectedPolicy({
+    gitRunner,
+    defaultBranch: 'main',
+    env: { GROVE_POLICY_DIR: 'custom/agents', GROVE_REVIEW_POLICY_PATH: 'custom/policy.md' },
+  });
+  assert.ok(reviewPolicyText.includes('CUSTOM'));
+  assert.ok(!reviewPolicyText.includes('STANDARD'));
+  assert.ok(charterTexts.some((t) => t.includes('CUSTOM CHARTER')));
+  assert.ok(!charterTexts.some((t) => t.includes('STANDARD CHARTER')));
+  const listedCharters = gitRunner.calls.some((a) => a[0] === 'ls-tree' && a.includes('charters'));
+  assert.equal(listedCharters, false, 'the override skips the standard charters/ candidate');
+});
+
+test('policy auto-discovery: a git ls-tree FAILURE (protected ref not fetched) still propagates as a hard error, never a silent empty policy', async () => {
+  // Every git call rejects — the shallow-checkout case. Must throw, not degrade.
+  const gitRunner = fakeRunner(() => undefined);
+  await assert.rejects(
+    () => readProtectedPolicy({ gitRunner, defaultBranch: 'main', env: {} }),
+    (err) => {
+      assert.match(err.message, /protected branch|origin\/main/i);
+      return true;
+    },
+  );
 });
