@@ -110,15 +110,29 @@ export function assemblePolicy({ reviewPolicyText = '', reviewPolicyPath = null,
   }
   const reviewlessTypes = new Set(rp.reviewlessTypes);
 
-  function owed(type) {
-    if (reviewlessTypes.has(type)) return [];
+  function declaredFor(type) {
     const declared = [];
     for (const [review, types] of typesByReview) {
       if (types.has(type)) declared.push(review);
     }
+    return declared;
+  }
+
+  function owed(type) {
+    if (reviewlessTypes.has(type)) return [];
     // fail-closed override: an unclaimed, non-reviewless type owes the full set
+    const declared = declaredFor(type);
     if (declared.length === 0) return [...ALL_REVIEWS];
     return declared;
+  }
+
+  // §D remedy-hint substrate (round 3): true iff `type` owes the full set via
+  // INV7's fail-closed override — no reviewer declares it AND it is not
+  // positively declared reviewless. Distinct from a declared type that merely
+  // happens to owe all four, and from a reviewless type that owes nothing.
+  function unclaimedType(type) {
+    if (reviewlessTypes.has(type)) return false;
+    return declaredFor(type).length === 0;
   }
 
   return {
@@ -128,6 +142,7 @@ export function assemblePolicy({ reviewPolicyText = '', reviewPolicyPath = null,
     reviewPolicyPath: reviewPolicyPath != null ? normalizePath(reviewPolicyPath) : null,
     reviewlessTypesSet: reviewlessTypes,
     owed,
+    unclaimedType,
     passClass: (review) => (passClassByReview.has(review) ? passClassByReview.get(review) : null),
     allReviews: ALL_REVIEWS,
   };

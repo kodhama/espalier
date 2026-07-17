@@ -113,9 +113,21 @@ export function runCheck({ changed = [], tree, comments = [], policy, protectedP
 
     const owed = policy.owed(type);
 
+    // §D remedy hint (presentation-only, round 3): a frontmatter-typed file
+    // whose type owes the full set via INV7's fail-closed override carries a
+    // marker keyed off this §C.2 step-1 classification. The view names the two
+    // cures; no verdict or reason token changes. Restricted to a real
+    // frontmatter `type:` so `code`/untyped classifications never draw a
+    // "declare it in reviewless_types" hint that does not fit them.
+    const remedy =
+      meta.hasFrontmatter && meta.type != null && policy.unclaimedType(type)
+        ? { type }
+        : null;
+
     const pairRowsForFile = [];
     for (const R of owed) {
       const row = evaluatePair({ file: f, review: R, prepared, tree, index, policy });
+      if (remedy) row.remedy = remedy;
       // §C.6 approved-upstream gate binds every owed fidelity pair.
       if (R === 'conformance') {
         const gate = approvedUpstreamGate({ file: f, tree, index });

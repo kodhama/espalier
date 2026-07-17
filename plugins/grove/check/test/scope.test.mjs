@@ -303,6 +303,31 @@ test('INV19 — strict mode never runs the carrier fail-close (no protectedPaths
   assert.ok(!d.rows.some((r) => r.reasons?.some((x) => x.code === 'carrier-unresolved')));
 });
 
+test('§D remedy-hint marker — an unclaimed frontmatter type marks its owed rows with the classified type (round-3 remedy hint)', () => {
+  const tree = new Map([['specs/widget.md', '---\nid: widget-1\ntype: widget\nstatus: draft\n---\n']]);
+  const d = runCheck({
+    changed: ['specs/widget.md'], tree, comments: [], policy: scopedPolicy,
+    protectedPaths: CARRIERS_OK,
+  });
+  const pairRows = d.rows.filter((r) => r.kind === 'pair' && r.subject === 'specs/widget.md');
+  assert.ok(pairRows.length > 0);
+  for (const r of pairRows) assert.deepEqual(r.remedy, { type: 'widget' });
+});
+
+test('§D remedy-hint marker — a declared type (spec) carries NO remedy marker', () => {
+  const tree = new Map([
+    ['decisions/adr-x.md', adr('adr-x', 'approved')],
+    ['specs/foo.md', spec('spec-foo', 'adr-x')],
+  ]);
+  const d = runCheck({
+    changed: ['specs/foo.md'], tree, comments: [], policy: scopedPolicy,
+    protectedPaths: CARRIERS_OK,
+  });
+  const pairRows = d.rows.filter((r) => r.kind === 'pair');
+  assert.ok(pairRows.length > 0);
+  for (const r of pairRows) assert.equal(r.remedy, undefined);
+});
+
 test('INV21 — gate carriers are in scope in scoped mode: declaration file, policy file, ledger, runtime-dir file, workflow file', () => {
   const declPolicy = assemblePolicy({
     reviewPolicyText: policyText(['scope: scoped']),
