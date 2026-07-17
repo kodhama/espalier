@@ -15,7 +15,7 @@ import { allowlistExempts } from './policy.mjs';
 import { prepareRecords, evaluatePair, sortReasons } from './match.mjs';
 import { resolveGraph } from './graph.mjs';
 import { decisionGate, approvedUpstreamGate } from './gates.mjs';
-import { inJurisdiction } from './scope.mjs';
+import { inJurisdiction, resolveCarriers } from './scope.mjs';
 
 function treeGet(tree, path) {
   if (tree == null) return undefined;
@@ -69,6 +69,20 @@ export function runCheck({ changed = [], tree, comments = [], policy, protectedP
       mode: 'scoped',
       jurisdiction: { inScope: files.length, total: changed.length },
     };
+
+    // §C.2 carrier fail-close (INV21, S23; §C.8): both machinery carriers must
+    // EXIST at the protected-branch commit — a runtime dir with ≥1 blob under
+    // its prefix, the workflow file's blob present. `protectedPaths` is that
+    // protected-branch blob listing (absent/empty fail-closes to unresolved,
+    // never silent exclusion). Each unresolved carrier is a file-level red.
+    for (const c of resolveCarriers(policy, protectedPaths)) {
+      rows.push(fileRow(c.path, [{
+        code: 'carrier-unresolved',
+        token: 'carrier-unresolved',
+        payload: { key: c.key, path: c.path, provenance: c.provenance },
+        routing: { to: 'human' },
+      }]));
+    }
   } else if (policy.scopeUnrecognized) {
     // an unrecognized value resolved to strict — named on every run (INV22, W2)
     scopeInfo = { mode: 'strict', rawValue: policy.scopeRaw, unrecognized: true };

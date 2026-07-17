@@ -231,6 +231,78 @@ test('INV20 — a file with frontmatter but NO type:, outside every basis, is ou
   assert.deepEqual(d.scope.jurisdiction, { inScope: 0, total: 1 });
 });
 
+// ---------------------------------------------------------------------------
+// Slice 3: §C.2 carrier fail-close (§C.8, INV21, S23; adr-0013 dec 1/AC4).
+// In scoped mode the two machinery carriers — check_runtime_dir (default
+// .grove/check/) and check_workflow_path (default the workflow file) — must
+// EXIST at the protected-branch commit; else a file-level red with
+// carrier-unresolved. runCheck consumes `protectedPaths` (the protected-branch
+// blob listing) and calls resolveCarriers.
+// ---------------------------------------------------------------------------
+
+test('S23 — scoped: absent carrier keys + defaults that exist nowhere ⇒ two carrier-unresolved reds naming key/path/defaulted', () => {
+  // no changed files at all — the carrier check is independent of the diff.
+  const d = runCheck({
+    changed: [], tree: new Map(), comments: [], policy: scopedPolicy,
+    protectedPaths: [], // the install defaults exist nowhere on the protected branch
+  });
+  assert.equal(d.green, false);
+  const carrierRows = d.rows.filter((r) => r.reasons.some((x) => x.code === 'carrier-unresolved'));
+  assert.equal(carrierRows.length, 2, JSON.stringify(d.rows));
+  const byKey = new Map();
+  for (const r of carrierRows) {
+    const cu = r.reasons.find((x) => x.code === 'carrier-unresolved');
+    byKey.set(cu.payload.key, cu.payload);
+  }
+  assert.deepEqual(byKey.get('check_runtime_dir'), {
+    key: 'check_runtime_dir', path: '.grove/check/', provenance: 'defaulted',
+  });
+  assert.deepEqual(byKey.get('check_workflow_path'), {
+    key: 'check_workflow_path', path: '.github/workflows/grove-review-bookkeeping.yml', provenance: 'defaulted',
+  });
+  // file-level rows carry the resolved path as their subject
+  assert.ok(carrierRows.some((r) => r.subject === '.grove/check/'));
+  assert.ok(carrierRows.some((r) => r.subject === '.github/workflows/grove-review-bookkeeping.yml'));
+});
+
+test('S23 — scoped: written carrier keys naming real protected-branch paths resolve (no carrier row)', () => {
+  const writtenPolicy = assemblePolicy({
+    reviewPolicyText: policyText([
+      'scope: scoped',
+      'check_runtime_dir: tools/check/',
+      'check_workflow_path: .github/workflows/custom.yml',
+    ]),
+    reviewPolicyPath: 'charters/review-policy.md',
+    charterTexts: fullCharterEntries,
+  });
+  const d = runCheck({
+    changed: [], tree: new Map(), comments: [], policy: writtenPolicy,
+    protectedPaths: ['tools/check/lib/x.mjs', '.github/workflows/custom.yml'],
+  });
+  assert.equal(d.green, true);
+  assert.equal(d.rows.length, 0);
+});
+
+test('S23 — scoped: one carrier present, one missing ⇒ exactly one carrier-unresolved red', () => {
+  const d = runCheck({
+    changed: [], tree: new Map(), comments: [], policy: scopedPolicy,
+    // runtime dir present (a blob under the prefix), workflow file absent
+    protectedPaths: ['.grove/check/lib/check.mjs'],
+  });
+  assert.equal(d.green, false);
+  const carrierRows = d.rows.filter((r) => r.reasons.some((x) => x.code === 'carrier-unresolved'));
+  assert.equal(carrierRows.length, 1);
+  const cu = carrierRows[0].reasons.find((x) => x.code === 'carrier-unresolved');
+  assert.equal(cu.payload.key, 'check_workflow_path');
+});
+
+test('INV19 — strict mode never runs the carrier fail-close (no protectedPaths needed, byte-identical)', () => {
+  const d = runCheck({ changed: [], tree: new Map(), comments: [], policy: strictPolicy });
+  assert.equal(d.green, true);
+  assert.equal(d.rows.length, 0);
+  assert.ok(!d.rows.some((r) => r.reasons?.some((x) => x.code === 'carrier-unresolved')));
+});
+
 test('INV21 — gate carriers are in scope in scoped mode: declaration file, policy file, ledger, runtime-dir file, workflow file', () => {
   const declPolicy = assemblePolicy({
     reviewPolicyText: policyText(['scope: scoped']),

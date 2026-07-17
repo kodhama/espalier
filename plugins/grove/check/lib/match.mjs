@@ -31,6 +31,7 @@ export const REASON_ORDER = [
   'no-reviewable-upstream',
   'unresolvable-reference',
   'record-rejected',
+  'carrier-unresolved', // scoped mode only (§C.2 step 0, adr-0013 dec 1/AC4)
 ];
 
 export function sortReasons(reasons) {
