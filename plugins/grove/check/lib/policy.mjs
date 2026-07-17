@@ -42,7 +42,13 @@ export function parseReviewPolicy(text) {
   let scopeUnrecognized = false;
   if (obj.scope != null) {
     scopeRaw = String(obj.scope);
-    if (scopeRaw === 'strict' || scopeRaw === 'scoped') scope = scopeRaw;
+    // Only a STRING value exactly `strict`/`scoped` is honored. A non-string
+    // scope (a YAML list/mapping) must not coerce via String() into a soft
+    // mode — e.g. `scope: [scoped]` would stringify to 'scoped' and silently
+    // enable scoped without the unrecognized note. Route it to the
+    // unrecognized ⇒ strict path like any malformed value (INV19; adr-0013
+    // dec 2: softness is never inferred). Strictly more fail-closed.
+    if (typeof obj.scope === 'string' && (scopeRaw === 'strict' || scopeRaw === 'scoped')) scope = scopeRaw;
     else scopeUnrecognized = true; // resolves to strict
   }
 

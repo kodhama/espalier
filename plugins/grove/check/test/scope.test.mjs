@@ -39,6 +39,27 @@ test('INV19 — an unrecognized scope value resolves to strict, raw value preser
   assert.equal(rp.scopeUnrecognized, true);
 });
 
+// INV19 (spec-0002): "any scope value other than exactly `strict` or `scoped`"
+// resolves to strict — a misparse never softens jurisdiction (adr-0013 dec 2:
+// softness is never inferred). A non-string scope (a YAML list / mapping) must
+// NOT coerce via String() into a soft mode: `scope: [scoped]` would become
+// String(['scoped']) === 'scoped' and silently enable scoped with
+// scopeUnrecognized:false — a silent-softening path. It must fail-close to
+// strict + unrecognized + raw preserved, exactly like any malformed value.
+test('INV19 — a list-valued scope ([scoped]) fail-closes to strict, unrecognized, raw preserved (no silent-soften)', () => {
+  const rp = parseReviewPolicy(policyText(['scope: [scoped]']));
+  assert.equal(rp.scope, 'strict');
+  assert.equal(rp.scopeUnrecognized, true);
+  assert.equal(rp.scopeRaw, String(['scoped']));
+});
+
+test('INV19 — a mapping-valued scope fail-closes to strict, unrecognized, raw preserved', () => {
+  const rp = parseReviewPolicy(policyText(['scope:', '  scoped: true']));
+  assert.equal(rp.scope, 'strict');
+  assert.equal(rp.scopeUnrecognized, true);
+  assert.equal(typeof rp.scopeRaw, 'string');
+});
+
 // --- §C.1: carrier-of-record keys (absent ⇒ install defaults, never silent exclusion) ---
 
 test('§C.1 — absent carrier keys fall to the install defaults with `defaulted` provenance', () => {
