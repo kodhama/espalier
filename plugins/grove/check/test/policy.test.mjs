@@ -50,6 +50,17 @@ test('an unclaimed/unknown type owes the FULL set, never nothing (S4/INV7)', () 
   );
 });
 
+test('unclaimedType distinguishes the fail-closed full-set case from a declared/reviewless type (§D remedy-hint substrate, round 3)', () => {
+  const p = assemblePolicy({ reviewPolicyText, charterTexts: fullCharters });
+  // an unknown frontmatter type falls to the full set via INV7's override
+  assert.equal(p.unclaimedType('widget'), true);
+  // a declared type is claimed, never "unclaimed"
+  assert.equal(p.unclaimedType('spec'), false);
+  assert.equal(p.unclaimedType('code'), false);
+  // a positively-declared reviewless type is not "unclaimed" (it owes nothing on purpose)
+  assert.equal(p.unclaimedType('research'), false);
+});
+
 test('reviewless is a positive declaration, never inferred from absence', () => {
   // policy with NO reviewless_types => research now owes the full set
   const noReviewless = reviewPolicyText.replace('reviewless_types: [research, feedback]', 'reviewless_types: []');
