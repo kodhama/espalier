@@ -1,7 +1,7 @@
 ---
 id: adr-0013-check-scope-mode
 type: adr
-status: gated  # self-checked against the rubric; awaiting decision-adversary + the maintainer intent act
+status: approved  # maintainer intent act 2026-07-17 ("approved") after adversary rounds 1-4 (SOUND at 736264b/b44acb9); in-conversation flip recording the act, adr-0011 precedent
 depends_on: [adr-0005-tdd-and-artifact-gated-dispatch, adr-0012-methodology-delivery-machinery]
 owner: agent
 updated: 2026-07-17
