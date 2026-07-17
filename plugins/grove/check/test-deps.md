@@ -3,9 +3,9 @@ id: ledger-grove-review-bookkeeping-check
 type: ledger
 status: gated
 implements: spec-0002-review-bookkeeping-check
-depends_on: [spec-0002-review-bookkeeping-check, adr-0006-operational-conformance-mechanism]
+depends_on: [spec-0002-review-bookkeeping-check, adr-0006-operational-conformance-mechanism, adr-0013-check-scope-mode]
 owner: agent
-updated: 2026-07-16
+updated: 2026-07-17
 ---
 
 # test-deps — review-bookkeeping check core
@@ -44,16 +44,19 @@ updated: 2026-07-16
 ## Declared upstreams (the tests rest on these)
 
 The behavioral tests in `test/` derive from `spec-0002`'s GWT scenarios
-(S1–S20) and EARS invariants (INV1–INV18); the fingerprint, policy,
-admissibility, and ledger conventions they encode trace to the decisions
-below.
+(S1–S23) and EARS invariants (INV1–INV22); the fingerprint, policy,
+admissibility, scope-mode, and ledger conventions they encode trace to
+the decisions below. The scope-mode tests (INV19–INV22, S21–S23) rest on
+`adr-0013-check-scope-mode` (approved 2026-07-17), the durable decision
+the `spec-0002` v2 amendment cites.
 
 ```grove-test-deps
 schema: 1
 specs:
-  - spec-0002-review-bookkeeping-check@v1
+  - spec-0002-review-bookkeeping-check@v2
 decisions:
   - adr-0012-methodology-delivery-machinery
   - adr-0005-tdd-and-artifact-gated-dispatch
   - adr-0006-operational-conformance-mechanism
+  - adr-0013-check-scope-mode
 ```
