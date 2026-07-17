@@ -67,6 +67,106 @@ test('rejected records are surfaced in the rendered view with their cause (§A.4
   assert.ok(text.toLowerCase().includes('edited'));
 });
 
+// ---------------------------------------------------------------------------
+// §D scope-mode rendering (adr-0013 dec 5/AC7; INV22, S21) + the carrier row +
+// the round-3 remedy hint + the unrecognized-scope note.
+// ---------------------------------------------------------------------------
+
+const GREEN_LOWER_FORBIDDEN = FORBIDDEN;
+
+test('INV22 / S21 — scoped green banner names the mode and the aggregate jurisdiction count on one line', () => {
+  const text = renderView({
+    green: true, rows: [], rejectedRecords: [],
+    scope: { mode: 'scoped', jurisdiction: { inScope: 3, total: 14 } },
+  });
+  assert.ok(text.includes('scoped mode: 3 of 14 changed files in jurisdiction'), text);
+  // INV11 non-authorizing language unchanged, no per-file exemption rows
+  assert.ok(text.includes('A human still judges genuineness and merges. This is NOT approval.'));
+  const lower = text.toLowerCase();
+  for (const w of GREEN_LOWER_FORBIDDEN) assert.ok(!lower.includes(w), `must not contain "${w}"`);
+});
+
+test('INV22 — scoped RED header also states the mode and the jurisdiction count (green and red alike)', () => {
+  const text = renderView({
+    green: false,
+    rows: [{ kind: 'pair', review: 'spec-adversary', subject: 'specs/bar.md', latestVerdict: null, fresh: null, covers: false, separated: null, recordSequence: [], reasons: [{ code: 'never-reviewed', token: 'never-reviewed' }] }],
+    rejectedRecords: [],
+    scope: { mode: 'scoped', jurisdiction: { inScope: 1, total: 2 } },
+  });
+  assert.ok(text.includes('scoped mode: 1 of 2 changed files in jurisdiction'), text);
+  assert.ok(text.includes('never-reviewed'));
+});
+
+test('INV19 — a plain-strict derivation (no scope descriptor) renders BYTE-IDENTICAL to before (green banner unchanged)', () => {
+  const text = renderView({ green: true, rows: [], rejectedRecords: [] });
+  assert.equal(text, GREEN_BANNER);
+});
+
+test('INV22 / W2 — an unrecognized scope value is named on EVERY run, green and red alike', () => {
+  const green = renderView({
+    green: true, rows: [], rejectedRecords: [],
+    scope: { mode: 'strict', rawValue: 'scopped', unrecognized: true },
+  });
+  assert.ok(green.includes("scope: 'scopped' unrecognized — resolved to strict (fail-closed)"), green);
+  // the strict green banner itself is unchanged
+  assert.ok(green.includes(GREEN_BANNER));
+
+  const red = renderView({
+    green: false,
+    rows: [{ kind: 'pair', review: 'conformance', subject: 'specs/foo.md', latestVerdict: null, fresh: null, covers: false, separated: null, recordSequence: [], reasons: [{ code: 'never-reviewed', token: 'never-reviewed' }] }],
+    rejectedRecords: [],
+    scope: { mode: 'strict', rawValue: 'scopped', unrecognized: true },
+  });
+  assert.ok(red.includes("scope: 'scopped' unrecognized — resolved to strict (fail-closed)"), red);
+});
+
+test('§D — a carrier-unresolved file-level row renders its key, resolved path, and written/defaulted provenance', () => {
+  const text = renderView({
+    green: false,
+    rows: [{
+      kind: 'file', review: null, subject: '.grove/check/', latestVerdict: null, fresh: null, covers: null, separated: null,
+      recordSequence: [], reasons: [{ code: 'carrier-unresolved', token: 'carrier-unresolved', payload: { key: 'check_runtime_dir', path: '.grove/check/', provenance: 'defaulted' } }],
+    }],
+    rejectedRecords: [],
+    scope: { mode: 'scoped', jurisdiction: { inScope: 0, total: 0 } },
+  });
+  assert.ok(text.includes('carrier-unresolved'));
+  assert.ok(text.includes('check_runtime_dir'));
+  assert.ok(text.includes('.grove/check/'));
+  assert.ok(text.includes('defaulted'));
+});
+
+test('§D round-3 remedy hint — an unclaimed-type red row names both cures (reviewless_types or a reviewer declaration)', () => {
+  const text = renderView({
+    green: false,
+    rows: [{
+      kind: 'pair', review: 'conformance', subject: 'specs/widget.md', latestVerdict: null, fresh: null, covers: false, separated: null,
+      recordSequence: [], reasons: [{ code: 'no-reviewable-upstream', token: 'no-reviewable-upstream' }], remedy: { type: 'widget' },
+    }],
+    rejectedRecords: [],
+    scope: { mode: 'scoped', jurisdiction: { inScope: 1, total: 1 } },
+  });
+  assert.ok(text.includes('unclaimed type `widget`'), text);
+  assert.ok(text.includes('reviewless_types'));
+  assert.ok(text.includes('charters/review-policy.md'));
+  assert.ok(text.toLowerCase().includes('reviewer declaration'));
+});
+
+test('§D remedy hint — the hint appears once per subject, not once per owed row', () => {
+  const row = (review) => ({
+    kind: 'pair', review, subject: 'specs/widget.md', latestVerdict: null, fresh: null, covers: false, separated: null,
+    recordSequence: [], reasons: [{ code: 'never-reviewed', token: 'never-reviewed' }], remedy: { type: 'widget' },
+  });
+  const text = renderView({
+    green: false,
+    rows: [row('conformance'), row('spec-adversary'), row('code-reviewer'), row('decision-adversary')],
+    rejectedRecords: [],
+    scope: { mode: 'scoped', jurisdiction: { inScope: 1, total: 1 } },
+  });
+  const hits = text.split('unclaimed type `widget`').length - 1;
+  assert.equal(hits, 1, `expected one hint for the subject, got ${hits}`);
+});
+
 test('render() emits the SAME single derivation as structured output alongside the text', () => {
   const derivation = { green: true, rows: [], rejectedRecords: [] };
   const out = render(derivation);
