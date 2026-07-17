@@ -3,10 +3,10 @@ id: spec-0002-review-bookkeeping-check
 type: spec
 status: approved  # gated → approved: the maintainer's explicit intent act ("approved. merge", 2026-07-16), bundled with adr-0012's approval on the same PR per Open Q5's sequencing; recorded in-PR by the shaper per lifecycle.md
 implements: adr-0012-methodology-delivery-machinery  # the realized contract (adr-0012 implements-edge); machine-readable fidelity selector
-depends_on: [adr-0012-methodology-delivery-machinery, adr-0005-tdd-and-artifact-gated-dispatch, adr-0006-operational-conformance-mechanism]  # builds-on; adr-0012 retained here too so depends_on-walking machinery keeps the edge until it learns `implements`
+depends_on: [adr-0012-methodology-delivery-machinery, adr-0005-tdd-and-artifact-gated-dispatch, adr-0006-operational-conformance-mechanism, adr-0013-check-scope-mode]  # builds-on; adr-0012 retained here too so depends_on-walking machinery keeps the edge until it learns `implements`; adr-0013 added by the 2026-07-17 scope-mode amendment
 owner: agent
-updated: 2026-07-16
-version: 1  # counter initialized at materialization (versioning.md); forward-only from here — held at 1 through this second pre-approval revision, see Rubric check
+updated: 2026-07-17
+version: 2  # bumped 1 → 2 by the 2026-07-17 adr-0013 scope-mode amendment — a testable-clause change (INV7/INV15 amended in place; INV19–INV22, S21–S23 added), versioning.md's significance bar; the durable decision the bump requires is adr-0013 itself
 status_note: promoted draft → gated on the passing self-check (contract-author Method 6); re-derived twice against adr-0012 at HEAD (fifth-pass revisions, `implements:` field, split-pair findings); round-2 spec-adversary APPROVE-READY. The Q5 provisional-upstream deviation RESOLVED 2026-07-16 — adr-0012 was approved by the maintainer's intent act, and this spec's approval was bundled with it on the same PR (Q5's anticipated sequencing). Buildable now.
 ---
 
@@ -28,6 +28,51 @@ is **not** authorization; a human still judges genuineness and merges.
 > genuineness, self-reported producer/reviewer tags, the `status:
 > approved` field's claim of a human act, record *deletion*). The values
 > it trusts are the Layer B surface (§E), named here, not pretended away.
+
+> **Amendment (2026-07-17, `adr-0013-check-scope-mode` — the check's
+> scope mode, `strict` | `scoped`). Citation, stated honestly: every
+> delta below derives from the approved `adr-0013` (maintainer intent
+> act 2026-07-17) and this amendment rides that approval — the bundle
+> goes to the maintainer's merge gate; no fresh approval of this spec
+> is claimed, and `status: approved` remains the recorded 2026-07-16
+> act.**
+> **WHAT:** the `grove-review-policy` block gains `scope: strict |
+> scoped` (absent ⇒ `strict`, fail-closed) and the
+> `check_runtime_dir` / `check_workflow_path` carrier-of-record keys
+> (absent ⇒ install defaults, never silent exclusion) (§B, §C.0, §C.1);
+> §C.2 gains **step 0, the `scoped`-mode jurisdiction filter** (the
+> four-basis in-scope union; out-of-scope files generate zero owed
+> pairs and zero reasons), the **carrier fail-close**, and the
+> index-membership clause; §D gains the `scoped`-mode header line
+> (mode + aggregate jurisdiction count) and the twelfth reason,
+> **`carrier-unresolved`**; §C.8 gains the carrier condition; §E gains
+> two disclosed rows (the producer-controlled ledger-presence proxy;
+> the run-from-PR-HEAD limit); INV7 and INV15 amended in place with
+> markers; INV19–INV22 and S21–S23 added; the traceability section
+> extended with the adr-0013 AC1–AC8 map; `version` bumped 1 → 2.
+> **WHY:** `adr-0013` (approved 2026-07-17): the wave-2 whole-repo
+> fail-closed default is right for grove-self and wrong for the
+> first-run consumer, whose ordinary PR reds on application code the
+> methodology never touched — at the exact moment adoption is decided.
+> The fix is a setup-time choice, never a softened default: silence
+> stays `strict`.
+> **SCOPE:** §B, §C.0–§C.2, §C.8, §D, §E, both AC grammars, the
+> traceability section, and the frontmatter change. Everything else
+> stands: the record model, fingerprints, admissibility, selection,
+> §C.3–§C.7's rules (applied identically inside jurisdiction), and
+> S1–S20; `strict` and absent-key behavior is byte-identical to the
+> pre-amendment spec (adr-0013 AC1). The 2026-07-16 notes below remain
+> the prior amendments' provenance — superseded as the latest note,
+> not edited.
+> **POINTER:** current truth is the body below — this note is
+> provenance only, not itself an acceptance criterion.
+> **VALUE:** as a first-run consumer, an ordinary PR touching only my
+> own application code no longer reds on files grove never governed —
+> while, as the maintainer, nothing inside jurisdiction got softer and
+> the check's own machinery stays tripwired in both modes.
+> **CONFIDENCE:** `verified` — every delta traces to `adr-0013`'s
+> Decisions 1–5, its conceded-class disclosure, Consequence 1, and
+> AC1–AC8, read at HEAD this sitting.
 
 > **Amendment (2026-07-16, `adr-0012` at HEAD — the fifth adversarial
 > pass's revisions (F1–F8) + the `implements:` frontmatter field; this is
@@ -378,6 +423,33 @@ projection*, not an authored artifact):
   `charter → conformance (→ its ADR)` projection explicitly, consistent
   with `adr-0006` dec 8 — the tension that question recorded is gone.)*
 
+**Scope mode (`adr-0013` dec 1–3 — added by the 2026-07-17 amendment).**
+The `grove-review-policy` block carries a `scope` key, read — like every
+policy input — from the protected branch, never PR HEAD (§C.1, INV1;
+S6 stays closed, adr-0013 AC6):
+
+| `scope` at the protected branch | Meaning |
+|---|---|
+| `strict` — and **absent** (the fail-closed silence default, adr-0013 dec 2) | Every changed file is the check's business: the rule above applies to the whole diff. With no `scope` key, behavior is **byte-identical** to this spec pre-amendment (adr-0013 AC1); softness is never inferred from silence. |
+| `scoped` | The check governs **only what is declared into the methodology**: the rule above applies only to in-jurisdiction files (§C.2 step 0). Everything else generates **no owed pairs and no reasons** — not red, not exempted: *outside the check's jurisdiction* (adr-0013 dec 1). |
+
+- **Scope narrows jurisdiction, never softens the gate** (adr-0013
+  dec 3): inside scope, every rule of this spec holds identically in
+  both modes — INV7's fail-closed unclaimed types, INV14's allowlist,
+  freshness, separation, the approved-upstream gate, §C.7 graph
+  resolution. `scoped` changes *which files* the check speaks for,
+  never *how it speaks*.
+- **Why this does not contradict `adr-0005` dec 3** (adr-0013's own
+  reconciliation, cited not re-argued): that rule governs work the
+  methodology produced; a consumer's pre-existing code in `scoped` mode
+  never *enters* the conformance question — jurisdiction, not verdict.
+  The moment it opts in (a ledger appears above it), dec 3 applies with
+  full force. The producer-controlled edge of this proxy is a disclosed
+  §E concession, not a silent trade.
+- The friendly path is **setup always writing the key** (adr-0013
+  dec 4) — a setup-skill deliverable, not this check's contract; the
+  silence default exists only as the fail-closed backstop.
+
 ---
 
 ## §C — The check
@@ -386,7 +458,7 @@ projection*, not an authored artifact):
 
 | Value | Source | Trusted? |
 |---|---|---|
-| owed-map (**assembled** from reviewer-charter declarations), PASS-class table, reviewless-type declarations, allowlist + prose-extension set, artifact dirs, record-poster policy | charters + policy on **protected branch** | policy, not agent-at-PR-HEAD |
+| owed-map (**assembled** from reviewer-charter declarations), PASS-class table, reviewless-type declarations, allowlist + prose-extension set, artifact dirs, record-poster policy, **scope mode + the `check_runtime_dir` / `check_workflow_path` carrier keys** *(amended per adr-0013; was: no scope/carrier inputs existed)* | charters + policy on **protected branch** | policy, not agent-at-PR-HEAD |
 | diff, `type` of each changed file | **HEAD** content | recomputed |
 | verdict records | the PR's **record stream**, read via the platform API | read as claims; every derivable property below recomputed |
 | record admissibility (comment edit history, poster identity) | **platform metadata** | read from the platform, never from any agent's claim (AC14) |
@@ -417,10 +489,67 @@ Open Q7 — RESOLVED 2026-07-16: the reviewer charters'
 policy file are the shipped carriers; the fail-closed branches remain
 operative for any input absent at check time.)*
 
+**Scope + carrier keys (added per `adr-0013` dec 1).** The
+`grove-review-policy` block additionally carries:
+
+| Key | Values | Absent ⇒ |
+|---|---|---|
+| `scope` | `strict` \| `scoped` (§B) | `strict` — the fail-closed silence default (adr-0013 dec 2); never a silent softening |
+| `check_runtime_dir` | path of the installed check runtime dir (carrier-of-record) | the install default `.grove/check/` — never silent exclusion |
+| `check_workflow_path` | path of the installed workflow file (carrier-of-record) | the install default `.github/workflows/grove-review-bookkeeping.yml` — never silent exclusion |
+
+All three are policy inputs like every other in this section: read from
+the **protected branch** commit only. A PR editing its own `scope` or
+carrier keys does not change the rules its own gate runs under (S6
+stays closed; adr-0013 AC6). Setup writing the keys on every CI-check
+install is adr-0013 AC5's criterion — a setup-skill deliverable
+(adr-0013 Consequence 3), not this check's contract; the defaults above
+are the fail-closed floor when it hasn't.
+
 ### C.2 Derive the owed-coverage set (AC1, AC3, AC4)
 
 For each file `f` in the diff (a rename contributing both its old path —
 a deletion — and its new path — an addition):
+
+**Step 0 — jurisdiction filter (`scoped` mode only; added per
+`adr-0013` dec 1).** When `scope` is `strict` (or absent), every diff
+file enters steps 1–3 — no filter exists and this step is a no-op.
+When `scoped`, `f` enters steps 1–3 **only if in scope**; an
+out-of-scope file generates **zero owed pairs and zero reasons** —
+outside the check's jurisdiction, not exempted — and its only trace is
+the §D header's aggregate jurisdiction count (adr-0013 AC2). In-scope
+is the **union** of:
+
+| Basis | `f` is in scope when |
+|---|---|
+| **path** | `f` is under a policy `artifact_dirs` directory (the governed corpus). |
+| **type** | `f`'s HEAD frontmatter declares a grove artifact type — **wherever it lives**: jurisdiction follows the artifact's own self-declaration, so mislocating a typed artifact outside `artifact_dirs` is not an exit door; §C.7 graph resolution runs for every changed artifact by this definition. |
+| **opted-in code** | `f` belongs to a package that opted in via a test-deps ledger (`adr-0006` dec 4; the ledger's concrete spelling is the ledger artifact's to pin, per Q8 — cited by reference, not respelled here). |
+| **gate carriers** | `f` is one of the gate's own carriers, machinery included: a discovered reviewer-declaration-directory file, the review-policy file itself, any test-deps ledger, or the installed check runtime dir / installed workflow file per the `check_runtime_dir` / `check_workflow_path` carrier keys (§C.1) — in scope **in both modes** (adr-0013 AC4). |
+
+- **In scope, nothing softens** (adr-0013 dec 3): steps 1–3 and every
+  downstream rule — INV7's fail-closed unclaimed types, the INV14
+  allowlist, freshness, separation, the approved-upstream gate, §C.7 —
+  apply to an in-scope file identically in both modes.
+- **Carrier fail-close (adr-0013 dec 1/AC4).** In `scoped` mode, a
+  carrier-of-record path — `check_runtime_dir` or `check_workflow_path`,
+  whether written in policy or fallen to its install default — that
+  does **not exist at the protected-branch commit** is a **red** with
+  reason `carrier-unresolved` (§D): a non-default hand install with
+  absent keys, and relocated machinery whose keys never followed the
+  move, stay red until the keys name the real paths — the assumption
+  is never silently wrong, and the gate's machinery is never silently
+  excluded from its own jurisdiction. *(Disclosed friction, adr-0013
+  Consequence 5: a legitimate machinery re-install shows these red rows
+  and the human merges over them knowingly; a smoother update path is a
+  follow-up parked in adr-0013, never silently traded for the
+  tripwire.)*
+- **Index membership is unchanged (adr-0013 Consequence 1).**
+  Type-based scope membership does **not** imply artifact-index
+  membership: the §A.3 step-1 index still globs `artifact_dirs` only,
+  in both modes. An inbound `depends_on`/`implements` reference to a
+  mislocated (typed-but-outside-`artifact_dirs`) artifact therefore
+  stays **red** with `unresolvable-reference` — fail-closed, unchanged.
 
 1. Classify `type(f)` from HEAD frontmatter (§B); no frontmatter ⇒
    `code`; positively declared reviewless ⇒ none; unclaimed /
@@ -534,8 +663,11 @@ artifact index (version suffixes stripped per `versioning.md` first).
 
 Green **iff** every owed pair is satisfied (C.3), every separation check
 holds (C.4), every decision-layer human gate (C.5) and approved-upstream
-gate (C.6) is satisfied, and graph resolution (C.7) holds for every
-changed artifact. Otherwise red, naming each failing row with its §D
+gate (C.6) is satisfied, graph resolution (C.7) holds for every
+changed artifact, and — in `scoped` mode — every carrier-of-record path
+resolves at the protected-branch commit (§C.2 step 0,
+`carrier-unresolved`) *(amended per adr-0013; was: no carrier
+condition — no scope mode existed)*. Otherwise red, naming each failing row with its §D
 reason(s). A rejected record never blocks an otherwise-satisfied pair,
 but every rejection is surfaced (§A.4). **Green is non-authorizing**
 (§D, AC6).
@@ -559,7 +691,15 @@ entirely from the record stream + the check's own recomputation —
   cause (§A.4).
 - **Header banner, verbatim intent:** *"Bookkeeping complete — a human
   still judges genuineness and merges. This is NOT approval."* on green;
-  the failing rows + reasons on red.
+  the failing rows + reasons on red. *(Amended per adr-0013 dec 5/AC7;
+  was: no mode line — no scope mode existed.)* In `scoped` mode the
+  header line additionally **names the mode and the aggregate
+  jurisdiction count**, on green and red alike — e.g. *"Bookkeeping
+  complete — scoped mode: 3 of 14 changed files in jurisdiction. A
+  human still judges genuineness and merges. This is NOT approval."* —
+  **one line, never per-file exemption rows**; the non-authorizing
+  banner language (INV11) is unchanged, so a green is never read as a
+  whole-repo verdict by the human at merge.
 - The view never carries the words "approved," "reviewed," or "safe to
   merge" for a green result (AC6, S8).
 
@@ -579,6 +719,7 @@ from this enum (all applicable reasons, in this order):
 | `no-reviewable-upstream` | A fidelity review is owed but no implements edge is declared — a spec/charter without `implements:`, a code package without a ledger entry (or, interim, without a pinned ledger convention — Q8) (`adr-0005` dec 3). | The subject + the missing declaration, named. |
 | `unresolvable-reference` | A changed artifact's `depends_on` or `implements` id is dangling or collided at HEAD (§C.7) — file-level, owed pair or not. | The id(s); for a collision, both claiming paths. |
 | `record-rejected` | A pair's only covering records are inadmissible (§A.4 — edited comment or unauthorized poster). | The rejected record(s) + cause (`edited` / `unauthorized`). |
+| `carrier-unresolved` | `scoped` mode only (§C.2 step 0, added per adr-0013 dec 1/AC4): a carrier-of-record path — `check_runtime_dir` or `check_workflow_path`, whether written in policy or fallen to its install default — does not exist at the protected-branch commit. File-level row, owed pair or not. (Semantics are the decision's; the token **spelling** is this spec's — flagged, the `upstream-indicted`/`vacuous-evidence` precedent.) | The key, the path it resolved to, and whether that path was `written` or `defaulted`. |
 
 Reason **naming** uses the record's `manifest_hashes` and the check's
 own recomputation; the **verdict** never depends on the recorded hashes
@@ -609,6 +750,8 @@ This spec does **not** specify, and its check does **not** provide
 | **Record deletion** | The store is the PR's comment stream. **Edit-gaming is Layer A now** (AC14, §A.4): an edited record is rejected via the platform's edit metadata, so a FAIL edited into a PASS is caught. A **deleted** record, by contrast, is undetectable and stays conceded to the human's judgment — disclosed, never claimed caught. |
 | **A verifiable human approval act** | §C.5/§C.6 read `status: approved` from frontmatter — a field an agent *could* flip. The check reads it as the **record** of a human act; binding approval to a verifiable platform act (required-review, grove#38) is Layer B (`adr-0012` F4/AC12). Until then an agent-flipped `approved` is the same conceded class as record genuineness. |
 | **Autonomous loop-bounding** | A non-converging revise ↔ re-review cycle is bounded by the **human** (v1); a force-push-stable mechanical bound is Layer B (E7). |
+| **Scoped-mode ledger-presence proxy** *(row added per adr-0013 AC8 — the conceded class, disclosed not silently traded)* | In `scoped` mode, code's in-scope test is test-deps-ledger presence — a proxy **the producing agent controls**. A grove-run change whose executor omits its ledger generates no owed pairs: `adr-0005` dec 3's mechanical second catch does not fire, where `strict` would red the identical PR. Layer A cannot mechanically attest *who produced* a change (the same limit class as record genuineness, above). Conceded, named, and **backstopped**, never closed: (1) the executor charter's standing duty — the ledger is part of the deliverable, and code shipped without one is non-conformant at build review; (2) the human at merge — new code with no ledger is visible in the diff, and the §D mode-naming banner keeps the green honest about what it did not examine; (3) `strict` mode as the ratchet for a project whose grove-run share has grown past trusting the prose duty. `scoped` trades the mechanical catch, knowingly, for adoption — the trade is adr-0013's point, stated here rather than discovered later. |
+| **Run-from-PR-HEAD** *(row added per adr-0013 AC8 — both modes; the wave-2 code-review finding, previously unrecorded here)* | The check's own code runs from the PR's checkout: a **malicious** PR can alter the running check itself, and no output of that run is trustworthy. Policy-from-protected-branch (INV1) and the §C.2 carrier scoping preserve the **non-malicious** tripwire — an honest edit to the gate's machinery is never silent, in either mode — but a deliberately subverted runner is the same conceded class as forged records: Layer B, judged by the human at merge, never claimed caught. |
 
 These are named, not pretended. Authenticity and policy changes remain
 **human-owned** (AC8).
@@ -651,13 +794,19 @@ These are named, not pretended. Authenticity and policy changes remain
 - **INV6 (coverage, AC3).** For a record to cover an owed pair `(f, R)`,
   the check **shall** require `f` to be a member of that record's
   subject manifest `S` — existence alone **shall not** suffice.
-- **INV7 (fail-closed type, AC4).** The check **shall** treat a `type`
+- **INV7 (fail-closed type, AC4)** *(amended 2026-07-17, adr-0013; was:
+  applied unconditionally to every changed file — no scope mode
+  existed).* The check **shall** treat a `type`
   as reviewless **only** on a positive policy declaration; where a
   changed file's `type` is new, undefined, or claimed by no reviewer
   declaration (and not declared reviewless), the check **shall** assign
   the full review set as an explicit rule on top of the assembly (which
   alone would fail open); where a file has no frontmatter, the check
-  **shall** classify it as `code`.
+  **shall** classify it as `code`. In `scoped` mode this rule **shall**
+  apply to in-jurisdiction files (§C.2 step 0): an out-of-scope file
+  generates no owed pairs at all — jurisdiction, never a softened
+  owed-set — and an in-scope file of unclaimed type **shall** owe the
+  full set identically in both modes (adr-0013 AC3).
 - **INV8 (separation, AC7).** The check **shall** go red if a matched
   record's `reviewer` equals its `producer` — the verdict record being
   the single separation authority at every layer — and **shall not**
@@ -694,7 +843,9 @@ These are named, not pretended. Authenticity and policy changes remain
   glob, or directory); and the check **shall** honor an entry only if
   the file passes the prose predicate (declared prose extension, no
   shebang) — a code-bearing path **shall never** be exempted through it.
-- **INV15 (reason grammar, AC6).** For every un-green row, the check
+- **INV15 (reason grammar, AC6)** *(amended 2026-07-17, adr-0013; was:
+  the enum ended at `record-rejected` — eleven reasons).* For every
+  un-green row, the check
   **shall** emit at least one reason from the §D enum —
   `never-reviewed`, `changed-since-review`, `upstream-<path>-changed`
   (naming the file), `review-failed` (linking the record's findings),
@@ -702,7 +853,8 @@ These are named, not pretended. Authenticity and policy changes remain
   `self-reviewed`, `vacuous-evidence`, `awaiting-human-approval` (naming
   the artifact and its status), `no-reviewable-upstream`,
   `unresolvable-reference` (naming the id(s)), `record-rejected` (naming
-  the record and cause) — and **shall** emit the per-row derivation
+  the record and cause), `carrier-unresolved` (`scoped` mode; naming the
+  key, the path, and written-vs-defaulted) — and **shall** emit the per-row derivation
   (reason + routing) as structured output so the view, dispatch, and the
   reviewer's scoped work order consume the same derivation rather than
   re-deriving it.
@@ -726,6 +878,35 @@ These are named, not pretended. Authenticity and policy changes remain
   reason `unresolvable-reference`, and **shall** shape-check-only
   cross-repo qualified ids (v0 no-fetch, `adr-0006` dec 3) — disclosed,
   never silently treated as resolved.
+- **INV19 (scope mode + silence = strict; adr-0013 AC1/AC6).** The
+  check **shall** read the `scope` key and the
+  `check_runtime_dir` / `check_workflow_path` carrier keys from the
+  `grove-review-policy` block at the protected default branch only —
+  never PR HEAD — and **shall** treat an absent `scope` key as
+  `strict`; with no `scope` key, the check's behavior **shall** be
+  byte-identical to this spec's pre-amendment `strict` behavior on
+  every input.
+- **INV20 (jurisdiction without softening; adr-0013 AC2/AC3).** In
+  `scoped` mode the check **shall** generate owed pairs only for
+  in-scope files (the §C.2 step-0 union: path / type / opted-in code /
+  gate carriers); **shall** emit zero owed pairs, zero reasons, and no
+  exemption rows for an out-of-scope file; and **shall** apply every
+  rule of this spec identically to in-scope files in both modes —
+  `scoped` **shall** change which files the check speaks for, never how
+  it speaks.
+- **INV21 (the gate governs itself, both modes; adr-0013 AC4).** The
+  reviewer-declaration files, the review-policy file, every test-deps
+  ledger, the installed check runtime dir, and the installed workflow
+  file **shall** be in the check's scope in both modes; in `scoped`
+  mode the check **shall** go red with `carrier-unresolved` where a
+  carrier-of-record path (written or defaulted, §C.1) does not exist at
+  the protected-branch commit — it **shall not** silently exclude the
+  gate's own machinery from its jurisdiction.
+- **INV22 (mode visibility; adr-0013 AC7).** In `scoped` mode the §D
+  header **shall** state the mode and the aggregate jurisdiction count,
+  on green and red alike, in one line; the check **shall not** render
+  per-file exemption rows; and the non-authorizing banner language
+  (INV11) **shall** be unchanged.
 
 ### Scenarios (GWT)
 
@@ -863,6 +1044,42 @@ These are named, not pretended. Authenticity and policy changes remain
   `no-reviewable-upstream` (`adr-0005` dec 3) — the fidelity review is
   owed and unsatisfiable until the edge is declared; `depends_on`
   entries never substitute for the implements edge.
+- **S21 (out-of-scope is silent, adr-0013 AC2/AC7).** *Given* policy on
+  the protected branch declares `scope: scoped`, *and* a PR changes
+  `src/app/main.py` — no frontmatter, not under `artifact_dirs`, its
+  package has no test-deps ledger, and it is no carrier path — *When*
+  the check runs, *Then* that file generates **zero owed pairs and zero
+  reasons**: no row, no exemption entry; its only trace is the §D
+  header's aggregate jurisdiction count (e.g. "0 of 1 changed files in
+  jurisdiction") — where `strict` mode would have owed
+  `conformance` + `code-reviewer` and gone red
+  (`no-reviewable-upstream`) on the identical PR.
+- **S22 (in-scope stays fail-closed, adr-0013 AC3 + Consequence 1).**
+  *Given* `scope: scoped` *and* the same PR also adds `specs/widget.md`
+  with frontmatter `type: widget` — in scope by path, claimed by no
+  reviewer declaration, not declared reviewless — *When* the check
+  runs, *Then* that file owes the **full** review set and is red until
+  every pair is present, fresh, and passing — byte-identical to S4's
+  `strict` behavior; jurisdiction narrowed nothing inside it. *And
+  given* a changed `notes/thing.md` whose HEAD frontmatter declares
+  `type: spec`, *Then* it is in scope **by type**, wherever it lives
+  (mislocation is not an exit door), and owes
+  `conformance` + `spec-adversary` — while remaining absent from the
+  artifact index (which globs `artifact_dirs` only, both modes), so an
+  inbound `depends_on`/`implements` reference to its id from another
+  changed artifact is **red** with `unresolvable-reference` —
+  fail-closed, unchanged.
+- **S23 (carrier fail-close, adr-0013 AC4).** *Given* `scope: scoped`,
+  *and* the policy block writes no
+  `check_runtime_dir` / `check_workflow_path` keys, *and* the
+  install-default paths (`.grove/check/`,
+  `.github/workflows/grove-review-bookkeeping.yml`) do not exist at the
+  protected-branch commit (a hand install placed the machinery
+  elsewhere), *When* the check runs, *Then* the check is **red** with
+  reason `carrier-unresolved` naming each key, the defaulted path it
+  fell to, and its `defaulted` provenance — and it stays red until the
+  keys name the real paths; the gate's machinery is never silently
+  excluded from its own jurisdiction.
 
 ### Traceability
 
@@ -882,6 +1099,20 @@ These are named, not pretended. Authenticity and policy changes remain
 | AC12 approved upstream | INV17, §C.6, S16 |
 | AC13 resolvable graph | INV18, §C.7, §A.3 steps 1–2, S18 |
 | AC14 record integrity | INV16, §A.4, S17 |
+
+**adr-0013 acceptance criteria** (added by the 2026-07-17 scope-mode
+amendment):
+
+| adr-0013 AC | Covered by |
+|---|---|
+| AC1 silence = strict | INV19, §B (scope-mode table), §C.1 (key table), §C.2 step 0 (no-op branch) |
+| AC2 jurisdiction | INV20, §C.2 step 0, S21 |
+| AC3 no softening | INV7 (amended), INV20, §B/§C.2, S22 |
+| AC4 the gate governs itself | INV21, §C.2 (carriers basis + fail-close), §C.8 (amended), §D `carrier-unresolved`, S23 |
+| AC5 the choice is recorded | **A setup-skill deliverable** (adr-0013 dec 4 / Consequence 3), not this check's contract — mapped honestly, not claimed covered here; this spec supplies the fail-closed floor when setup fails it: INV19 (silence ⇒ `strict`), INV21 (absent/dangling carriers red in `scoped`) |
+| AC6 S6 intact | INV19, §C.1 (scope + carrier keys from the protected branch), S6 (stands unamended — the new keys are policy inputs under its existing rule) |
+| AC7 mode visibility | INV22, §D header banner (amended), S21 |
+| AC8 concessions written down | §E — both new rows: the scoped-mode ledger-presence proxy (three backstops named) and run-from-PR-HEAD (both modes) |
 
 ---
 
@@ -1027,3 +1258,23 @@ the human's to give (`lifecycle.md`, `floor-intent-gate`) — and, per
 Open Q5, this spec's own authorizing decision is still `gated`, so it
 must not be built against until both it and `adr-0012` clear the human
 gate.
+
+### Amendment self-check (2026-07-17, adr-0013 scope-mode amendment)
+
+The check above is the pre-approval revision's provenance and stands
+unedited (its counts and "remaining `gated`" line describe that
+sitting); this dated subsection is the amendment's own check.
+
+| Criterion | Result | Note |
+|---|---|---|
+| Derives only from the approved decision | PASS | Every delta cites `adr-0013` (Decisions 1–5, the conceded-class disclosure, Consequence 1, AC1–AC8); nothing added beyond it. Illustrative example paths in S21/S23 are examples, not new requirements. |
+| Append-only amendment discipline | PASS | New section-level delta note (five fields + VALUE + CONFIDENCE) prepended; prior notes unedited; no INV/S renumbered; meaning-changing edits (INV7, INV15, §C.0 policy row, §C.8, §D banner) carry explicit `(amended per adr-0013)` / dated inline markers with prior-state `was:` clauses. |
+| Both grammars extended (`adr-0004`) | PASS | 22 EARS invariants (INV19–INV22 added) + 23 GWT scenarios (S21–S23 added); neither grammar stands in for the other. |
+| Concretization beyond the decision | PARTIAL-DISCLOSED | One token spelling pinned here, flagged in §D per the `upstream-indicted`/`vacuous-evidence` precedent: **`carrier-unresolved`** (the decision names the semantics and uses "carrier-unresolved reason" descriptively; the enum token is this spec's spelling). The `written`/`defaulted` payload provenance values are likewise this spec's spelling of the decision's "written or defaulted" distinction. |
+| Traceability | PASS-DISCLOSED | adr-0013 AC1–AC8 all mapped; AC5 honestly mapped as a setup-skill deliverable outside this check's contract (with this spec's fail-closed floor named), never claimed covered. |
+| Versioning discipline (`versioning.md`) | PASS | Significant testable-clause change ⇒ `version` bumped 1 → 2; the durable decision the bump requires is `adr-0013` itself. |
+| Status honesty (`lifecycle.md`) | PASS-DISCLOSED | `status: approved` stands on the recorded 2026-07-16 human act; this amendment claims no fresh spec approval — it rides the maintainer's 2026-07-17 `adr-0013` approval, and the bundle goes to their merge gate (stated in the delta note's citation line). No agent flipped any state. |
+
+**Amendment self-check verdict: PASS with disclosures** (the flagged
+token spelling and the AC5 mapping, both stated in place). Conformance
+is not self-declared here — the gates judge.
