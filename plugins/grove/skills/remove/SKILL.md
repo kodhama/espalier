@@ -14,7 +14,9 @@ List the agent files present in `.claude/agents/` (the thirteen possible roles:
 `divergent-researcher`, `shaper`, `decision-adversary`, `contract-author`, `spec-adversary`,
 `executor`, `conformance-reviewer`, `code-reviewer`, `validator`, `dispatcher`, `run-resumer`,
 `propagation-remediator`, `corpus-reviewer`, plus their `README.md`), and check whether
-`.claude/skills/grove-status/` exists.
+`.claude/skills/grove-status/` exists. Also check whether the **GitHub bookkeeping check** was
+installed (setup step 7): the `.grove/check/` runtime directory, the workflow file
+`.github/workflows/grove-review-bookkeeping.yml`, and `.grove/review-policy.md`.
 
 ## 2. Ask before deleting
 
@@ -46,7 +48,27 @@ added real decisions/specs into those directories, **do not delete the directori
 same as step 2. An empty seeded store with nothing added since is safe to remove if the user
 confirms; a store with real content is not grove's to delete.
 
-## 5. Confirm
+## 5. Remove the GitHub bookkeeping check, if installed
 
-Tell the user exactly what you removed (which agent files, the `grove-status` skill if present, and
-the `CLAUDE.md` block). If nothing was present, say so plainly — **do not invent changes**.
+If setup step 7 installed the check, reverse exactly those three pieces (augment-never-clobber in
+reverse — remove only what setup wrote, and **ask before deleting anything unexpected**):
+
+- **`.grove/check/`** — the vendored check runtime. Safe to delete if it matches the vendored copy;
+  if the user has hand-edited it, ask before removing. (Zero deps were installed, so there is no
+  `node_modules` to clean up.)
+- **`.github/workflows/grove-review-bookkeeping.yml`** — the workflow file. Remove **only** this
+  file; **touch no other workflow** in `.github/workflows/`. If the directory is left empty and
+  grove created it, removing the empty directory is fine; if it holds other workflows, leave it.
+- **`.grove/review-policy.md`** — the policy carrier. If the user has since edited its
+  `artifact_dirs` / allowlist for their own corpus, **ask first** (same as step 2) rather than
+  discarding their tuning; an untouched vendored copy is safe to remove on confirmation.
+
+Leave the rest of `.grove/` (the `lifecycle.md` / `versioning.md` / `relations.md` companions,
+handled with the agents above) exactly as it was. If the check was never installed, skip this step.
+
+## 6. Confirm
+
+Tell the user exactly what you removed (which agent files, the `grove-status` skill if present, the
+GitHub bookkeeping check pieces — `.grove/check/`, the workflow, `.grove/review-policy.md` — if they
+were installed, and the `CLAUDE.md` block). If nothing was present, say so plainly — **do not invent
+changes**.
