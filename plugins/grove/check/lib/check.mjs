@@ -15,6 +15,7 @@ import { allowlistExempts } from './policy.mjs';
 import { prepareRecords, evaluatePair, sortReasons } from './match.mjs';
 import { resolveGraph } from './graph.mjs';
 import { decisionGate, approvedUpstreamGate } from './gates.mjs';
+import { inJurisdiction } from './scope.mjs';
 
 function treeGet(tree, path) {
   if (tree == null) return undefined;
@@ -39,17 +40,41 @@ function fileRow(subject, reasons) {
   };
 }
 
-// runCheck({ changed, tree, comments, policy }) -> the derivation.
-//   changed  — added/modified paths present at HEAD that owe review.
-//   tree     — Map<path, content> (or object) at HEAD.
-//   comments — the PR record stream (platform comment objects).
-//   policy   — an assemblePolicy() result (from the PROTECTED branch).
-export function runCheck({ changed = [], tree, comments = [], policy }) {
+// runCheck({ changed, tree, comments, policy, protectedPaths }) -> the derivation.
+//   changed        — added/modified paths present at HEAD that owe review
+//                    (the §C.2 step-0 iteration set: HEAD-present entries after
+//                    rename expansion; deletions contribute none).
+//   tree           — Map<path, content> (or object) at HEAD.
+//   comments       — the PR record stream (platform comment objects).
+//   policy         — an assemblePolicy() result (from the PROTECTED branch).
+//   protectedPaths — protected-branch blob listing covering the two machinery
+//                    carrier paths (§C.2 carrier fail-close; `scoped` only —
+//                    absent in scoped mode fail-closes to carrier-unresolved).
+export function runCheck({ changed = [], tree, comments = [], policy, protectedPaths }) {
   const index = buildArtifactIndex(tree, policy.artifactDirs);
   const prepared = prepareRecords(comments, { record_poster_allowlist: policy.recordPosterAllowlist });
   const rows = [];
 
-  for (const f of changed) {
+  // §C.2 step 0 — jurisdiction filter (`scoped` mode only; adr-0013 dec 1).
+  // strict/absent: no filter exists, this is a no-op and behavior is
+  // byte-identical to pre-amendment (INV19). An out-of-scope file generates
+  // zero owed pairs and zero reasons; its only trace is the §D header's
+  // aggregate jurisdiction count (INV20, S21).
+  const scoped = policy.scope === 'scoped';
+  let files = changed;
+  let scopeInfo = null;
+  if (scoped) {
+    files = changed.filter((f) => inJurisdiction(f, tree, policy));
+    scopeInfo = {
+      mode: 'scoped',
+      jurisdiction: { inScope: files.length, total: changed.length },
+    };
+  } else if (policy.scopeUnrecognized) {
+    // an unrecognized value resolved to strict — named on every run (INV22, W2)
+    scopeInfo = { mode: 'strict', rawValue: policy.scopeRaw, unrecognized: true };
+  }
+
+  for (const f of files) {
     const content = treeGet(tree, f);
     const meta = artifactMeta(content);
     const type = meta.hasFrontmatter ? (meta.type != null ? meta.type : '__untyped__') : 'code';
@@ -110,6 +135,10 @@ export function runCheck({ changed = [], tree, comments = [], policy }) {
   return {
     green,
     rows,
+    // The scope descriptor is present ONLY when it carries information beyond
+    // plain strict (scoped mode, or an unrecognized value resolved to strict)
+    // so absent/`strict` output stays byte-identical to pre-amendment (INV19).
+    ...(scopeInfo ? { scope: scopeInfo } : {}),
     rejectedRecords: prepared.rejected.map((e) => ({
       cause: e.cause,
       review: e.record.review,

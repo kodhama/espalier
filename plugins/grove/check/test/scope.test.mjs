@@ -92,3 +92,164 @@ test('assemblePolicy surfaces scope + carrier keys on the assembled policy', () 
   assert.equal(p.checkRuntimeDir.path, '.grove/check/');
   assert.equal(p.checkWorkflowPath.path, '.github/workflows/grove-review-bookkeeping.yml');
 });
+
+// ---------------------------------------------------------------------------
+// Slice 2: §C.2 step 0 — the scoped-mode jurisdiction filter (INV20; S21, S22).
+// runCheck gains `protectedPaths` (protected-branch blob listing for the two
+// machinery carriers) — supplied here so the carrier fail-close (slice 3)
+// stays satisfied, per S21's carrier-resolving Given.
+// ---------------------------------------------------------------------------
+
+import { runCheck } from '../lib/check.mjs';
+
+const adr = (id, status = 'approved') => `---\nid: ${id}\ntype: adr\nstatus: ${status}\n---\n`;
+const spec = (id, impl) => `---\nid: ${id}\ntype: spec\nstatus: gated\nimplements: ${impl}\n---\n`;
+const fullCharterEntries = [
+  { path: 'charters/conformance-reviewer.md', text: decl('conformance', ['spec', 'charter', 'code'], ['PASS']) },
+  { path: 'charters/spec-adversary.md', text: decl('spec-adversary', ['spec'], ['APPROVE-READY']) },
+  { path: 'charters/code-reviewer.md', text: decl('code-reviewer', ['code'], ['CLEAN', 'PASS-WITH-ADVISORIES']) },
+  { path: 'charters/decision-adversary.md', text: decl('decision-adversary', ['adr', 'decision'], ['SOUND']) },
+];
+
+const scopedPolicy = assemblePolicy({
+  reviewPolicyText: policyText(['scope: scoped', 'reviewless_types: [research, feedback]']),
+  reviewPolicyPath: 'charters/review-policy.md',
+  charterTexts: fullCharterEntries,
+});
+const strictPolicy = assemblePolicy({
+  reviewPolicyText: policyText(['scope: strict', 'reviewless_types: [research, feedback]']),
+  reviewPolicyPath: 'charters/review-policy.md',
+  charterTexts: fullCharterEntries,
+});
+
+// Install-default carriers resolving at the protected branch (S21's Given):
+// >=1 blob under .grove/check/ and the workflow blob present.
+const CARRIERS_OK = [
+  '.grove/check/lib/check.mjs',
+  '.github/workflows/grove-review-bookkeeping.yml',
+];
+
+const pairKey = (r) => `${r.subject}::${r.review}`;
+
+test('S21 — scoped: an out-of-scope file generates zero owed pairs and zero reasons (jurisdiction 0 of 1)', () => {
+  const tree = new Map([['src/app/main.py', 'print("hi")\n']]);
+  const d = runCheck({
+    changed: ['src/app/main.py'], tree, comments: [], policy: scopedPolicy,
+    protectedPaths: CARRIERS_OK,
+  });
+  assert.equal(d.rows.length, 0, JSON.stringify(d.rows));
+  assert.equal(d.green, true);
+  assert.equal(d.scope.mode, 'scoped');
+  assert.deepEqual(d.scope.jurisdiction, { inScope: 0, total: 1 });
+});
+
+test('S21 (contrast) — strict on the identical PR owes conformance + code-reviewer and is red', () => {
+  const tree = new Map([['src/app/main.py', 'print("hi")\n']]);
+  const d = runCheck({ changed: ['src/app/main.py'], tree, comments: [], policy: strictPolicy });
+  assert.equal(d.green, false);
+  const pairs = d.rows.filter((r) => r.kind === 'pair').map(pairKey).sort();
+  assert.deepEqual(pairs, ['src/app/main.py::code-reviewer', 'src/app/main.py::conformance']);
+  assert.ok(d.rows.some((r) => r.reasons.some((x) => x.code === 'no-reviewable-upstream')));
+});
+
+test('INV19 — absent-scope policy carries NO scope descriptor in the derivation (byte-identical strict)', () => {
+  const noScopePolicy = assemblePolicy({
+    reviewPolicyText: policyText(['reviewless_types: [research]']),
+    charterTexts: fullCharterEntries,
+  });
+  const tree = new Map([['src/app/main.py', 'print("hi")\n']]);
+  const d = runCheck({ changed: ['src/app/main.py'], tree, comments: [], policy: noScopePolicy });
+  assert.equal('scope' in d, false);
+});
+
+test('S22 — scoped: an in-scope unclaimed type (specs/widget.md, type: widget) owes the FULL set — INV7 intact in jurisdiction', () => {
+  const tree = new Map([['specs/widget.md', '---\nid: widget-1\ntype: widget\nstatus: draft\n---\n']]);
+  const d = runCheck({
+    changed: ['specs/widget.md'], tree, comments: [], policy: scopedPolicy,
+    protectedPaths: CARRIERS_OK,
+  });
+  assert.equal(d.green, false);
+  const reviews = d.rows.filter((r) => r.kind === 'pair').map((r) => r.review).sort();
+  assert.deepEqual(reviews, ['code-reviewer', 'conformance', 'decision-adversary', 'spec-adversary']);
+  assert.deepEqual(d.scope.jurisdiction, { inScope: 1, total: 1 });
+});
+
+test('S22 — scoped: a typed artifact OUTSIDE artifact_dirs is in scope by type (mislocation is not an exit door) yet absent from the index', () => {
+  const tree = new Map([
+    ['notes/thing.md', '---\nid: spec-thing\ntype: spec\nstatus: gated\nimplements: adr-x\n---\n'],
+    ['decisions/adr-x.md', adr('adr-x', 'approved')],
+    // another changed artifact referencing the mislocated one:
+    ['specs/other.md', '---\nid: spec-other\ntype: spec\nstatus: gated\nimplements: adr-x\ndepends_on: [spec-thing]\n---\n'],
+  ]);
+  const d = runCheck({
+    changed: ['notes/thing.md', 'specs/other.md'], tree, comments: [], policy: scopedPolicy,
+    protectedPaths: CARRIERS_OK,
+  });
+  // in scope by type: owes conformance + spec-adversary
+  const thingPairs = d.rows.filter((r) => r.kind === 'pair' && r.subject === 'notes/thing.md').map((r) => r.review).sort();
+  assert.deepEqual(thingPairs, ['conformance', 'spec-adversary']);
+  // the index still globs artifact_dirs only: the inbound depends_on reference is red
+  const unres = d.rows.find((r) => r.subject === 'specs/other.md' && r.reasons.some((x) => x.code === 'unresolvable-reference'));
+  assert.ok(unres, 'inbound reference to a mislocated artifact must red as unresolvable-reference');
+  assert.deepEqual(d.scope.jurisdiction, { inScope: 2, total: 2 });
+});
+
+test('S22 — scoped: an UNRECOGNIZED type outside artifact_dirs is in scope by type all the same and owes the full set', () => {
+  const tree = new Map([['notes/gadget.md', '---\nid: gadget-1\ntype: widget\nstatus: draft\n---\n']]);
+  const d = runCheck({
+    changed: ['notes/gadget.md'], tree, comments: [], policy: scopedPolicy,
+    protectedPaths: CARRIERS_OK,
+  });
+  assert.equal(d.green, false);
+  const reviews = d.rows.filter((r) => r.kind === 'pair').map((r) => r.review).sort();
+  assert.deepEqual(reviews, ['code-reviewer', 'conformance', 'decision-adversary', 'spec-adversary']);
+});
+
+test('INV20 — scoped: opted-in code (an ancestor test-deps ledger) is in jurisdiction', () => {
+  const tree = new Map([
+    ['decisions/adr-x.md', adr('adr-x', 'approved')],
+    ['specs/foo.md', spec('spec-foo', 'adr-x')],
+    ['pkg/test-deps.md', '```grove-test-deps\nschema: 1\nspecs: [spec-foo]\n```'],
+    ['pkg/code.mjs', 'export const x = 1;\n'],
+  ]);
+  const d = runCheck({
+    changed: ['pkg/code.mjs'], tree, comments: [], policy: scopedPolicy,
+    protectedPaths: CARRIERS_OK,
+  });
+  const pairs = d.rows.filter((r) => r.kind === 'pair').map(pairKey).sort();
+  assert.deepEqual(pairs, ['pkg/code.mjs::code-reviewer', 'pkg/code.mjs::conformance']);
+  assert.deepEqual(d.scope.jurisdiction, { inScope: 1, total: 1 });
+});
+
+test('INV20 — a file with frontmatter but NO type:, outside every basis, is out of scope (no type: declaration, no entry)', () => {
+  const tree = new Map([['docs/note.md', '---\ntitle: hello\n---\nbody\n']]);
+  const d = runCheck({
+    changed: ['docs/note.md'], tree, comments: [], policy: scopedPolicy,
+    protectedPaths: CARRIERS_OK,
+  });
+  assert.equal(d.rows.length, 0);
+  assert.deepEqual(d.scope.jurisdiction, { inScope: 0, total: 1 });
+});
+
+test('INV21 — gate carriers are in scope in scoped mode: declaration file, policy file, ledger, runtime-dir file, workflow file', () => {
+  const declPolicy = assemblePolicy({
+    reviewPolicyText: policyText(['scope: scoped']),
+    reviewPolicyPath: '.grove/review-policy.md',
+    charterTexts: [{ path: '.claude/agents/conformance-reviewer.md', text: decl('conformance', ['spec', 'code'], ['PASS']) }],
+  });
+  const changed = [
+    '.claude/agents/conformance-reviewer.md', // reviewer-declaration file
+    '.grove/review-policy.md',                // the review-policy file itself
+    'pkg/test-deps.md',                       // a test-deps ledger
+    '.grove/check/lib/match.mjs',             // under check_runtime_dir (default)
+    '.github/workflows/grove-review-bookkeeping.yml', // check_workflow_path (default)
+    'src/app/main.py',                        // NOT a carrier — out of scope
+  ];
+  const tree = new Map(changed.map((p) => [p, p.endsWith('.md') ? '# doc\n' : 'code\n']));
+  const d = runCheck({ changed, tree, comments: [], policy: declPolicy, protectedPaths: CARRIERS_OK });
+  assert.deepEqual(d.scope.jurisdiction, { inScope: 5, total: 6 });
+  // the out-of-scope file has no rows at all
+  assert.ok(!d.rows.some((r) => r.subject === 'src/app/main.py'));
+  // the in-scope carriers generate owed pairs per their classification
+  assert.ok(d.rows.some((r) => r.subject === '.grove/check/lib/match.mjs'));
+});
