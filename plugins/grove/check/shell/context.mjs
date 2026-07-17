@@ -49,6 +49,11 @@ export function resolveActionsContext({ env = {}, event = {} }) {
   // base / head commit SHAs: override, then event payload.
   const base = env.GROVE_BASE_SHA || (pr.base && pr.base.sha) || null;
   const head = env.GROVE_HEAD_SHA || (pr.head && pr.head.sha) || env.GITHUB_SHA || null;
+  // `base` is as required as `head`: it is the left side of the `base...head`
+  // merge-base diff (git-adapter computeChanged). A null `base` would otherwise
+  // surface only as a cryptic `null...head` git failure downstream, so validate
+  // it here for the same clean "missing required input" message `head` gets.
+  if (!base) missing('base SHA (GROVE_BASE_SHA or pull_request.base.sha)', missingInputs);
   if (!head) missing('head SHA (GROVE_HEAD_SHA or pull_request.head.sha)', missingInputs);
 
   // protected default branch: override, payload, GITHUB_BASE_REF, then main.

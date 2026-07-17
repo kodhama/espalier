@@ -57,7 +57,8 @@ test('falls back to GH_TOKEN and the default public API base', () => {
 
 test('defaultBranch falls back to GITHUB_BASE_REF then main when no payload/override', () => {
   // supply the other required inputs so resolution reaches defaultBranch
-  const stub = { GROVE_PR_NUMBER: '1', GROVE_HEAD_SHA: 'h' };
+  // (base included: it became a validated required input — Finding 5)
+  const stub = { GROVE_PR_NUMBER: '1', GROVE_BASE_SHA: 'b', GROVE_HEAD_SHA: 'h' };
   const ctx = resolveActionsContext({ env: { ...baseEnv, ...stub, GITHUB_BASE_REF: 'release' }, event: {} });
   assert.equal(ctx.defaultBranch, 'release');
   const ctx2 = resolveActionsContext({ env: { ...baseEnv, ...stub }, event: {} });
@@ -78,5 +79,40 @@ test('throws when the PR number cannot be resolved (not a pull_request event)', 
   assert.throws(
     () => resolveActionsContext({ env: baseEnv, event: {} }),
     /pr|pull|number/i,
+  );
+});
+
+// --- Finding 4: the three previously-untested resolution branches ---
+
+test('resolves PR number from refs/pull/<n>/merge (GITHUB_REF) when no override/payload', () => {
+  // The Actions checkout ref for a PR; the last fallback in the prNumber ladder.
+  const env = { ...baseEnv, GITHUB_REF: 'refs/pull/42/merge', GROVE_BASE_SHA: 'b', GROVE_HEAD_SHA: 'h' };
+  const ctx = resolveActionsContext({ env, event: {} });
+  assert.equal(ctx.prNumber, 42);
+});
+
+test('head falls back to GITHUB_SHA when no GROVE_HEAD_SHA and no pull_request.head.sha', () => {
+  const env = { ...baseEnv, GROVE_PR_NUMBER: '3', GROVE_BASE_SHA: 'b', GITHUB_SHA: 'sha123' };
+  const ctx = resolveActionsContext({ env, event: {} });
+  assert.equal(ctx.head, 'sha123');
+});
+
+test('resolves PR number from event.number (issues-style payload) when no pull_request block', () => {
+  const env = { ...baseEnv, GROVE_BASE_SHA: 'b', GROVE_HEAD_SHA: 'h' };
+  const ctx = resolveActionsContext({ env, event: { number: 5 } });
+  assert.equal(ctx.prNumber, 5);
+});
+
+// --- Finding 5: a missing `base` is a clean missing-input error, not a
+//     cryptic `null...head` git failure downstream (parity with `head`) ---
+
+test('missing base produces a clean "missing required input" error naming base', () => {
+  const env = { GITHUB_REPOSITORY: 'a/b', GROVE_PR_NUMBER: '1', GROVE_HEAD_SHA: 'h' };
+  assert.throws(
+    () => resolveActionsContext({ env, event: {} }),
+    (err) => {
+      assert.match(err.message, /base/i);
+      return true;
+    },
   );
 });
