@@ -312,7 +312,15 @@ approval:
   owed-map live from the charters at run-time (above). Replaces the setup
   skill's current "check by hand" fallback.
 - **Reviewer charters are updated (consolidate, not accrete):** every reviewer
-  posts verdict records; the **`conformance-reviewer` is stated once as the
+  posts verdict records;
+  <!-- POSTING-ACTOR REFINED by adr-0015 (grove#67, 2026-07-18): "every
+  reviewer posts verdict records" is corrected — the reviewer supplies only
+  the judgment; a machine emitter stamps the record (this decision's own AC2
+  already presupposes an emitter recording the fingerprint) and the harness
+  posts. adr-0015 Consequence 1 removes the record/fingerprint/PR language
+  from the reviewer charters. The record CONTENT and binding ACs are
+  unchanged; only the posting actor is corrected. See adr-0015. -->
+  the **`conformance-reviewer` is stated once as the
   fidelity instrument at every layer** — spec→decision joins its existing
   code→spec and charter→ADR duties (an extension into territory `adr-0006`
   leaves unassigned — verified: nothing assigns spec→decision elsewhere, and

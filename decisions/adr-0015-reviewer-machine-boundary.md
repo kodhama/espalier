@@ -226,8 +226,19 @@ ledger/`implements` upstream the fidelity basis resolves through);
   flagged as a constraint the emitter build must pin (Consequence 2).
 The adversary found the premise sound and everything else it attacked
 (AC7 separation preserved as the same conceded §E class; build-on-settled-
-ground; deferability of the open questions) holds. A round-2 re-review
-scoped to the added adr-0012-relationship text precedes the human gate.
+ground; deferability of the open questions) holds.
+
+**Decision-adversary round 2 (2026-07-18): NEEDS-REVISION, narrow** — the
+N1 core reconciliation verified SOUND (all fourteen adr-0012 ACs confirmed
+actor-neutral; AC2 already presupposes a machine *emitter* recording the
+fingerprint — a direct confirmation), but the fix was incompletely applied:
+adr-0012 carries **three** posting-actor prose sites and round 1 annotated
+only two, leaving the third (the Consequences charter-update directive
+*"every reviewer posts verdict records"* — the clause adr-0015 most directly
+reverses) un-pointed. Fixed: the forward pointer is now added on that third
+site too, so all three of adr-0012's posting-actor statements carry the
+adr-0015 refinement pointer. A round-3 re-review scoped to that single
+annotation precedes the human gate.
 
 Not claiming adversary validation — the decision-adversary pass precedes
 the human gate; the `approved` intent act is the maintainer's
