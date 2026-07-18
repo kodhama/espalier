@@ -294,6 +294,26 @@ the human's own GitHub identity, not an app/bot token) is already parked in
 the "Headless/cron posting identity" open question — honest handling of the
 edge, not a gap.
 
+**Decision-adversary round 2 (2026-07-18, scoped to the skill-encapsulation
+revision): SOUND.** The revision's new surface holds: the self-detect no-op
+is **fail-safe by construction** — its condition (policy-block absent on
+`origin/<default>`) is exactly the condition under which the check's own
+`adr-0014` bootstrap green-skips, so nothing is owed precisely when nothing
+is posted, and a *wrong* no-op surfaces as the check's `never-reviewed` red
+(loud), never a silent green (the check reads the protected branch itself
+and never trusts the skill). Policy-presence is the correct posting-side
+discriminator (a workflow-presence key would starve the PR of records on the
+`adr-0013` carrier-red case). `<details>` wrapping cannot break record
+recognition (`blocks.mjs` extraction is line-based; §A.1 allows surrounding
+prose). The hook rejection rests on true premises, not taste. The knowledge
+budget is coherent (unconditional invocation + in-skill no-op ≠ a
+dispatcher-side conditional; the invocation is idempotent on a check-less
+consumer). No round-1 regression. Two non-blocking build notes carried
+forward: pin the skill's "cannot read `origin/<default>`" vs. "absent"
+semantics, and note that §A.4's whole-comment edit-rejection freezes the
+summary prose together with the record (consistent with the never-edit
+rule).
+
 **Not claiming adversary validation** — the decision-adversary pass precedes
 the human gate; the `approved` intent act is the maintainer's
 (`gated → approved` flip), never the shaper's.
