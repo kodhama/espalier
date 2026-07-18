@@ -15,6 +15,7 @@ import { parseJudgment, extractJudgmentBlocks } from '../lib/judgment.mjs';
 import { emitFromJudgment } from '../shell/emitter.mjs';
 import { makeExecGitRunner } from '../shell/git-adapter.mjs';
 import { groveFp1 } from '../lib/fingerprint.mjs';
+import { resolveArtifactDirs } from '../bin/emit-record.mjs';
 
 const adr = (id) => `---\nid: ${id}\ntype: adr\nstatus: approved\n---\n`;
 const spec = (id, impl) => `---\nid: ${id}\ntype: spec\nstatus: gated\nimplements: ${impl}\n---\n`;
@@ -117,6 +118,73 @@ test('NON-CANONICAL code subject: emitter fingerprints real content, round-trips
   const comments = records.map((r, i) => ({ body: r.block, author: 'alice', authorAssociation: 'MEMBER', id: i + 1 }));
   const result = runCheck({ changed: ['lib/foo.mjs'], tree, comments, policy });
   assert.equal(result.green, true, JSON.stringify(result.rows, null, 2));
+});
+
+// adr-0015 Consequence 2 — code-review MEDIUM: a consumer whose policy declares
+// non-default artifact_dirs must have those dirs conveyed to the emitter, or the
+// fidelity upstream U mis-resolves (the upstream sits under a dir the default
+// index never globs) and the fingerprint the check accepts is never minted.
+// This proves the emitFromJudgment plumbing: with the custom dir the upstream
+// resolves and the record round-trips GREEN; without it, no record at all.
+test('CUSTOM artifact_dirs: fidelity upstream under a custom dir resolves U, round-trips GREEN', async () => {
+  const files = new Map([
+    ['extra/gate.md', `---\nid: gate-x\ntype: charter\nstatus: approved\nimplements: adr-x\n---\n`],
+    ['extra/adr-x.md', adr('adr-x')],
+  ]);
+  const artifactDirs = ['decisions', 'specs', 'charters', 'extra'];
+  const judgment = parseJudgment(
+    extractJudgmentBlocks(
+      judgmentBody({ review: 'conformance', verdict: 'PASS', subject: ['extra/gate.md'] }),
+    )[0],
+  );
+
+  // Without the custom dir: the upstream is unindexed, U is non-computable.
+  const bare = await emitFromJudgment({ gitRunner: fakeGit(files), head: 'HEAD', judgment });
+  assert.equal(bare.records.length, 0);
+  assert.equal(bare.errors.length, 1);
+
+  // With the custom dir conveyed: U resolves, one record, round-trip GREEN.
+  const { records, errors } = await emitFromJudgment({ gitRunner: fakeGit(files), head: 'HEAD', judgment, artifactDirs });
+  assert.equal(errors.length, 0);
+  assert.equal(records.length, 1);
+
+  const customPolicy = assemblePolicy({
+    reviewPolicyText: '```grove-review-policy\nschema: 1\nartifact_dirs: [decisions, specs, charters, extra]\n```',
+    charterTexts: [
+      decl('conformance', ['charter'], ['PASS']),
+      decl('spec-adversary', ['spec'], ['APPROVE-READY']),
+      decl('code-reviewer', ['code'], ['CLEAN']),
+      decl('decision-adversary', ['adr'], ['SOUND']),
+    ],
+  });
+  const tree = new Map(files);
+  const comments = records.map((r, i) => ({ body: r.block, author: 'alice', authorAssociation: 'MEMBER', id: i + 1 }));
+  const result = runCheck({ changed: ['extra/gate.md'], tree, comments, policy: customPolicy });
+  assert.equal(result.green, true, JSON.stringify(result.rows, null, 2));
+});
+
+// adr-0015 Consequence 2 — code-review MEDIUM (CLI conveyance): the record-emitter
+// CLI resolves artifact_dirs so a consumer's non-default policy is honored. The
+// explicit `--artifact-dirs` flag wins; else the local review-policy.md's
+// grove-review-policy block supplies them (the same source the check reads);
+// else the default three.
+test('resolveArtifactDirs: flag > local policy block > default', () => {
+  // flag (comma list, trimmed) wins over policy
+  assert.deepEqual(
+    resolveArtifactDirs({
+      flag: 'decisions, specs , charters, extra',
+      policyText: '```grove-review-policy\nschema: 1\nartifact_dirs: [only]\n```',
+    }),
+    ['decisions', 'specs', 'charters', 'extra'],
+  );
+  // no flag: the local policy block supplies the dirs
+  assert.deepEqual(
+    resolveArtifactDirs({ policyText: '```grove-review-policy\nschema: 1\nartifact_dirs: [decisions, adr]\n```' }),
+    ['decisions', 'adr'],
+  );
+  // no flag, no policy block: the default three
+  assert.deepEqual(resolveArtifactDirs({ policyText: '' }), ['decisions', 'specs', 'charters']);
+  assert.deepEqual(resolveArtifactDirs({}), ['decisions', 'specs', 'charters']);
 });
 
 test('real-git integration: stamp over a true HEAD tree, round-trip GREEN', async () => {

@@ -15,11 +15,25 @@
 // stdin/the file, the real execFile('git', ...) runner, and process wiring —
 // everything they call (lib/judgment.mjs, shell/emitter.mjs) is unit-tested.
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
+import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 import { parseJudgment, extractJudgmentBlocks } from '../lib/judgment.mjs';
+import { parseReviewPolicy } from '../lib/policy.mjs';
 import { emitFromJudgment } from '../shell/emitter.mjs';
 import { makeExecGitRunner } from '../shell/git-adapter.mjs';
+
+// The local review-policy.md candidates (the same precedence list the git
+// adapter reads from the PROTECTED branch — charters/ is grove-self's carrier,
+// .grove/ the consumer install location). Read from the working tree here: the
+// check reads artifact_dirs from the policy, so the emitter reading the local
+// policy is the consistent source. (Judgment call: the check reads the
+// PROTECTED-branch policy; the emitter runs on the PR checkout and reads HEAD's
+// policy. artifact_dirs is stable install config, so HEAD and base agree in
+// practice; a PR that edits its own artifact_dirs is out of scope for this fix.)
+const REVIEW_POLICY_CANDIDATES = ['charters/review-policy.md', '.grove/review-policy.md'];
+const DEFAULT_ARTIFACT_DIRS = ['decisions', 'specs', 'charters'];
 
 function readStdin() {
   try {
@@ -30,12 +44,45 @@ function readStdin() {
 }
 
 function parseArgs(argv) {
-  const opts = { file: null, head: 'HEAD' };
+  const opts = { file: null, head: 'HEAD', artifactDirs: null };
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--file') opts.file = argv[++i];
     else if (argv[i] === '--head') opts.head = argv[++i];
+    else if (argv[i] === '--artifact-dirs') opts.artifactDirs = argv[++i];
   }
   return opts;
+}
+
+// resolveArtifactDirs({ flag, policyText }) -> string[]
+// Precedence: an explicit `--artifact-dirs` flag (comma list) wins; else the
+// local review-policy.md's grove-review-policy block; else the default three.
+// parseReviewPolicy already falls a missing block/key to the default three, so
+// an empty policyText yields the default — the exact set emitFromJudgment uses.
+export function resolveArtifactDirs({ flag, policyText } = {}) {
+  if (flag) {
+    const dirs = String(flag)
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (dirs.length) return dirs;
+  }
+  if (policyText) return parseReviewPolicy(policyText).artifactDirs;
+  return [...DEFAULT_ARTIFACT_DIRS];
+}
+
+// The untested fs edge: read the first local policy candidate that exists.
+function readLocalPolicyText({ cwd = process.cwd() } = {}) {
+  for (const rel of REVIEW_POLICY_CANDIDATES) {
+    const p = join(cwd, rel);
+    if (existsSync(p)) {
+      try {
+        return readFileSync(p, 'utf8');
+      } catch {
+        /* fall through to the next candidate / default */
+      }
+    }
+  }
+  return '';
 }
 
 async function main() {
@@ -52,7 +99,8 @@ async function main() {
   const judgment = parseJudgment(blocks[0]);
 
   const gitRunner = makeExecGitRunner();
-  const { records, errors } = await emitFromJudgment({ gitRunner, head: opts.head, judgment });
+  const artifactDirs = resolveArtifactDirs({ flag: opts.artifactDirs, policyText: readLocalPolicyText() });
+  const { records, errors } = await emitFromJudgment({ gitRunner, head: opts.head, judgment, artifactDirs });
 
   if (process.env.GROVE_STRUCTURED_OUTPUT) {
     process.stdout.write(JSON.stringify({
@@ -71,7 +119,13 @@ async function main() {
   process.exit(errors.length > 0 || records.length === 0 ? 1 : 0);
 }
 
-main().catch((err) => {
-  process.stderr.write(`grove emit-record: ${err && err.stack ? err.stack : err}\n`);
-  process.exit(2);
-});
+// Run only when invoked directly (node bin/emit-record.mjs), never when imported
+// by a test — so the pure helpers above (resolveArtifactDirs) are unit-testable
+// without kicking off stdin reads / process.exit.
+const invokedDirectly = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+if (invokedDirectly) {
+  main().catch((err) => {
+    process.stderr.write(`grove emit-record: ${err && err.stack ? err.stack : err}\n`);
+    process.exit(2);
+  });
+}
