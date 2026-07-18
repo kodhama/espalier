@@ -11,6 +11,7 @@
 import { buildTree } from './git-adapter.mjs';
 import { buildArtifactIndex } from '../lib/artifact-index.mjs';
 import { emitRecords } from '../lib/emit.mjs';
+import { normalizePath } from '../lib/normalize.mjs';
 
 const DEFAULT_ARTIFACT_DIRS = ['decisions', 'specs', 'charters'];
 
@@ -23,7 +24,16 @@ const DEFAULT_ARTIFACT_DIRS = ['decisions', 'specs', 'charters'];
 // with custom `artifact_dirs` in policy passes them through.
 export async function emitFromJudgment({ gitRunner, head = 'HEAD', judgment, artifactDirs } = {}) {
   const dirs = artifactDirs && artifactDirs.length ? artifactDirs : DEFAULT_ARTIFACT_DIRS;
-  const tree = await buildTree({ gitRunner, head, artifactDirs: dirs, changed: judgment.subject });
+  // Normalize the subject paths to the SAME canonical form emit.mjs applies
+  // (`normalizePath`) before they seed buildTree's changed-set (code-review
+  // high). A non-canonical subject (`./lib/foo.mjs`, a trailing-slash or
+  // `a/./b` form) would otherwise miss the changed-set — git lists the
+  // canonical `lib/foo.mjs` while the set holds the raw form — so the blob is
+  // never loaded and emit.mjs (which normalizes first) fingerprints over the
+  // ABSENT sentinel, minting a permanently-stale record. One normalization,
+  // both consumers: the tree source and the fingerprint basis use one path set.
+  const changed = judgment.subject.map(normalizePath).filter(Boolean);
+  const tree = await buildTree({ gitRunner, head, artifactDirs: dirs, changed });
   const index = buildArtifactIndex(tree, dirs);
   return emitRecords({ judgment, tree, index });
 }

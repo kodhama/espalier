@@ -14,6 +14,7 @@ import { parseRecord } from '../lib/records.mjs';
 import { parseJudgment, extractJudgmentBlocks } from '../lib/judgment.mjs';
 import { emitFromJudgment } from '../shell/emitter.mjs';
 import { makeExecGitRunner } from '../shell/git-adapter.mjs';
+import { groveFp1 } from '../lib/fingerprint.mjs';
 
 const adr = (id) => `---\nid: ${id}\ntype: adr\nstatus: approved\n---\n`;
 const spec = (id, impl) => `---\nid: ${id}\ntype: spec\nstatus: gated\nimplements: ${impl}\n---\n`;
@@ -84,6 +85,37 @@ test('ROUND-TRIP through the shell: emitted record makes the real check GREEN', 
   const tree = new Map(files);
   const comments = records.map((r, i) => ({ body: r.block, author: 'alice', authorAssociation: 'MEMBER', id: i + 1 }));
   const result = runCheck({ changed: ['specs/foo.md'], tree, comments, policy });
+  assert.equal(result.green, true, JSON.stringify(result.rows, null, 2));
+});
+
+// adr-0015 Consequence 2 — code-review HIGH: the emitter must normalize the
+// subject paths BEFORE handing them to buildTree, so the tree source and the
+// fingerprint basis share one canonical path set. A NON-CANONICAL, non-artifact
+// (code) subject (`./lib/foo.mjs`) previously missed buildTree's changed-set
+// (git lists `lib/foo.mjs`, the set held `./lib/foo.mjs`), the blob was never
+// loaded, and the emitter fingerprinted over the ABSENT sentinel — a record the
+// real check is guaranteed to red as stale, silently emitted with exit 0. The
+// canonical/artifact-pathed fixtures never exercised this class.
+test('NON-CANONICAL code subject: emitter fingerprints real content, round-trips GREEN', async () => {
+  const files = new Map([['lib/foo.mjs', 'export const x = 1;\n']]);
+  const gitRunner = fakeGit(files);
+  const judgment = parseJudgment(
+    extractJudgmentBlocks(
+      judgmentBody({ review: 'code-reviewer', verdict: 'CLEAN', subject: ['./lib/foo.mjs'] }),
+    )[0],
+  );
+  const { records, errors } = await emitFromJudgment({ gitRunner, head: 'HEAD', judgment });
+  assert.equal(errors.length, 0);
+  assert.equal(records.length, 1);
+
+  // The stamp is over the REAL blob at the canonical path — not the ABSENT tree.
+  assert.equal(records[0].fingerprint, groveFp1(['lib/foo.mjs'], files));
+  assert.notEqual(records[0].fingerprint, groveFp1(['lib/foo.mjs'], new Map()));
+
+  // And the real check accepts it: the emitted record makes runCheck GREEN.
+  const tree = new Map(files);
+  const comments = records.map((r, i) => ({ body: r.block, author: 'alice', authorAssociation: 'MEMBER', id: i + 1 }));
+  const result = runCheck({ changed: ['lib/foo.mjs'], tree, comments, policy });
   assert.equal(result.green, true, JSON.stringify(result.rows, null, 2));
 });
 
