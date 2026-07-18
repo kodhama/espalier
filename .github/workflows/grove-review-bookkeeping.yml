@@ -1,14 +1,13 @@
 # grove — review-bookkeeping check (spec-0002, Layer A) — grove-self's own copy.
 #
-# STAGED, NOT ACTIVE: this file lives at `.github/grove-review-bookkeeping.yml`
-# (not `.github/workflows/`) so it triggers nothing. Activation is moving it to
-# `.github/workflows/grove-review-bookkeeping.yml` by DIRECT COMMIT to main
-# (adr-0017 Part 2): a PR that adds a workflow file runs it on that same PR —
-# and grove's review policy is already on main, so adr-0014's fresh-install
-# green-skip would NOT apply to grove-self; the adoption PR would gate itself.
-# A push fires no run (the triggers below are pull_request / issue_comment
-# only), so the direct commit self-gates nothing. The first PR AFTER the
-# activating commit is the first genuinely gated one.
+# ACTIVE since 2026-07-18, landed by DIRECT COMMIT to main per adr-0017
+# Part 2 (the file was staged inert at `.github/` root on PR #73, then moved
+# here by push — a PR that adds a workflow file runs it on that same PR, and
+# grove's review policy was already on main, so adr-0014's fresh-install
+# green-skip would not have applied; a push fires no run, so this landing
+# self-gated nothing). Every PR from this commit on is genuinely gated.
+# Records are posted by the dispatcher's `record-verdict` skill
+# (plugins/grove/skills/record-verdict/SKILL.md) — this check only reads.
 #
 # Adapted per adr-0017 from the consumer template
 # (plugins/grove/reference/ci/grove-review-bookkeeping.yml): the runtime path
