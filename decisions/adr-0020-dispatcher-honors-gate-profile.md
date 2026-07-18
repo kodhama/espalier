@@ -26,11 +26,13 @@ updated: 2026-07-18
 > **The crux (Q1) is Decided — D1: dispatcher-central**, refined so the
 > gate fires **post-convergence** (the independent check always runs; the
 > profile only decides whether a human ratification is *additionally*
-> required), and refined by **D2** (the dispatcher re-resolves the profile
-> per-handover, snapshotted at run start). The remaining Open items are the
-> *how* (gate→stage mapping, guardian-fallback surfacing, D11 channels, and
-> backprop-cascade gate ordering). Every other entry is either an inherited
-> **Given** (from `adr-0018`, cited, not reopened) or an **Open** question.
+> required); refined by **D2** (per-handover resolution, snapshotted at run
+> start); and extended by **D3** (backprop cascades serialize on any
+> ratification edge, batch only human gates). The remaining Open items are
+> the *how* (gate→stage mapping, guardian-fallback surfacing, and whether
+> #77 operationalizes D11's channels). Every other entry is either an
+> inherited **Given** (from `adr-0018`, cited, not reopened) or an **Open**
+> question.
 
 ## Decision state
 
@@ -120,6 +122,35 @@ updated: 2026-07-18
     downside of per-handover (the profile *can* change mid-run) becomes a
     **surfaced event**, not an invisible one.
   - *(Rejected: once-per-run — see `## Rejected options`.)*
+- **D3 — backprop cascade (W4): serialize on *any* ratification edge,
+  batch only human gates** *(maintainer, 2026-07-18)*. Resolves Q9. When
+  one convergence cascades **upstream** — a build change forces a spec
+  revision, so it touches **multiple** gated artifacts across dependency
+  edges — the dispatcher sequences the gates by the dependency graph:
+  - **Serialize across every dependency edge on *any* ratification —
+    human or agent.** A downstream artifact re-syncs **only after the
+    upstream's ratification *record* exists**, regardless of who owns that
+    gate. Rationale: build-on-settled-ground (`inv-ratifiable-artifacts`)
+    is **owner-agnostic** — it requires the upstream be *ratified*, not
+    *human*-ratified. A `C2 = agent` spec is genuinely ratified by its
+    convergence verdict (`spec-adversary` `SOUND`), and an agent gate can
+    return `NEEDS-REVISION` that invalidates downstream work exactly as a
+    human rejection would. So in a `build → spec` cascade the **spec gate
+    clears first (human OR agent) → the build re-syncs against the
+    *ratified* spec → then the build gate** — forced serial for agent
+    edges too, not only human ones.
+  - **Batching is a human-interruption optimization only.** Where a
+    cascade touches artifacts with **no dependency edge** between them
+    (an antichain) and they are **human**-gated, their ratifications
+    **batch into one prompt** (minimize human interruptions). An **agent**
+    ratification is not an interruption to batch — batching never applies
+    to it. Net: **serialize across every dependency edge on any
+    ratification; batch only the human gates within an antichain.**
+  - Interacts with the dispatcher's existing **W4 backprop-interrupt**
+    handling (`charters/dispatcher.md`: surface upstream, repair, one
+    scoped audit at the next generation, cascade bound at generation 2).
+  - *(Rejected: Option B — serialize on human gates only; and speculative
+    re-sync — see `## Rejected options`.)*
 
 ### Open
 - **Q3 — gate→stage mapping.** grove's four gates
@@ -142,30 +173,6 @@ updated: 2026-07-18
   at human gates (checks the channel is self-authenticating before
   counting the gate satisfied), or does that stay **separate** (candidate
   grove#74)?
-- **Q9 — gate enforcement during a backprop cascade (W4).** Convergence
-  can cascade **upstream**: a build change forces a spec revision, so one
-  convergence touches **multiple** gated artifacts across dependency edges.
-  How does the dispatcher sequence the (possibly several) human gates a
-  cascade raises? **Maintainer's candidate model — sequence across edges,
-  batch within independent sets:**
-  - **Serial across a dependency edge is *forced*, not just cautious.** A
-    dependent artifact must NOT re-sync against an **unratified** upstream
-    (`inv-ratifiable-artifacts` / build-on-settled-ground). So in a
-    build→spec cascade: the **spec gate clears first → the build re-syncs
-    against the *ratified* spec → then the build gate.**
-  - **Batch within an antichain.** Where a cascade touches artifacts with
-    **no dependency edge** between them and both are human-gated, their
-    ratifications **batch into one prompt** (minimize human interruptions).
-  - **Net:** topologically order the human gates by the dependency graph —
-    **sequential across edges, batched within antichains.** Interacts with
-    the dispatcher's existing **W4 backprop-interrupt** handling
-    (`charters/dispatcher.md`: surface upstream, repair, one scoped audit,
-    cascade bound at generation 2).
-  - **Rejected alternative — speculative re-sync:** build against the
-    *proposed* (unratified) spec and batch **all** gates at the end.
-    Rejected — it builds on **unsettled ground** and wastes the downstream
-    work if the human revises the upstream at its gate. *(Candidate, not
-    yet Decided — awaiting maintainer confirmation.)*
 
 ### Parked
 - **Implementation.** This is a decision; the `executor` pass (charter
@@ -252,6 +259,19 @@ across N readers. Options B and C are retired in `## Rejected options`.
   wouldn't be seen until the *next* run, and reusing a cached reading
   contradicts D1/Q4's record-not-memory + re-invoke determinism rule.
   Superseded by per-handover resolution (D2).
+- **Backprop cascade — serialize on human gates only (Q9 Option B).**
+  Impose the serial-across-edge wait only where a *human* gate sits on the
+  edge; let an agent-ratified upstream not force the downstream to wait.
+  **Rejected (D3, maintainer 2026-07-18):** it would let a downstream
+  re-sync against an agent-ratified-but-not-yet-cleared upstream, allowing
+  exactly the build-against-unratified-then-`NEEDS-REVISION` waste
+  build-on-settled-ground prevents. Build-on-settled-ground is
+  owner-agnostic, so the edge serializes on *any* ratification (D3).
+- **Backprop cascade — speculative re-sync (Q9).** Build against the
+  *proposed* (unratified) upstream and batch **all** gates at the end.
+  **Rejected (D3, maintainer 2026-07-18):** it builds on **unsettled
+  ground** and wastes the downstream work if the human (or the agent gate)
+  revises the upstream at its gate.
 
 ## Consequences / propagation (draft — POST-approval executor work, NOT part of this canvas)
 
