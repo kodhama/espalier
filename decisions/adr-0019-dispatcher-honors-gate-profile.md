@@ -10,40 +10,73 @@ updated: 2026-07-18
 
 # ADR-0019: the run-sequencer honors the gate-profile at run time
 
-> **`draft` — first shaping turn (framing only).** This canvas activates
-> `adr-0018` at run time: `adr-0018` built the gate-profile machinery
-> (`gates.toml`, the floor validator, the `guardian` fallback,
-> `resolveProfile` + the `resolve-profile` CLI) but **nothing reads it
-> when sequencing a run** — a repo-wide grep finds no consumer of
-> `resolve-profile` outside `gates/`, `setup`, and `set-profile`. So the
-> gate-profile is today **configuration without enforcement**: a consumer
-> can pick `initiator`, but the swarm still runs as if gate ownership were
-> hardcoded, because the dispatcher never consults the profile. This
-> decision frames **how the run stops assuming hardcoded ownership and
-> starts reading it**. Read `## Decision state` first — it is the live
-> state of the decision in one place.
+> **`draft` — shaping in progress.** This canvas activates `adr-0018` at
+> run time: `adr-0018` built the gate-profile machinery (`gates.toml`, the
+> floor validator, the `guardian` fallback, `resolveProfile` + the
+> `resolve-profile` CLI) but **nothing reads it when sequencing a run** — a
+> repo-wide grep finds no consumer of `resolve-profile` outside `gates/`,
+> `setup`, and `set-profile`. So the gate-profile is today **configuration
+> without enforcement**: a consumer can pick `initiator`, but the swarm
+> still runs as if gate ownership were hardcoded, because the dispatcher
+> never consults the profile. This decision frames **how the run stops
+> assuming hardcoded ownership and starts reading it**. Read
+> `## Decision state` first — it is the live state of the decision in one
+> place.
 >
-> Nothing here is decided yet. The `## Decided` list is empty by design on
-> the first turn; every entry below is either an inherited **Given** (from
-> `adr-0018`, cited, not reopened) or an **Open** question for the
-> maintainer.
+> **The crux (Q1) is Decided — D1: dispatcher-central.** The dispatcher is
+> the single component that reads the profile and enforces pause-vs-proceed
+> at each gate. The remaining Open items are the *how* (granularity,
+> gate→stage mapping, deterministic realization, fallback timing, D11). Every
+> other entry is either an inherited **Given** (from `adr-0018`, cited, not
+> reopened) or an **Open** question.
 
 ## Decision state
 
 ### Decided
-- **None yet.** This is the first shaping turn. The scope — *wire the
-  run-sequencer to read `.grove/gates.toml` and honor it per gate* — is the
-  framed goal from grove#77, not a maintainer decision in this
-  conversation. Items move here as the maintainer decides them, each
-  tagged who/when.
+- **D1 — dispatcher-central: the run-sequencer is the single reader and
+  enforcer of the gate-profile** *(maintainer, 2026-07-18)*. Resolves the
+  Q1 crux (Option A over B/C — see `## Rejected options`).
+  - **The dispatcher is the single component that reads
+    `.grove/gates.toml`** (via `resolve-profile`) **and enforces
+    pause-vs-proceed at each handover.** At each gate it resolves the
+    owner and routes accordingly:
+    - **`C2 = human`** → route to the **human** for that gate's approval
+      (merge / in-session, per D11's self-authenticating channels).
+    - **`C2 = agent`** → route to that gate's **agent gate-keeper** (e.g.
+      `decision-adversary` at `intent`, `conformance-reviewer` at
+      `build`). **"Proceed on agent authority" means route-to-agent-
+      ratifier, NOT skip the check** — the gate still fires; only *who
+      ratifies* changes from human to the independent agent.
+  - **Stage charters shed their ownership assertions.** The
+    `shaper`/`contract-author`/`executor` charters stop *asserting* who
+    owns their gate (e.g. `shaper.md`'s "the merge is the approval; the
+    intent gate never opens to agents"); the dispatcher becomes the single
+    authority, **reading** ownership from the profile rather than each
+    stage hardcoding it. *(Post-approval executor edit — see
+    `## Consequences / propagation`.)*
+  - **This discharges `adr-0018`'s D2 "merge is the approval" wording
+    flag** *(resolves Q8)*. The stage charters shift from *asserting*
+    ownership to the dispatcher *reading* it, so the merge-only phrasing
+    the D2 flag worried about is removed at its source — not left as a
+    later clarifying touch.
+  - **Rationale for A over B (single reader, not N):** the safety-critical
+    floor logic (floor validation + `guardian` fallback, `adr-0018` D8)
+    **lives once, in the dispatcher's read path**, so it cannot **drift**
+    across N stage charters each re-implementing it. The `adr-0012` "gates
+    emerge from agent boundaries" counter-argument does not apply: it is
+    about where gates *emerge*, not where they are *enforced* —
+    **enforcement stays central** even though the gate structure is still
+    emergent (the profile configures that structure, it does not replace
+    it).
+  - **What D1 settles about agent-owned gate semantics (folds former Q5).**
+    The general shape is now decided: `C2 = agent` routes to the agent
+    gate-keeper (not a skip). For the `initiator` front `intent` gate
+    specifically, that gate-keeper is the `decision-adversary`
+    (soundness-ratify) with the human intent-ratification relocated to
+    `ship` (`adr-0018` D3, Given). The remaining *"how, deterministically,
+    in a charter-driven v0"* question survives as **Q4**.
 
 ### Open
-- **Q1 — the crux: WHO reads the profile.** Does the **dispatcher alone**
-  read `gates.toml` and orchestrate pause/proceed at each gate (stage
-  charters stay ownership-agnostic), or do **individual stage charters
-  become profile-aware** and each consult the profile for its own gate?
-  Concrete options in `## The crux (Q1)`. *(Most consequential — it
-  determines where enforcement lives and how many charters change.)*
 - **Q2 — read granularity.** Resolve the profile **once per run at the
   start**, or **re-resolve at each gate/handover**? Trade-off: a mid-run
   hand-edit of `gates.toml` (or a mid-run breakage triggering the D8
@@ -66,14 +99,10 @@ updated: 2026-07-18
   agent-following-a-charter realize per-gate pause/proceed
   **deterministically** (so it cannot "remember" the profile said proceed
   and skip a human gate — the same failure the "a review the dispatcher
-  remembers ran does not count" boundary guards against)?
-- **Q5 — agent-owned gate semantics, esp. `intent` under `initiator`.**
-  `adr-0018` D3 says an agent-owned intent gate ⇒ **autonomous drafting**
-  (no interactive human shaping Q&A) + **agent soundness-ratification**
-  (`decision-adversary`) + **human ratification relocated to `ship`**. How
-  does the dispatcher realize "proceed on agent authority" **concretely**
-  at each agent-owned gate — what does it do differently at a `C2=agent`
-  gate vs a `C2=human` gate, step by step?
+  remembers ran does not count" boundary guards against)? *(Also carries
+  the residual "what does the dispatcher do differently, step by step, at a
+  `C2=agent` vs `C2=human` gate" from former Q5 — D1 settled the general
+  shape, Q4 is the deterministic realization.)*
 - **Q6 — guardian fallback at run time.** When/how does the dispatcher
   detect a **missing/unreadable/floor-violating** profile mid-sequencing
   and surface the loud D8 warning + run under `guardian`? The CLI already
@@ -87,15 +116,6 @@ updated: 2026-07-18
   at human gates (checks the channel is self-authenticating before
   counting the gate satisfied), or does that stay **separate** (candidate
   grove#74)?
-- **Q8 — the hardcoded-charter reconciliation.** Stage charters currently
-  **assert** ownership — `shaper.md`: "the merge is the approval; the
-  intent gate never opens to agents"; `dispatcher.md` Boundaries: "the
-  intent gate (decisions, specs) never fully opens to agents." Under
-  `initiator` (`intent = agent`) that assertion is now false for the
-  *front* intent gate (the floor relocates to `ship`). Does resolving this
-  decision also **discharge `adr-0018`'s D2 wording flag** — the charters
-  shifting from *asserting* ownership to *reading* it — or is that a
-  separate propagation pass? *(Depends heavily on Q1's answer.)*
 
 ### Parked
 - **Implementation.** This is a decision; the `executor` pass (charter
@@ -145,69 +165,65 @@ it once with the citation, then defers.
   structure** (`adr-0012` E5): owed-review rules and the quality gates
   still run; the profile tunes *who owns* a gate, never deletes the seam.
 
-## The crux (Q1) — who reads the profile
+## The crux (Q1) — who reads the profile — DECIDED (D1: Option A)
 
 grove's stage charters currently **hardcode** gate ownership. `adr-0018`
-made ownership **configurable per profile**. The core design fork:
-
-- **Option A — dispatcher-central (single reader).** Only the dispatcher
-  (the run-sequencer) reads `gates.toml` via `resolve-profile`, once it
-  knows which gate it is at, and decides **pause-for-human**
-  (`C2=human`) vs **proceed-on-agent-authority** (`C2=agent`). Stage
-  charters stop *asserting* ownership and defer to the dispatcher's
-  sequencing. *Pros:* one enforcement point; matches the "the dispatcher
-  sequences" boundary; fewest charters change. *Cons:* concentrates the
-  logic in the one role that is "the interactive session (v0)" and holds
-  no persistent process — the determinism question (Q4) lands hardest
-  here.
-- **Option B — stage-distributed (each charter profile-aware).** Each
-  stage charter consults `resolve-profile` for *its own* gate and
-  self-gates. *Pros:* local to where the gate fires; matches `adr-0012`'s
-  "gates emerge from each agent's boundary rules." *Cons:* N readers of
-  the same file; duplicates the resolve call; the dispatcher already *is*
-  the sequencer, so this splits one responsibility across many roles.
-- **Option C — hybrid (dispatcher resolves, passes owner down).** The
-  dispatcher resolves the profile and **hands each stage its gate's
-  resolved owner** as it dispatches; stages act on the passed owner but do
-  not read the file. *Pros:* single reader (A's benefit) + local action
-  (B's benefit). *Cons:* adds a hand-off contract (what the dispatcher
-  passes) that must itself be specified.
-
-This fork also drives **Q8** (the hardcoded-charter reconciliation): under
-A, mainly `dispatcher.md` changes and the stage charters lose their
-ownership assertions; under B, every stage charter grows a
-profile-consult; under C, both change but differently.
+made ownership **configurable per profile**. The core design fork was
+*which component reads it*; the maintainer chose **Option A —
+dispatcher-central** (see D1). Only the dispatcher (the run-sequencer)
+reads `gates.toml` via `resolve-profile` and enforces pause-vs-proceed at
+each gate; a `C2=agent` gate routes to that gate's agent gate-keeper (not
+a skip); stage charters shed their ownership assertions. The chosen
+rationale: the safety-critical floor logic (validation + `guardian`
+fallback) lives **once** in the dispatcher's read path, so it cannot drift
+across N readers. Options B and C are retired in `## Rejected options`.
 
 ## Rejected options
 
-*(None yet — populated as the maintainer retires options. Rejected
-options move here with their one-line reason, per the append-only
-why-not discipline.)*
+- **Option B — stage-distributed (each charter profile-aware).** Each
+  stage charter consults `resolve-profile` for its own gate and
+  self-gates. **Rejected (D1, maintainer 2026-07-18):** it puts the
+  safety-critical floor + `guardian`-fallback logic in **N stage charters**
+  where it can **drift**, and splits the one sequencing responsibility the
+  dispatcher already holds across many roles. The `adr-0012` "gates emerge
+  from agent boundaries" argument for B does not apply — that is about
+  where gates *emerge*, not where they are *enforced*; enforcement stays
+  central.
+- **Option C — hybrid (dispatcher resolves, passes owner down).** Single
+  reader, but the dispatcher hands each stage its gate's resolved owner.
+  **Rejected (D1, maintainer 2026-07-18):** it still spreads the *act* of
+  gating into every stage and adds a hand-off contract (what exactly the
+  dispatcher passes, how a stage proves it acted on it) that A avoids by
+  keeping both the read **and** the pause/proceed act in one place.
 
 ## Consequences / propagation (draft — POST-approval executor work, NOT part of this canvas)
 
 Flagged now so no dependent is silently missed (`inv-graph-maintenance`);
-the actual edits are a post-approval `executor` pass. The exact set
-**depends on Q1's answer**.
+the actual edits are a post-approval `executor` pass. Under **D1
+(dispatcher-central)** the set is now firm:
 
-- **`charters/dispatcher.md`** — gains the run-time profile-read + per-gate
-  pause/proceed sequencing (the primary edit under every option). Note it
-  is `gated`, ships to consumers who vendor it — so the enforcement, once
-  expressed there, is what makes `adr-0018` pay off for adopters.
-- **Stage charters that hardcode ownership** —
-  `charters/shaper.md` ("the merge is the approval; the intent gate never
-  opens to agents") and `dispatcher.md`'s Boundaries line ("the intent
-  gate … never fully opens to agents"). These shift from *asserting*
-  ownership to *reading* it under `initiator` (Q8). This is also where
-  `adr-0018`'s **D2 wording flag** would be discharged if Q8 folds it in.
+- **`charters/dispatcher.md`** — the **primary edit**: gains the run-time
+  profile-read (`resolve-profile`) + per-gate pause/proceed sequencing (the
+  D1 routing table), and its Boundaries line "the intent gate (decisions,
+  specs) never fully opens to agents" is rewritten to *read* ownership from
+  the profile rather than assert it. It is `gated` and ships to consumers
+  who vendor it — so the enforcement, once expressed there, is what makes
+  `adr-0018` pay off for adopters.
+- **Stage charters shed their ownership assertions** — `charters/shaper.md`
+  ("the merge is the approval; the intent gate never opens to agents"), and
+  any equivalent assertion in `contract-author`/`executor`. They shift from
+  *asserting* ownership to deferring to the dispatcher's profile-read. **This
+  discharges `adr-0018`'s D2 "merge is the approval" wording flag** (D1 /
+  former Q8) — the source of the merge-only phrasing is removed, not
+  patched around.
 - **Any run-sequencing skill/entry** that should now call
   `resolve-profile` (the setup skill already documents the intended path
   `node .grove/internal/gates/bin/resolve-profile.mjs`, lines 68-70 — but
   nothing at run time calls it).
-- **Append-only discipline.** If resolving Q8 amends the ratified text of
-  `adr-0018` or a `gated` charter, it follows `decisions/README.md`
-  (forward pointer on the superseded text, same change) — not an in-place
-  rewrite of ratified rationale.
+- **Append-only discipline.** Where the executor pass touches ratified
+  text of `adr-0018` or a `gated` charter (e.g. the D2 wording discharge),
+  it follows `decisions/README.md` (forward pointer on the superseded
+  text, same change) — not an in-place rewrite of ratified rationale.
 
 ## Design constraints (honor while shaping — not open questions)
 
