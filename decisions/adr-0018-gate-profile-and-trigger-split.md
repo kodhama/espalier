@@ -51,24 +51,42 @@ updated: 2026-07-18
     channel restriction. This decision states channel-agnosticism
     explicitly so that phrasing is not misread as merge-only. *(See the
     propagation flag in `## Consequences / propagation`.)*
+- **D3 — grove ships all three presets** *(maintainer, 2026-07-18)*:
+  **`steward`** (default, D1), **`guardian`** (opt-in), and
+  **`initiator`** (opt-in). Rationale: K2 (the trigger-vs-intent-gate
+  split) is already in scope and requires designing the "intent
+  **expressed** at kickoff, **ratified** at ship" row **regardless** —
+  `initiator` merely *names* that configuration, so it is nearly free,
+  and cutting it would hollow out K2's deliverable.
+  - **`initiator` is in-domain and does NOT depend on grove#36.** Its
+    intent is *expressed* at kickoff and **ratified by a human at ship**
+    — so there **is** a human intent gate *in this domain*; the floor is
+    satisfied **locally**, no cross-domain seal needed. It is **not**
+    coupled to, nor likely-to-shift-under, grove#36. Keep it crisply
+    distinct from the parked case:
+    - **`initiator` (shipped, in-domain):** no human *required* until
+      ship; **ship ratifies intent locally**. Floor holds here.
+    - **`autonomous/standing` (parked → grove#36, cross-domain):** **no
+      human gate in this domain at all**; floor satisfied by a human in
+      *another* domain. Needs the seal. *(→ `## Parked`.)*
+    The single distinguishing fact: `initiator` has a local human ship
+    gate; `autonomous/standing` has no local human gate whatsoever.
 
 ### Open
-1. **The preset set** — do all three (`guardian` / `steward` /
-   `initiator`) ship, or a subset? Retiring an option beats carrying it.
-2. **Which dials are per-gate configurable** — both C1 (enforcement
+1. **Which dials are per-gate configurable** — both C1 (enforcement
    strength) and C2 (owner), or is C1 fixed per gate by grove and only
    C2 (who owns it) tunable per profile?
-3. **Where the gate-profile artifact lives and its format** — a
+2. **Where the gate-profile artifact lives and its format** — a
    `.grove/` companion file, a managed `CLAUDE.md` block, or frontmatter
    on an existing artifact; YAML vs. a companion-doc table.
-4. **How the trigger row is represented** alongside the four gate rows
+3. **How the trigger row is represented** alongside the four gate rows
    (K2) — same table, separate section, what its cells hold.
-5. **What the floor validator checks, and when it fires** — presumably
+4. **What the floor validator checks, and when it fires** — presumably
    "reject any profile with 0 human-owned intent gates" at setup and on
    every hand-edit, but the exact check surface and firing points are
    open (does it read only C2 on the intent row, or also the external
    slot once that lands?).
-6. **Approval authenticity per channel (in-domain).** D2 leaves the
+5. **Approval authenticity per channel (in-domain).** D2 leaves the
    approval *channel* unrestricted — but the approval must genuinely
    originate from the accountable human, and **channels differ in
    forgeability**: a tracker/GitHub comment "can be faked," whereas a
@@ -224,7 +242,7 @@ default is **`steward`** (**D1**). Candidate presets:
 
 ## Open questions
 
-The six live items are enumerated in `## Decision state → Open` above
+The five live items are enumerated in `## Decision state → Open` above
 (single source of truth). They are surfaced one per turn, most
 consequential first; the rest wait their turn in the Open list.
 
@@ -247,8 +265,9 @@ consequential first; the rest wait their turn in the Open list.
 - **Scope guard**: the across-domains preset is parked to grove#36, not
   shaped; the schema leaves its slot. New ideas mid-shaping go to Open or
   Parked, never silently into a Decided.
-- **Not converged**: 2 Decided (D1 default preset, D2 channel-agnostic
-  intent gate) / 6 Open / 1 Parked as of 2026-07-18. Still a canvas, not
-  a finished decision — the shaper does not promote past `draft`.
+- **Not converged**: 3 Decided (D1 default preset, D2 channel-agnostic
+  intent gate, D3 ship all three presets) / 5 Open / 1 Parked as of
+  2026-07-18. Still a canvas, not a finished decision — the shaper does
+  not promote past `draft`.
 </content>
 </invoke>
