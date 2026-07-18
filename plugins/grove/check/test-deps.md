@@ -3,7 +3,7 @@ id: ledger-grove-review-bookkeeping-check
 type: ledger
 status: gated
 implements: spec-0002-review-bookkeeping-check
-depends_on: [spec-0002-review-bookkeeping-check, adr-0006-operational-conformance-mechanism, adr-0013-check-scope-mode, adr-0014-install-is-invisible-and-ungated]
+depends_on: [spec-0002-review-bookkeeping-check, adr-0006-operational-conformance-mechanism, adr-0013-check-scope-mode, adr-0014-install-is-invisible-and-ungated, adr-0015-reviewer-machine-boundary]
 owner: agent
 updated: 2026-07-18
 ---
@@ -55,14 +55,35 @@ does not gate its own arrival") rest on
 shell orchestration governed by that decision, not a spec-0002 core
 algorithm, so it carries no spec-0002 amendment.
 
+The **record-emitter** tests (`test/judgment.test.mjs`,
+`test/emit.test.mjs`, `test/emitter.test.mjs`, and `test/basis.test.mjs`
+for the shared-basis extraction) rest on
+`adr-0015-reviewer-machine-boundary` (approved 2026-07-18): the machine
+half of the reviewer/machine boundary — a reviewer emits CI-agnostic
+judgment, the machine stamps the `§A.2` record with a machine-computed
+`grove-fp-1`. The emitter shares the check's own `reviewBasis` +
+`fingerprint`, so the stamp and the freshness check agree by construction;
+the round-trip test (judgment -> emit -> the actual `runCheck` -> GREEN) is
+that agreement's proof. The emitter follows `match.mjs`'s **per-file**
+basis (one record per reviewed file) — the referent the check actually
+verifies. `spec-0002` §A.3's whole-`S` basis prose has since been
+**reconciled to that per-file referent** by the 2026-07-18
+`adr-0015` amendment (`spec-0002@v3`): §A.3, **INV3**, and the §Terms
+`fingerprint` shorthand now state the per-owed-pair-path basis (`[f]` /
+`[f] ∪ U(f, C)`), closing the discrepancy this note once flagged. Because
+`match.mjs` already computes per-file, the corrected INV3 already holds —
+the `@v2 → @v3` pin bump below is a **mechanical re-verification, not an
+owed code change**.
+
 ```grove-test-deps
 schema: 1
 specs:
-  - spec-0002-review-bookkeeping-check@v2
+  - spec-0002-review-bookkeeping-check@v3
 decisions:
   - adr-0012-methodology-delivery-machinery
   - adr-0005-tdd-and-artifact-gated-dispatch
   - adr-0006-operational-conformance-mechanism
   - adr-0013-check-scope-mode
   - adr-0014-install-is-invisible-and-ungated
+  - adr-0015-reviewer-machine-boundary
 ```

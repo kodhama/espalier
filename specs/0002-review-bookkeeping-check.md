@@ -3,10 +3,10 @@ id: spec-0002-review-bookkeeping-check
 type: spec
 status: approved  # gated → approved: the maintainer's explicit intent act ("approved. merge", 2026-07-16), bundled with adr-0012's approval on the same PR per Open Q5's sequencing; recorded in-PR by the shaper per lifecycle.md
 implements: adr-0012-methodology-delivery-machinery  # the realized contract (adr-0012 implements-edge); machine-readable fidelity selector
-depends_on: [adr-0012-methodology-delivery-machinery, adr-0005-tdd-and-artifact-gated-dispatch, adr-0006-operational-conformance-mechanism, adr-0013-check-scope-mode, adr-0014-install-is-invisible-and-ungated]  # builds-on; adr-0012 retained here too so depends_on-walking machinery keeps the edge until it learns `implements`; adr-0013 added by the 2026-07-17 scope-mode amendment; adr-0014 added by the 2026-07-18 §E pre-install non-gating disclosure (genuine coupling — the disclosed limit tracks adr-0014's move-1b behavior)
+depends_on: [adr-0012-methodology-delivery-machinery, adr-0005-tdd-and-artifact-gated-dispatch, adr-0006-operational-conformance-mechanism, adr-0013-check-scope-mode, adr-0014-install-is-invisible-and-ungated, adr-0015-reviewer-machine-boundary]  # builds-on; adr-0012 retained here too so depends_on-walking machinery keeps the edge until it learns `implements`; adr-0013 added by the 2026-07-17 scope-mode amendment; adr-0014 added by the 2026-07-18 §E pre-install non-gating disclosure (genuine coupling — the disclosed limit tracks adr-0014's move-1b behavior); adr-0015 added by the 2026-07-18 §A reviewer/machine-boundary amendment (genuine coupling — §A's record-author actor and the §A.3 per-file basis both track adr-0015)
 owner: agent
 updated: 2026-07-18
-version: 2  # bumped 1 → 2 by the 2026-07-17 adr-0013 scope-mode amendment — a testable-clause change (INV7/INV15 amended in place; INV19–INV22, S21–S23 added), versioning.md's significance bar; the durable decision the bump requires is adr-0013 itself
+version: 3  # bumped 1 → 2 by the 2026-07-17 adr-0013 scope-mode amendment (INV7/INV15 amended; INV19–INV22, S21–S23 added); bumped 2 → 3 by the 2026-07-18 adr-0015 reviewer/machine-boundary amendment — a testable-clause change (INV3's freshness basis reconciled to the per-owed-pair-path form §A.3/match.mjs enforce; the whole-`S` form was fail-open for multi-path records), versioning.md's significance bar; the durable decision the bump requires is adr-0015 itself
 status_note: promoted draft → gated on the passing self-check (contract-author Method 6); re-derived twice against adr-0012 at HEAD (fifth-pass revisions, `implements:` field, split-pair findings); round-2 spec-adversary APPROVE-READY. The Q5 provisional-upstream deviation RESOLVED 2026-07-16 — adr-0012 was approved by the maintainer's intent act, and this spec's approval was bundled with it on the same PR (Q5's anticipated sequencing). Buildable now.
 ---
 
@@ -29,6 +29,88 @@ is **not** authorization; a human still judges genuineness and merges.
 > approved` field's claim of a human act, record *deletion*). The values
 > it trusts are the Layer B surface (§E), named here, not pretended away.
 
+> **Amendment (2026-07-18, `adr-0015-reviewer-machine-boundary` — the
+> reviewer/machine boundary; §A machine-stamped clarification + §A.3
+> per-file basis reconciliation. A documentation/interface amendment,
+> NOT a version bump.)**
+> **WHAT:** §A's actor is corrected — the verdict record is
+> **machine-assembled, not hand-authored**. The **reviewer** supplies
+> only its CI-agnostic judgment (verdict + subject + findings +
+> producer/reviewer); the check package's **record-emitter** stamps the
+> machine-computed parts (`fingerprint`, `manifest_hashes`, the §A.2
+> envelope) by importing the check's own basis + fingerprint code; the
+> **harness** posts. §A.1 (record/carrier), §A.2 (the `fingerprint` +
+> `manifest_hashes` rows), and §A.3 (the "reviewer records" closing
+> paragraph) are re-actored accordingly (`adr-0015` Decision 1–3,
+> Consequence 3). §A.3's basis is **reconciled to the
+> per-owed-pair-path referent the check actually recomputes over**
+> (`plugins/grove/check/lib/match.mjs` `evaluatePair` +
+> `lib/basis.mjs` `reviewBasis`: `basis = [f]` for quality,
+> `[f, ...U(f, C)]` for fidelity, per subject path `f`) — a record's
+> single `fingerprint` binds a **single-path** basis; the emitter emits
+> one record per reviewed path (`lib/emit.mjs`). §A.4 gains the
+> `adr-0015` N2 note that whichever harness component posts must sit in
+> `record_poster_allowlist`. `adr-0015` added to `depends_on`;
+> `updated:` unchanged (already 2026-07-18).
+> **WHY:** grove#67 — the check was ungreenable because nothing could
+> emit a record it accepts: an LLM reviewer cannot compute `grove-fp-1`
+> (`sha256` over blob bytes) by hand, yet §A cast it as the record's
+> author. `adr-0015` moves stamping to a mechanical emitter that
+> **shares the check's own code** (so stamp and freshness check agree by
+> construction) and posting to the harness; the reviewer keeps only
+> judgment. Separately, §A.3's whole-`S` basis prose disagreed with the
+> check's per-file recomputation for a multi-subject record (adversary
+> N3) — reconciled here to the one referent the code enforces.
+> **SCOPE:** §A.1/§A.2/§A.3/§A.4 (actor + basis) plus the frontmatter
+> `depends_on` edit only. The check's **trust model is byte-unchanged**
+> (§C.0 — recompute fingerprint/`U` at HEAD, trust no recomputable
+> agent value); **separation authority stays the record's
+> `producer`/`reviewer` fields, not the poster** (§C.4, `adr-0012`
+> AC7) — the emitter transcribes them, forgery stays the conceded §E
+> Layer-B limit; **records still land on the change request** (AC10),
+> only the actor is corrected; §A.4 poster-admissibility (the
+> `record_poster_allowlist` / default `author_association`) and the §E
+> deletion/forgery concessions stand. **One EARS invariant is
+> reconciled** to complete the §A.3 basis alignment: **INV3**'s
+> freshness basis is corrected from the whole-`S` form
+> (`S ∪ U(S, HEAD)`) to the per-owed-pair-path form (`[f]` /
+> `[f] ∪ U(f, HEAD)`) that §A.3 and `match.mjs` enforce — the whole-`S`
+> form was **fail-open** for a multi-path record (it would green what
+> the per-path code reds); the §Terms `fingerprint` shorthand is aligned
+> the same way. **All other INV\*/S\* are byte-unedited** — INV2/INV4/S13
+> retain their "review-class basis" / single-path-example phrasing, which
+> is already consistent with the per-path form. **Which harness
+> component posts is left parked** (`adr-0015` open question), not
+> resolved here. The notes below remain the prior amendments' provenance
+> — superseded as the latest note, not edited.
+> **POINTER:** current truth is the §A body below — this note is
+> provenance only, not itself an acceptance criterion.
+> **VALUE:** as a reviewer, I state my verdict and what I examined and
+> never touch CI — the machine stamps the cryptography and the harness
+> delivers it; as the maintainer, the check that was ungreenable can now
+> be fed a record it accepts, with its trust model and separation
+> authority untouched.
+> **CONFIDENCE:** `verified` — the emitter/basis referents
+> (`plugins/grove/check/lib/emit.mjs`, `lib/basis.mjs`, `lib/match.mjs`
+> `evaluatePair`) were read at HEAD this sitting; the actor correction
+> traces to `adr-0015` Decision 1–3 and Consequence 3, the basis
+> reconciliation to Consequence 2 / adversary N3.
+> **Versioning judgment:** **version-significant per `versioning.md`**
+> (behavioral spec → agent-judged significance counter): a testable
+> clause changed — **INV3**'s normative freshness basis is edited (and
+> the §Terms `fingerprint` shorthand with it) to close the internal
+> contradiction the §A.3 reconciliation would otherwise leave, in the
+> fail-open direction. `version` **bumped 2 → 3**; the durable decision
+> the bump requires is **`adr-0015`** itself (which mandated the full
+> reconciliation). The §A actor correction alone (§A.1/§A.2/§A.3/§A.4)
+> remains a documentation/interface change (`adr-0015` Consequence 3:
+> "No core algorithm change"); the version bump is carried solely by the
+> INV3 edit. Cascade: the ledger pin
+> `plugins/grove/check/test-deps.md` (`spec-0002@v2` → `@v3`) is updated
+> in the same wave; because the check code (`match.mjs`) already computes
+> per-path, the corrected INV3 **already holds** — the pin bump is a
+> mechanical re-verification, **not an owed code change**.
+>
 > **Amendment (2026-07-18, `adr-0014-install-is-invisible-and-ungated`
 > — the pre-install non-gating exception, disclosed in §E; a §E-only
 > disclosure, NOT a version bump).**
@@ -250,12 +332,12 @@ is **not** authorization; a human still judges genuineness and merges.
 | **quality review** | `decision-adversary`, `spec-adversary`, `code-reviewer` — "is it good, judged as the thing it is?" Fingerprint basis: the subject **alone** (§A.3). |
 | **fidelity review** | `conformance` — "does it faithfully derive from its **implements** upstream?", at every layer with one, plus graph integrity's **judgment half** (propagation claims true). The **mechanical half** — every changed artifact's `depends_on`/`implements` ids resolve — is the **check's own** (§C.7, AC13), not the reviewer's. Fingerprint basis: subject **+ implements target** (§A.3). |
 | **implements edge** | The machine-readable realized-contract edge (`adr-0012`): an artifact declares the contract it realizes in an **`implements:` frontmatter field (one id)** — a spec its decision, a charter its ADR; **code names its specs via the test-deps ledger**. Distinct from `depends_on` (**builds-on**), which never owes fidelity — a decision's `depends_on` names decisions it builds on and has no implements edge (its upstream is human intent). |
-| **verdict record** | One structured, **append-only** comment a reviewer posts on the PR per review act (§A). The commit point: a review not recorded here does not count. |
+| **verdict record** | One structured, **append-only** comment on the PR carrying a review's machine-stamped record, per reviewed path (§A.1 — the reviewer judges, the emitter stamps, the harness posts; `adr-0015`). The commit point: a review not recorded here does not count. |
 | **record stream** | The PR's comment stream, read via the platform API — the only channel the check reads records from. Read **in full** (paginated to exhaustion, §A.4). |
 | **admissible record** | A schema-valid record that also passes §A.4 — unedited carrying comment, authorized poster. Only admissible records enter selection (§C.3). |
 | **subject manifest (S)** | The reviewer-declared set of repo-relative paths a record certifies (§A). |
 | **upstream set (U)** | The check-derived **implements target(s)** of the subjects (§A.3) — the `implements:` id for artifacts, the ledger-named specs for code; **never** the rest of `depends_on`, never trusted from the record. Fidelity reviews only. |
-| **fingerprint** | A deterministic hash over the review-class basis (`S` or `S ∪ U`) content (§A.3). |
+| **fingerprint** | A deterministic hash over the review-class basis of a single subject path `f` (`[f]` quality, `[f] ∪ U(f)` fidelity) content (§A.3). |
 | **owed-map** | The run-time assembly of the one owed-rule from the reviewer charters' declarations (§B). Never a stored table. |
 | **PASS-class** | The pass tokens of a review's own charter verdict grammar (§A.2). |
 | **approved** | Exactly `status: approved` per `lifecycle.md`'s four-state enum. `draft`, `gated`, and `superseded` are all **not** approved — a superseded artifact does not satisfy an approval gate; the consequence is stated where it bites (§C.6). |
@@ -273,10 +355,21 @@ normalized to this form **matches nothing** (fail-closed by non-match).
 ### A.1 The record and its carrier
 
 - A verdict record is a **structured comment on the PR** — one comment
-  per review act, posted by the reviewer in **one act** (verdict +
-  manifest + fingerprint + attribution + findings together; no second
-  channel). Nothing lands in the repo tree: **no verdict path exists**
-  (`adr-0012` AC5, AC10).
+  per reviewed path (§A.3 basis granularity), carrying the full §A.2
+  envelope in **one act** (verdict + subject + `manifest_hashes` +
+  fingerprint + producer/reviewer + findings together; no second
+  channel). The record is **machine-assembled, not hand-authored**
+  (`adr-0015`): the **reviewer** supplies only its CI-agnostic
+  **judgment** — the verdict token, the subject it reviewed, the
+  findings, and the producer/reviewer attribution (the separation
+  authority, `adr-0012` AC7); the check package's **record-emitter**
+  reads HEAD and **stamps** the machine-computed parts — the
+  `fingerprint`, the `manifest_hashes`, and the §A.2 envelope — by
+  importing the check's own basis + fingerprint code (`adr-0015`
+  Decision 2); the **harness** posts the resulting comment to the change
+  request. The reviewer knows nothing of `grove-fp-1`, the envelope, the
+  check, or the PR (`adr-0015` Decision 1–3). Nothing lands in the repo
+  tree: **no verdict path exists** (`adr-0012` AC5, AC10).
 - **Carrier (concretization, flagged):** the machine-parseable part is a
   fenced code block tagged `grove-verdict` containing YAML per §A.2. A
   comment may carry surrounding prose; only the block is the record. Any
@@ -286,10 +379,11 @@ normalized to this form **matches nothing** (fail-closed by non-match).
   `grove-verdict` block is **wholly inert** — one comment is one record,
   matching the decision's one-act rule (fail-closed by non-recognition;
   concretization, flagged).
-- **Append-only.** A re-review posts a **new** record; nothing is
+- **Append-only.** A re-review yields a **new** record; nothing is
   overwritten or deleted. Editing a record's comment **rejects** the
-  record (§A.4, AC14) — a reviewer never edits a record comment, it
-  posts a new one. For each owed pair, the **latest covering admissible
+  record (§A.4, AC14) — a record comment is never edited; a correction
+  is a **new** record (re-emitted and re-posted). For each owed pair,
+  the **latest covering admissible
   record counts** (§C.3), and the full sequence stays visible — a FAIL
   quietly "becoming" a PASS is visible by construction (S14) and an
   edited one is rejected outright (S17).
@@ -314,10 +408,10 @@ Every field is **required** unless marked optional.
 | `schema` | int | Record-schema version. This spec defines exactly `1`. A block whose `schema` is absent or ≠ `1` is **inert** (fail-closed by non-recognition; a future value requires a revision of this spec). |
 | `review` | enum | The review this record is for (one of the four). |
 | `verdict` | string | The reviewer's overall verdict token, verbatim from its charter grammar. |
-| `subject` | list\<path\> | The subject manifest `S` — normalized repo-relative paths this record certifies. Non-empty. |
+| `subject` | list\<path\> | The subject manifest `S` — normalized repo-relative paths this record certifies. Non-empty. In practice a **single element**: the emitter fans a reviewer's multi-path subject out to **one record per reviewed path**, each binding that path's single-path basis (§A.3). |
 | `subject_id` | string (optional) | The subject artifact's frontmatter `id`, when it has one. |
-| `manifest_hashes` | map path → sha256 | Per-path content hashes at review time, over `S` (quality) or `S` plus the reviewer-resolved upstream (fidelity). **Used only to name stale reasons (§D); never for the verdict** — the check recomputes everything. |
-| `fingerprint` | string | `grove-fp-1:<64-hex>` recorded by the reviewer over the review-class basis (§A.3). Recomputed by the check, never trusted. |
+| `manifest_hashes` | map path → sha256 | Per-path content hashes **machine-stamped by the emitter** at the commit it reads, over the record's single-path basis (§A.3) — the subject path alone (quality) or that path plus its check-derived upstream `U(f, C)` (fidelity). **Used only to name stale reasons (§D); never for the verdict** — the check recomputes everything. |
+| `fingerprint` | string | `grove-fp-1:<64-hex>` **machine-stamped by the emitter** over the record's single-path review-class basis (§A.3), not hand-authored (`adr-0015`). Recomputed by the check at HEAD, never trusted. |
 | `producer` | string | Self-reported agent id that **produced** the subject (`adr-0012` AC7/F7 — the record is the single separation authority; renamed from `author`, see the delta note). |
 | `reviewer` | string | Self-reported agent id that **produced this record**. |
 | `findings` | string | The findings **inline, in this record** — the evidence for a PASS-class verdict, the named gaps for a failing one. An empty/whitespace body makes the record **vacuous** (§D `vacuous-evidence`): schema-valid but satisfying nothing. |
@@ -348,15 +442,30 @@ The fingerprint binds a record to exactly the content the review rested
 on, so that a later edit to that content invalidates it — and **only**
 it. Per `adr-0012`'s fidelity/quality split, the basis differs by class:
 
-| Review class | Fingerprint input basis | Consequence |
-|---|---|---|
-| **quality** (`decision-adversary`, `spec-adversary`, `code-reviewer`) | `I = sorted(dedup(S))` — the subject **alone** | An upstream edit does **not** invalidate a quality verdict (S13). |
-| **fidelity** (`conformance`) | `I = sorted(dedup(S ∪ U(S, C)))` — subject **+ derived implements upstream** | Any subject *or* upstream edit — content or membership — invalidates it (S2, S13). |
+**Basis granularity (`adr-0015` Consequence 2 / adversary N3 — the one
+referent).** The check recomputes freshness **per owed-pair path**: for
+each subject path `f`, `reviewBasis` builds a **single-path** basis and
+compares `grove-fp-1(basis, HEAD)` to the record's `fingerprint`
+(`plugins/grove/check/lib/match.mjs` `evaluatePair`, `lib/basis.mjs`
+`reviewBasis`: `basis = [f]` for quality, `[f, ...U]` for fidelity). A
+record's single `fingerprint` therefore binds a **single-path** basis,
+not the whole subject manifest `S` — the two coincide only when
+`|S| = 1`. The **emitter** stamps at this granularity: one record per
+reviewed path (`lib/emit.mjs`), each certifying one subject path over
+that path's basis. The `f`-indexed forms below are the referent both the
+emitter and the check compute; a legacy multi-path record verifies fresh
+only for the single path whose single-path basis its `fingerprint`
+matches.
 
-**Upstream set `U(S, C)`** at commit `C`, derived by the check for
-fidelity records (never read from the record). **`U` is the implements
-edge, not `depends_on`** (`adr-0012` F5): a `depends_on` entry is
-builds-on and never enters the fidelity basis.
+| Review class | Fingerprint input basis (per subject path `f`) | Consequence |
+|---|---|---|
+| **quality** (`decision-adversary`, `spec-adversary`, `code-reviewer`) | `I = [f]` — the single subject path **alone** | An upstream edit does **not** invalidate a quality verdict (S13). |
+| **fidelity** (`conformance`) | `I = sorted(dedup([f] ∪ U(f, C)))` — the subject path `f` **+ its derived implements upstream** | Any subject *or* upstream edit — content or membership — invalidates it (S2, S13). |
+
+**Upstream set `U(f, C)`** at commit `C`, derived by the check for the
+subject path `f` of a fidelity record (never read from the record).
+**`U` is the implements edge, not `depends_on`** (`adr-0012` F5): a
+`depends_on` entry is builds-on and never enters the fidelity basis.
 
 1. Build an **artifact index** at `C`: glob the policy-declared artifact
    directories (default `decisions/`, `specs/`, `charters/`), read each
@@ -364,7 +473,7 @@ builds-on and never enters the fidelity basis.
    same `id` make that id ambiguous**: any resolution through it fails —
    red with `unresolvable-reference` naming both paths (§C.7); the check
    never silently picks one.
-2. For each subject path `s ∈ S` that carries YAML frontmatter: read its
+2. For the subject path `f`, if it carries YAML frontmatter: read its
    **`implements:` field** (one id; strip any `@version` suffix per
    `versioning.md`), resolve it to a path via the index, and add that
    path to `U`. A fidelity-owing subject with **no `implements`
@@ -374,7 +483,7 @@ builds-on and never enters the fidelity basis.
    `C` leaves `U` undefined for that subject → **red** with
    `unresolvable-reference` — the basis is never computed over a
    silently smaller set. Transitive closure is **not** taken (Open Q3).
-3. A subject with no frontmatter (**code**) resolves its upstream from
+3. A subject `f` with no frontmatter (**code**) resolves its upstream from
    the **per-package test-deps ledger** (`adr-0006` dec 4): locate the
    ledger for the subject's package, read its declared spec/decision ids
    at `C`, resolve each to a path via the index, and add it to `U`. The
@@ -396,16 +505,19 @@ builds-on and never enters the fidelity basis.
    `L_p = hex(sha256(utf8(p))) + ":" + hex(sha256(b))`.
 3. Fingerprint `= "grove-fp-1:" + hex(sha256( join(L_p, "\n") ))`.
 
-The **reviewer** records `grove-fp-1(I, reviewed-commit)` over its
-class's basis. The **check** recomputes `grove-fp-1(I, HEAD)` — deriving
-`U` itself for fidelity — and compares. Any difference — changed subject
+The **emitter** stamps `grove-fp-1(I, C)` over the record's single-path
+class basis at the commit `C` it reads — importing the check's own basis
++ fingerprint code (`adr-0015` Decision 2) so the stamped value equals
+what the check will recompute for unchanged content. The **check**
+recomputes `grove-fp-1(I, HEAD)` per owed-pair path — deriving `U`
+itself for fidelity — and compares. Any difference — changed subject
 content, changed upstream content, or changed upstream *membership* — is
 a **stale** record (S2). Because the check derives `U` itself and
-recomputes over `HEAD`, a reviewer cannot make a fidelity record look
-fresh by recording a manifest that omits the implements target. The
-recorded `manifest_hashes` feed only the §D reason attribution: a
-mis-recorded per-path hash can at worst **misname** a reason, never flip
-the check's red/green.
+recomputes over `HEAD`, neither the reviewer nor the emitter can make a
+fidelity record look fresh by omitting the implements target — `U` is
+never read from the record. The recorded `manifest_hashes` feed only the
+§D reason attribution: a mis-recorded per-path hash can at worst
+**misname** a reason, never flip the check's red/green.
 
 ### A.4 Record admissibility (AC14 — record integrity)
 
@@ -418,15 +530,27 @@ the check's red/green.
   history / `updated_at == created_at`, per the platform's contract).
   Granularity is the **whole comment** (the platform cannot attest less
   — concretization, flagged): any edit, even to surrounding prose,
-  rejects the record. Reviewers therefore never edit a record comment —
-  a correction is a **new** record (§A.1).
+  rejects the record. A record comment is therefore never edited — a
+  correction is a **new** record (§A.1).
 - **Authorized poster.** A record is admissible only if the
   platform-attested comment author is authorized: by the configured
   **record-poster allowlist** in policy on the protected branch when one
   exists, else by the default `author_association ∈ {OWNER, MEMBER,
   COLLABORATOR}` (concretization, flagged — the decision pins
   "restricts who may post records"; the default is this spec's
-  spelling, overridable in policy; carrier: Open Q7).
+  spelling, overridable in policy; carrier: Open Q7). **The poster is
+  now the harness, not the reviewer** (`adr-0015` Decision 3), so this
+  admissibility gate binds the **harness component that posts**:
+  whichever component posts (a CI step such as `github-actions[bot]`, or
+  the dispatcher relaying) **must be in `record_poster_allowlist`** — a
+  bot identity is none of `{OWNER, MEMBER, COLLABORATOR}`, so absent an
+  allowlist entry its record is rejected `unauthorized` and every owed
+  pair reds (`adr-0015` N2). The overridable allowlist is exactly the
+  accommodating mechanism; *which* harness component posts is parked as
+  an orchestration detail (`adr-0015` open question), not resolved here.
+  Separation authority is unaffected — it is the record's
+  `producer`/`reviewer` **fields**, not the poster (§C.4, `adr-0012`
+  AC7).
 - **Rejection semantics.** An inadmissible record is **rejected**:
   excluded from §C.3 selection entirely, and **always surfaced** in the
   status view as an integrity finding (which comment, which cause —
@@ -887,10 +1011,15 @@ These are named, not pretended. Authenticity and policy changes remain
   HEAD content.
 - **INV3 (freshness by review class, AC2).** The check **shall**
   recompute each matched record's fingerprint via `grove-fp-1` over the
-  review-class basis at HEAD — the subject alone for a quality review,
-  `S ∪ U(S, HEAD)` for a fidelity review — and **shall** treat any
-  mismatch as stale, never trusting the recorded fingerprint or
-  `manifest_hashes` for the verdict.
+  review-class basis at HEAD **per owed-pair path `f`** (§A.3) — `[f]`
+  for a quality review, `[f] ∪ U(f, HEAD)` for a fidelity review — and
+  **shall** treat any mismatch as stale, never trusting the recorded
+  fingerprint or `manifest_hashes` for the verdict. *(Amended
+  2026-07-18, `adr-0015` reviewer/machine-boundary reconciliation; was:
+  "the subject alone for a quality review, `S ∪ U(S, HEAD)` for a
+  fidelity review" — the whole-`S` form disagreed with §A.3 and
+  `match.mjs`'s per-path recomputation for a multi-path record, in the
+  fail-open direction.)*
 - **INV4 (derived implements upstream, fidelity).** For fidelity
   records, the check **shall** derive the upstream set `U` itself — from
   the HEAD frontmatter **`implements:`** field for artifacts, from the
@@ -1463,3 +1592,120 @@ than constituting a fresh behavioral contract. No re-judgment of the
 adversary or conformance verdicts is claimed; `status: approved` still
 rests on the recorded 2026-07-16 human act plus the adr-0013
 ride-along.
+
+### Amendment self-check (2026-07-18, adr-0015 reviewer/machine-boundary amendment)
+
+The checks above are the prior sittings' provenance and stand unedited;
+this dated subsection is the adr-0015 amendment's own check. The
+amendment is **chiefly a documentation/interface correction of §A**
+(`adr-0015` Consequence 3: "No core algorithm change"); it additionally
+**reconciles one invariant — INV3 — and the §Terms `fingerprint`
+shorthand to the per-owed-pair-path basis**, closing the internal
+contradiction the §A.3 reconciliation would otherwise leave. That
+invariant edit is a testable-clause change and carries the `version`
+bump 2 → 3 (spec-adversary round 2, 2026-07-18, verified against
+`match.mjs`).
+
+**What changed.**
+
+- **§A.1** — the record is re-actored as **machine-assembled**: the
+  reviewer supplies only CI-agnostic judgment (verdict + subject +
+  findings + producer/reviewer); the **record-emitter** stamps the
+  `fingerprint`/`manifest_hashes`/§A.2 envelope by importing the check's
+  own basis + fingerprint code; the **harness** posts. The append-only
+  bullet's "a reviewer never edits… posts a new one" is re-actored to
+  "a record comment is never edited; a correction is a new record."
+- **§A.2** — the `fingerprint` row ("recorded by the reviewer over the
+  review-class basis") and the `manifest_hashes` row ("over `S`… plus
+  the reviewer-resolved upstream") are corrected to
+  **machine-stamped by the emitter** over the record's **single-path**
+  basis; the `subject` row notes the emitter's one-record-per-path
+  fan-out (single element in practice).
+- **§A.3** — a **Basis granularity** note pins the per-owed-pair-path
+  referent the code enforces (`match.mjs` `evaluatePair` +
+  `basis.mjs` `reviewBasis`: `basis = [f]` / `[f, ...U]`); the basis
+  table is reconciled from `I = sorted(dedup(S))` /
+  `sorted(dedup(S ∪ U(S, C)))` to the per-path `I = [f]` /
+  `sorted(dedup([f] ∪ U(f, C)))`; `U(S, C)` → `U(f, C)`; steps 2–3 read
+  the single subject path `f`; and the closing paragraph is re-actored
+  from "the **reviewer** records `grove-fp-1(I, reviewed-commit)`" to
+  "the **emitter** stamps `grove-fp-1(I, C)`… importing the check's own
+  code."
+- **§A.4** — the authorized-poster bullet gains the `adr-0015` N2 note:
+  the poster is now the harness, so **whichever component posts must be
+  in `record_poster_allowlist`** (a bot is none of `{OWNER, MEMBER,
+  COLLABORATOR}`), else the record is rejected and every owed pair reds.
+- **INV3 (freshness by review class)** — the normative freshness basis
+  is reconciled from the whole-`S` form ("the subject alone for a
+  quality review, `S ∪ U(S, HEAD)` for a fidelity review") to the
+  **per-owed-pair-path** form (`[f]` / `[f] ∪ U(f, HEAD)`) that §A.3 and
+  `match.mjs evaluatePair` enforce, carrying an inline
+  `(Amended 2026-07-18, adr-0015…; was: …)` marker with the prior
+  clause. This was **fail-open** as written — for a multi-path record it
+  computes one whole-`S` fingerprint and would green a stale pair the
+  per-path code reds. Its "shall treat any mismatch as stale, never
+  trusting the recorded fingerprint/`manifest_hashes`" clause is kept
+  verbatim. This is the sole testable-clause edit and the reason
+  `version` bumps 2 → 3.
+- **§Terms — two lines.** (1) The **verdict record** definition ("a
+  reviewer posts on the PR per review act") was a direct definitional
+  dependent of §A.1's actor; corrected to "the reviewer judges, the
+  emitter stamps, the harness posts." (2) The **`fingerprint`**
+  definition's "`S` or `S ∪ U`" shorthand is aligned to the per-path
+  form (`[f]` / `[f] ∪ U(f)`), consistent with INV3 and §A.3. Both keep
+  the glossary consistent with the corrected §A (no INV/S renumbered).
+- **Frontmatter** — `adr-0015-reviewer-machine-boundary` added to
+  `depends_on`; `updated:` already `2026-07-18`. A top-of-file
+  five-field delta note (+ VALUE + CONFIDENCE + versioning judgment) is
+  prepended; prior notes unedited.
+
+**Why it is faithful to adr-0015.** The actor correction is `adr-0015`
+Decision 1–3 (reviewer judges / machine stamps / harness posts) and
+Consequence 3 verbatim ("`spec-0002` §A note: the record's `fingerprint`
+… is machine-stamped by the emitter, not hand-authored"). The §A.3 basis
+reconciliation is Consequence 2 / adversary N3, resolved in the direction
+the code fixes: the referents (`lib/emit.mjs`, `lib/basis.mjs`,
+`lib/match.mjs` `evaluatePair`), read at HEAD this sitting, all compute
+**per subject path `f`**, so `I` is stated as `[f]` / `[f] ∪ U(f, C)`,
+not whole-`S`.
+
+**What was deliberately NOT changed.**
+
+- **The check's trust model** (§C.0): recompute fingerprint/`U` at HEAD,
+  trust no recomputable agent value — byte-unchanged. No core algorithm.
+- **Separation authority** stays the record's `producer`/`reviewer`
+  **fields**, not the poster (§C.4, `adr-0012` AC7); the emitter merely
+  transcribes them, and forgery stays the conceded §E Layer-B limit.
+- **AC10** — records still land on the change request; only the actor
+  (emitter stamps, harness posts) is corrected. §A.4 poster-admissibility
+  and the §E deletion/forgery concessions stand.
+- **Every EARS invariant except INV3, and every GWT scenario, is
+  byte-unedited.** INV2 (abstract "recompute fingerprints from PR HEAD
+  content"), INV4 (upstream-derivation rule, no basis-set notation), and
+  S13 (single-subject worked examples — "basis: the spec alone" / "basis:
+  spec + `adr-x`") are already consistent with the per-path form and were
+  left untouched; their semantics (S2/S13 staleness) are unchanged. Only
+  INV3 carried the whole-`S` freshness notation that **contradicted** the
+  reconciled §A.3 in the fail-open direction, so only INV3 (plus the
+  §Terms `fingerprint` shorthand, a glossary line) is aligned — the
+  minimal edit that closes the contradiction, not a sweep.
+- **Which harness component posts** is left parked (`adr-0015` open
+  question), per the mandate — the N2 allowlist constraint is stated as
+  a wiring requirement without resolving the actor.
+
+| Criterion | Result | Note |
+|---|---|---|
+| Derives only from the approved decision | PASS | Every §A delta cites `adr-0015` Decision 1–3, Consequence 2–3, or adversary N2/N3; the code referents fix the reconciliation direction. Nothing added beyond the two mandated clauses. |
+| Append-only amendment discipline | PASS | New section-level delta note (five fields + VALUE + CONFIDENCE + versioning judgment) prepended; prior notes unedited; no INV/S renumbered. INV3's single-invariant edit carries an inline `(Amended 2026-07-18, adr-0015…; was: …)` marker per `adr-0004`'s scenario-level delta form; the §A prose/tables and the two §Terms glossary lines carry their provenance in the delta note and this self-check. |
+| Both grammars intact (`adr-0004`) | PASS-DISCLOSED | Every GWT scenario is byte-unchanged; every EARS invariant except **INV3** is byte-unchanged. INV3's freshness basis is reconciled to the per-path form (marked inline) to close the contradiction the §A.3 edit would otherwise leave; its "shall … stale" obligation is verbatim. Neither grammar stands in for the other. |
+| Concretization beyond the decision | PASS | No new requirement invented — the §A.3 basis and the INV3 reconciliation are stated **against the code the check already runs** (`match.mjs`/`basis.mjs`/`emit.mjs`), the machine-stamping is `adr-0015` Consequence 3's own words, and the N2 allowlist note is `adr-0015`'s stated wiring constraint. |
+| Traceability | PASS | Consequence 3 → §A.1/§A.2/§A.3 actor; Consequence 2 / N3 → §A.3 basis + INV3; N2 → §A.4 poster note. AC10/AC7 preservation asserted and located (§A.4, §C.4). |
+| Versioning discipline (`versioning.md`) | PASS | **Version-significant** — INV3's normative freshness basis is a testable-clause (invariant) edit; `version` **bumped 2 → 3**, durable decision `adr-0015` (which mandated the full §A.3 reconciliation that INV3 completes). Cascade applied in-wave: the ledger pin `plugins/grove/check/test-deps.md` `spec-0002@v2` → `@v3`, and its "whole-`S`… pre-existing discrepancy, not amended here" note reconciled. Because `match.mjs` is already per-path, the corrected INV3 already holds — the pin bump is a mechanical re-verification, **no owed code change**. |
+| Status honesty (`lifecycle.md`) | PASS-DISCLOSED | `status: approved` stands on the recorded 2026-07-16 human act; this amendment claims no fresh spec approval — it rides the maintainer's 2026-07-18 `adr-0015` approval, and the bundle goes to their merge gate. No agent flipped any state. |
+
+**Amendment self-check verdict: PASS.** A bounded §A actor correction, a
+§A.3 basis reconciliation to the referent the check enforces, and the
+single INV3 (+ §Terms `fingerprint`) alignment that completes it — with
+the trust model, separation authority, AC10, and every other EARS/GWT
+clause untouched. Conformance is not self-declared here — the gates
+judge, and `approved` is the maintainer's to give.
