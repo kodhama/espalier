@@ -19,9 +19,32 @@ updated: 2026-07-18
 > shaper's flip. Read `## Decision state` first — it is the live state of
 > the decision in one place.
 >
-> Spun out of grove#36's parked dependents (K1/K2). The one preset that
-> genuinely needs the cross-domain interop "seal" (`autonomous/standing`
-> across domains) stays parked on grove#36 — see `## Parked`.
+> Spun out of grove#36's parked dependents (K1/K2). The preset that
+> genuinely needs the cross-domain interop "seal" (**P2** —
+> cross-domain external-intent) stays parked on grove#36; the related
+> in-domain autonomous case (**P1**) is parked separately — see
+> `## Parked`.
+
+> **Revision 2026-07-18 (scoped — for adversary re-review).** Folds the
+> `decision-adversary` **NEEDS-REVISION** (one load-bearing break + two
+> approved clarifications). **Scoped delta — only these touched:**
+> **(F1)** `initiator`'s encoding was a **C1 category error** that
+> collapsed it into `steward` under the C2-only profile (D4); relocated
+> its distinctness to **C2 at the front `intent` gate** —
+> `initiator = {intent=agent, spec=agent, build=agent, ship=human}` — and
+> **restated the floor validator** as *≥1 human intent-locus gate
+> (`intent = human` OR `ship = human`)*. **(F1 clarification)** spelled
+> out what an agent-owned intent gate entails operationally
+> (autonomous-draft + agent-ratify-on-soundness + human ratification
+> relocated to `ship`; blocking-ambiguity escape hatch). **(Parked
+> split)** separated **P1** in-domain-autonomous (same-domain standing
+> intent; no seal) from **P2** cross-domain (grove#36's seal). Plus two
+> adversary observations folded as record: the D10 pass must preserve
+> `adr-0013` AC4's carrier fail-close; `.grove/` bundling confirmed
+> as-is. Touched: D3, D4, the K1 preset table + bullets + floor-validator
+> restatement, K2, the Parked split, the propagation list, this
+> self-check. **No new Decided item; no D-number added** — F1 corrects the
+> *encoding* of D3, not the set of decisions.
 
 ## Decision state
 
@@ -54,26 +77,39 @@ updated: 2026-07-18
     channel restriction. This decision states channel-agnosticism
     explicitly so that phrasing is not misread as merge-only. *(See the
     propagation flag in `## Consequences / propagation`.)*
-- **D3 — grove ships all three presets** *(maintainer, 2026-07-18)*:
+- **D3 — grove ships all three presets** *(maintainer, 2026-07-18;
+  initiator encoding revised by the F1 fix, 2026-07-18)*:
   **`steward`** (default, D1), **`guardian`** (opt-in), and
-  **`initiator`** (opt-in). Rationale: K2 (the trigger-vs-intent-gate
-  split) is already in scope and requires designing the "intent
-  **expressed** at kickoff, **ratified** at ship" row **regardless** —
-  `initiator` merely *names* that configuration, so it is nearly free,
-  and cutting it would hollow out K2's deliverable.
+  **`initiator`** (opt-in). Their **C2 rows** (D4 — pure C2, no C1):
+  - **guardian** `{intent=human, spec=human, build=agent, ship=human}`
+  - **steward** `{intent=human, spec=agent, build=agent, ship=human}`
+  - **initiator** `{intent=agent, spec=agent, build=agent, ship=human}`
+    — **F1 fix:** initiator's distinctness is a **C2 difference at the
+    front `intent` gate** (`agent`), *not* a C1 "expressed" difference; an
+    all-C1 encoding collapsed it into steward (identical C2 rows). The
+    "intent expressed at kickoff" is a **trigger** property (K2), not a
+    gate.
+  - Rationale for shipping it: K2 already requires the "agent-owned front
+    gate, human ratifies at ship" configuration to exist, so `initiator`
+    merely *names* it — nearly free; cutting it would hollow out K2.
+  - **What `intent = agent` entails operationally (F1 clarification).**
+    Not "skip the merge": the decision is **drafted autonomously** (no
+    interactive human shaping Q&A) + **agent-ratified on soundness**
+    (`decision-adversary`) + the **human intent-ratification relocated to
+    `ship`**. Exception: a **blocking ambiguity may still escalate** to
+    the human (`inv-clarify-before-commit`) — an exception, not routine
+    Q&A. The human is out of the *middle*, not merely off the merge.
   - **`initiator` is in-domain and does NOT depend on grove#36.** Its
-    intent is *expressed* at kickoff and **ratified by a human at ship**
-    — so there **is** a human intent gate *in this domain*; the floor is
-    satisfied **locally**, no cross-domain seal needed. It is **not**
-    coupled to, nor likely-to-shift-under, grove#36. Keep it crisply
-    distinct from the parked case:
-    - **`initiator` (shipped, in-domain):** no human *required* until
-      ship; **ship ratifies intent locally**. Floor holds here.
+    sole human intent-locus is **`ship`** (`ship = human`) — a human
+    intent gate *in this domain*; floor satisfied **locally**, no
+    cross-domain seal. Crisply distinct from the parked case:
+    - **`initiator` (shipped, in-domain):** front `intent` agent-owned;
+      **`ship` ratifies intent locally**. Floor holds here.
     - **`autonomous/standing` (parked → grove#36, cross-domain):** **no
-      human gate in this domain at all**; floor satisfied by a human in
-      *another* domain. Needs the seal. *(→ `## Parked`.)*
-    The single distinguishing fact: `initiator` has a local human ship
-    gate; `autonomous/standing` has no local human gate whatsoever.
+      human intent-locus in this domain at all** (`ship` also agent);
+      floor satisfied by a human in *another* domain. Needs the seal.
+    The distinguishing fact: `initiator` has a local human `ship` gate;
+    `autonomous/standing` has **no** local human intent-locus.
 - **D4 — C1 is grove-fixed; the profile is a single (C2) axis
   (Model A)** *(maintainer, 2026-07-18)*. Enforcement strength (**C1**:
   `enforced` / `default-on-but-skippable` / `expressed`) is **grove's
@@ -85,9 +121,12 @@ updated: 2026-07-18
   (`inv-minimal-first`); avoids the under-gating footgun of quietly
   setting a gate advisory; and it matches how grove already keeps
   enforcement knobs **gate-locally** (`adr-0007` severity threshold,
-  `adr-0013` scope mode) rather than as a global dial. Floor untouched —
-  the intent gate stays C1 = `enforced`, C2 = `human`. *(Resolves former
-  Open item 1.)*
+  `adr-0013` scope mode) rather than as a global dial. Floor untouched:
+  the **human intent-ratification locus** is C1 = `enforced`, C2 =
+  `human` — that locus is the **front `intent` gate** for steward/guardian
+  and is **relocated to `ship`** for initiator (F1). "The intent gate" =
+  *the intent-locus gate*, not specifically the front `intent` row.
+  *(Resolves former Open item 1.)*
 - **D5 — the consumer `.grove/` layout, split by AUTHORITY**
   *(maintainer, 2026-07-18; recorded here in adr-0018 by the maintainer's
   call)*. Organizing principle: **placement by who is authoritative on a
@@ -217,15 +256,26 @@ updated: 2026-07-18
   the in-domain case.
 
 ### Parked
-- **The `autonomous/standing`-across-domains preset** — all of a repo's
-  *local* gates agent-owned, the floor satisfied by a human intent gate
-  in a *different* governance domain (an upstream that pre-ratifies, or
-  the consuming domain's own ship gate). This is the single case that
-  genuinely depends on the cross-domain interop contract's **seal**
-  (what a gate-owner guarantees across a boundary), tracked in
-  **grove#36**. Not shaped in this canvas — pointer only. The schema
-  below leaves an explicit slot for it (`## Design constraints`) so it
-  drops in later without a rewrite.
+The formerly-single "autonomous/standing" park bundles **two distinct
+cases** (adversary observation, 2026-07-18) — split here so they don't
+get conflated later. Neither is shaped or implemented now.
+
+- **(P1) in-domain `autonomous` (standing pre-ratification).** All gates
+  agent-owned **including `ship`** (auto-merge), the floor satisfied by a
+  **same-domain recorded standing intent** — e.g. an auto-bug-fixer
+  authorized by a recorded *"fix all reported bugs, if you can"*
+  decision. This is a **future in-domain preset in this decision's own
+  family**; it does **not** need grove#36's cross-domain seal. Parked,
+  gated only on **"how grove verifies that a standing decision authorizes
+  a given run"** (a same-domain question). *(Note: this reuses the
+  intent-locus floor — the human locus is the standing decision, not a
+  per-run gate.)*
+- **(P2) cross-domain external-intent.** The floor satisfied by a human
+  gate in *another* governance domain — the **seal** (what a gate-owner
+  guarantees across a boundary). This is what the reserved
+  `[intent_external]` slot fills; stays parked to **grove#36**. The
+  schema leaves the slot (`## Design constraints`) so it drops in without
+  a rewrite.
 
 ### Related, out of scope (seen, tracked elsewhere)
 - **`status`-field vs merge-event divergence at ratification.** When a
@@ -256,16 +306,19 @@ then defers.
   owed-review rules + each agent's triggers, composed with the standing
   invariants. A gate-profile is a *configuration layer over that*, not a
   replacement for it.
-- **A gate-profile is a named per-gate assignment of C1/C2** onto
-  grove's four gates — the physical realization of trellis's dials onto
-  grove's pipeline. It mirrors how a trellis *profile* sets invariant
-  expression: pick a preset, then tune individual dials.
+- **A gate-profile is a named per-gate assignment of trellis's dials**
+  onto grove's four gates — the physical realization of those dials onto
+  grove's pipeline. In principle it could set both C1 and C2; **grove's
+  realization configures only C2, with C1 grove-fixed** (D4). It mirrors
+  how a trellis *profile* sets invariant expression: pick a preset, then
+  tune individual (C2) rows.
 - **The floor that bounds every profile:** `floor-intent-gate` — the
-  intent gate's **C2 can never be `none`**; at least one human-owned
-  intent gate must exist (`trellis/signature-catalog-v1`; grove echoes
-  it in `charters/dispatcher.md`, `adr-0005`, `adr-0014`). A profile
-  with zero human intent gates is **illegal** and must be rejected by a
-  validator. This is a floor, not a dial — non-configurable to off.
+  intent locus's **C2 can never be `none`**; at least one human-owned
+  **intent-locus** gate must exist (`trellis/signature-catalog-v1`; grove
+  echoes it in `charters/dispatcher.md`, `adr-0005`, `adr-0014`). The
+  eligible loci are the front `intent` gate **or** `ship` (F1) — a
+  profile with **neither** human is **illegal** and must be rejected by
+  the validator. This is a floor, not a dial — non-configurable to off.
 - **grove already runs agentic triggers.** Remediation roles
   (`run-resumer`, `propagation-remediator`), the `validator`'s
   triggered drift audits (`adr-0006` dec 5), and inference-first
@@ -287,7 +340,20 @@ setup with the **`steward`** default (**D1**, **D6**), and is
 |---|---|---|---|---|---|
 | **guardian** | human | human | agent | human | max oversight — human at intent + spec + ship |
 | **steward** *(default, D1)* | human | agent | agent | human | human at intent + ship; agents own the middle *(grove's current de-facto behavior)* |
-| **initiator** | human *(expressed at kickoff)* | agent | agent | human *(ratifies)* | human expresses intent at kickoff, ratifies at ship; mid-pipeline agent-owned |
+| **initiator** | **agent** | agent | agent | human | human ratifies **only at ship**; the entire pipeline including the **front intent gate** is agent-owned |
+
+> **Encoding note (revised — F1 fix, 2026-07-18).** The presets differ
+> **purely in C2** (who owns each gate), because the profile is C2-only
+> (**D4**). `initiator`'s distinctness is a **C2 difference at the front
+> `intent` gate** (`agent` vs steward's `human`) — **not** a C1
+> "expressed vs enforced" difference. An earlier cut located the
+> steward↔initiator difference in C1 ("intent expressed at kickoff"),
+> which was a **category error**: with C1 grove-fixed, both presets would
+> have had identical C2 rows `{human, agent, agent, human}` and
+> `initiator` would collapse into `steward`. Corrected: `initiator` =
+> `{intent=agent, spec=agent, build=agent, ship=human}`. The "intent
+> expressed at kickoff" idea is a property of the **trigger (K2)**, not a
+> gate — anchored there, not on the `intent` row.
 
 - **`human` sets who is *required*, not who is *allowed* (D2).** A cell
   reading `agent` means no human is *required* at that gate — a human
@@ -297,14 +363,30 @@ setup with the **`steward`** default (**D1**, **D6**), and is
   self-authenticating channels: in-session approval and merge** (**D11**).
   A bare tracker comment is not honored in v0 (forgeable); a
   verified-identity comment is a deferred follow-up.
+- **What an `agent`-owned intent gate entails operationally (F1
+  clarification, 2026-07-18).** `intent = agent` at the front is **not**
+  merely "skip the human merge." It means: the decision is **drafted
+  autonomously** (no interactive human shaping Q&A), **agent-ratified on
+  soundness** (the `decision-adversary` pass), and the **human
+  intent-ratification is relocated to `ship`**. The human is out of the
+  *middle*, not merely off the merge. **One exception:** a genuinely
+  **blocking ambiguity may still escalate to the human** — grove never
+  silently guesses on a real fork (`inv-clarify-before-commit`) — an
+  exception, not routine Q&A.
 - **Per-gate override.** On top of a chosen preset, the human may flip
   any single gate's **C2** in `gates.toml` — the preset is a starting
   point, not a cage. (C1 is not exposed here — D4.)
-- **The floor validator** rejects any resulting profile with **0
-  human-owned intent gates** (`floor-intent-gate`). guardian and steward
-  satisfy it with a human-owned *first* intent gate; initiator satisfies
-  it with a human-owned intent gate **at ship** (ratification) — which
-  is why K2 matters.
+- **The floor validator (restated — F1 fix, 2026-07-18).** It rejects
+  any profile with **0 human-owned intent-locus gates**, where the
+  eligible intent-locus gates are **`intent` (front) OR `ship`
+  (ratify-at-end)** — concretely **`intent = human` OR `ship = human`**.
+  guardian and steward pass at the **front** (`intent = human`);
+  initiator passes at **ship** (`ship = human`, the relocated
+  ratification locus); an **all-agent** profile (`intent`, `ship` both
+  `agent`) **fails**. This replaces the too-narrow "the `intent` row must
+  be human," which would wrongly reject a valid `initiator`. *(The
+  reserved `[intent_external]` slot is a third way to satisfy the floor —
+  parked, cross-domain; grove#36.)*
 
 **Illustrative `gates.toml` shape (B — explicit full table, D7).** Field
 names are illustrative; the executor finalizes the exact keys. The
@@ -317,9 +399,9 @@ sections written out visibly.
 seeded_from = "steward"      # provenance only — non-authoritative; the rows below win
 
 [gates]                      # the four rows ARE the source of truth (no inheritance)
-intent = "human"             # floor: floor validator requires >=1 human intent gate
-spec   = "agent"
-build  = "agent"
+intent = "human"             # floor: validator requires intent=human OR ship=human
+spec   = "agent"             #   (>=1 human intent-locus gate; F1 fix). steward shown.
+build  = "agent"             #   initiator would read intent="agent" (passes via ship).
 ship   = "human"
 
 [trigger]                    # K2 — what IGNITES a run, held SEPARATELY from who ratifies
@@ -328,52 +410,61 @@ ship   = "human"
 sources = ["human-ask", "cron", "ci-event", "backprop-interrupt"]
 
 [intent_external]            # reserved slot (design constraint; grove#36) — EMPTY in-domain
-enabled = false              # in-domain profiles leave this off; the parked autonomous/
-# satisfied_by = "..."       # standing preset fills it once the cross-domain SEAL exists
+enabled = false              # in-domain profiles leave this off; the parked P2 cross-domain
+# satisfied_by = "..."       # case fills it once the cross-domain SEAL exists
 ```
 
 - **Trigger row (closes Open — K2 representation).** The trigger is its
   own `[trigger]` section, **not** an owner-typed gate row: it records
   *what ignites a run*, a different question from *who ratifies intent*.
-  It is **not floor-bound** (the floor pins the intent *gate*, never the
+  It is **not floor-bound** (the floor pins the intent *locus*, never the
   trigger) and its sources may be agentic — matching grove's existing
   agentic triggers (remediation roles, validator drift audits,
   inference-first dispatch). An agentic first *gate* stays legal (K2)
   because intent is ratified at ship (initiator) or by a standing
-  in-domain decision — the trigger row does not change that.
+  in-domain decision — the trigger row does not change that. **The
+  "intent expressed at kickoff" idea lives here** (a trigger property),
+  **not** on the `intent` gate row (F1 fix).
 - **External-intent slot (design constraint held).** Written out
   explicitly as `[intent_external]`, `enabled = false` in every in-domain
   profile — visible-but-reserved, so a future reader sees the seam. The
-  parked `autonomous/standing` preset (grove#36) is the only thing that
-  flips it on; nothing in this canvas fills it.
+  parked **P2** cross-domain case (grove#36) is the only thing that flips
+  it on; nothing in this canvas fills it. *(The in-domain **P1**
+  autonomous case satisfies the floor via a same-domain standing
+  decision, not this slot.)*
 - **Floor validator + load-time floor-guard (D7 + D8).** Reads the four
-  `[gates]` rows **directly** and rejects any profile with **0 `human`
-  intent gates**; fires at **setup**, on **every `set-profile`**, and —
-  per **D8** — **on every read that sequences a run** (the load-time
-  guard **A**), so a manual hand-edit that violates the floor is caught
-  at run time too. When the profile **cannot be honored** (missing /
-  unreadable / floor-violating), grove falls back to the **`guardian`**
-  preset with a **loud warning** (D8) — floor stays enforced and
-  non-silent. The CI/pre-commit variant (**B**) is parked (Options).
+  `[gates]` rows **directly** and rejects any profile with **0
+  human-owned intent-locus gates** (`intent = human` OR `ship = human`;
+  F1 fix); fires at **setup**, on **every `set-profile`**, and — per
+  **D8** — **on every read that sequences a run** (the load-time guard
+  **A**), so a manual hand-edit that violates the floor is caught at run
+  time too. When the profile **cannot be honored** (missing / unreadable
+  / floor-violating), grove falls back to the **`guardian`** preset with
+  a **loud warning** (D8) — floor stays enforced and non-silent. The
+  CI/pre-commit variant (**B**) is parked (Options).
 
-> **guardian vs steward vs initiator — the load-bearing difference.**
-> steward and initiator both put a human only at intent + ship, but
-> differ on *where the human-owned intent gate physically sits*: steward
-> keeps a genuine human intent **gate up front**; initiator has intent
-> merely **expressed** at kickoff (C1 `expressed`, ungated) with the
-> human-owned intent **ratification landing at ship**. guardian adds a
-> third human gate at spec. Fewer human gates = more agent autonomy =
-> later the human catches a wrong *direction*.
+> **guardian vs steward vs initiator — the load-bearing difference
+> (revised, F1 fix).** All three are pure **C2** rows (D4). **steward**
+> `{human, agent, agent, human}` and **initiator** `{agent, agent, agent,
+> human}` differ at the **front `intent` gate**: steward keeps a
+> human-owned intent gate **up front**; initiator makes the front
+> **agent-owned** and relocates the sole human intent-locus to **`ship`**
+> (ratify-at-end). **guardian** `{human, human, agent, human}` adds a
+> third human gate at `spec`. Fewer human gates = more agent autonomy =
+> the human catches a wrong *direction* later (at ship, for initiator)
+> rather than at kickoff.
 
 ### K2 — the trigger-vs-intent-gate split
 
 - **The trigger** (what *ignites* a run — a human ask, a cron, a CI
-  event, a backprop interrupt) is a **separate row** from the **intent
+  event, a backprop interrupt; and *"intent expressed at kickoff"* is a
+  trigger property, F1) is a **separate row** from the **intent-locus
   gate** (who *ratifies direction*). They are different questions and
   must not be conflated.
-- The floor pins the **intent gate** to human; it says **nothing about
-  the trigger**, and it does **not** require the intent gate to be
-  *first*.
+- The floor pins **an intent-locus gate** (front `intent` **or** `ship`)
+  to human; it says **nothing about the trigger**, and it does **not**
+  require the human intent-locus to be *first* (initiator ratifies at
+  ship).
 - An **agentic first gate is legal** when intent is ratified at ship
   (initiator), or pre-ratified by a **standing decision within this same
   domain** (a locked decision the agent runs under — `charters/dispatcher.md`'s
@@ -388,7 +479,7 @@ enabled = false              # in-domain profiles leave this off; the parked aut
   **"intent satisfied externally"** — a per-profile marker naming that a
   local intent gate's floor obligation is discharged by a human intent
   gate in another domain. In-domain profiles leave it empty; the parked
-  `autonomous/standing` preset (grove#36) fills it once the cross-domain
+  **P2** cross-domain case (grove#36) fills it once the cross-domain
   **seal** contract exists. Shape the in-domain case now; leave the
   slot; do **not** resolve the external case here.
 - **The profile configures, it does not replace, the emergent gate
@@ -486,6 +577,14 @@ dependent is silently missed (`inv-graph-maintenance`).
   **setup / check-install / remove skills** and **`reference/ci/`** that
   reference the old single-file paths. `review.toml` is owned wholesale
   by its own skill (D9).
+  - **Load-bearing (adversary obs. a, 2026-07-18):** relocating
+    `check_workflow_path` / `check_runtime_dir` into `.grove/internal/`
+    is a **mechanism move, not a rename** — the executor pass **must
+    preserve `adr-0013` AC4's protected-branch carrier fail-close** (a
+    carrier key absent/unresolved on the protected branch must still force
+    the red it mandates; cf. `adr-0014` move 1b, which keys off exactly
+    this). The split changes *where the key lives*, never *that its
+    absence fails closed*.
 - **D2 wording flag (record, do not chase in this canvas).** The shaper
   charter and `floor-intent-gate` phrase ratification as "the merge is
   the approval." Under **D2** that is the **GitHub-repo reference
@@ -518,10 +617,11 @@ canvas itself moves no files.
       `initiator`) expand correctly (D3).
 - [ ] C1 is **not** in `gates.toml`; enforcement defaults live in a
       grove-managed `.grove/internal/enforcement.toml` (D4).
-- [ ] The floor validator rejects any profile with 0 `human` intent
-      gates, reading rows directly; it runs at setup, on every
-      `set-profile`, and **on every run-sequencing read** (load-time
-      guard A, D8).
+- [ ] The floor validator rejects any profile with **0 human intent-locus
+      gates** (`intent = human` OR `ship = human`; F1), reading rows
+      directly; it runs at setup, on every `set-profile`, and **on every
+      run-sequencing read** (load-time guard A, D8). It **passes** a valid
+      `initiator` (`ship = human`) and **fails** an all-agent profile.
 - [ ] A missing/unreadable/floor-violating `gates.toml` falls back to
       **`guardian` + a loud warning**, floor enforced and non-silent
       (D8).
@@ -544,9 +644,20 @@ canvas itself moves no files.
 
 ## Self-check (gate → `gated`)
 
-Self-checked to **`gated`** by the shaper, 2026-07-18. Not an approval —
-the `decision-adversary` pass and the human intent gate follow; the merge
-is the maintainer's ratification act (`floor-intent-gate`).
+Self-checked to **`gated`** by the shaper, 2026-07-18, and **re-checked
+after the F1 revision** (same day). Not an approval — the
+`decision-adversary` **re-review** (scoped to the revision banner's delta)
+and the human intent gate follow; the merge is the maintainer's
+ratification act (`floor-intent-gate`).
+
+- **F1 break closed (the load-bearing fix)**: `initiator` is now a
+  **distinct C2 row** (`{agent, agent, agent, human}`) — it no longer
+  collapses into `steward` under the C2-only profile (D4). The floor
+  validator is restated to **`intent = human` OR `ship = human`**, so it
+  passes `initiator` (via `ship`) and fails an all-agent profile; the
+  earlier "the `intent` row must be human" (which would wrongly reject
+  `initiator`) is gone. The C1 "expressed at kickoff" framing is removed
+  and re-anchored to the **trigger (K2)**. PASS.
 
 - **Frontmatter**: `id`/`type`/`status`/`depends_on`/`informed_by`/
   `owner`/`updated` present, well-typed; `status: gated`. PASS.
@@ -567,19 +678,23 @@ is the maintainer's ratification act (`floor-intent-gate`).
   rejected` with its one-line reason (append-only why-not discipline).
   PASS.
 - **Floor honored (the load-bearing check)**: every shipped preset and
-  the fallback keeps a human-owned intent gate (`floor-intent-gate`);
-  the floor validator + load-time guard (D8) enforce it, and D11 scopes
-  approval to self-authenticating channels so the floor is not satisfied
-  by a forgeable act. C2-`none` on the intent gate is impossible by
-  construction. PASS.
+  the fallback keeps a human-owned **intent-locus** gate (front `intent`
+  for steward/guardian, `ship` for initiator — `floor-intent-gate`); the
+  restated validator (`intent = human` OR `ship = human`) + load-time
+  guard (D8) enforce it, and D11 scopes approval to self-authenticating
+  channels so the floor is not satisfied by a forgeable act. An
+  all-agent (no local intent-locus) profile is rejected; C2-`none` at the
+  intent locus is impossible by construction. PASS.
 - **Forward-compat constraint held**: the `[intent_external]` slot is
-  reserved and visible (design constraint) so the parked cross-domain
-  preset (grove#36) drops in without a rewrite (`inv-graph-maintenance`).
-  PASS.
-- **Scope guard**: the across-domains preset is Parked to grove#36; the
-  `status`/merge divergence is noted Related-out-of-scope; the
-  verified-identity approval mechanism is a deferred D11 follow-up. No
-  new idea landed silently in a Decided. PASS.
+  reserved and visible (design constraint) so the parked **P2**
+  cross-domain case (grove#36) drops in without a rewrite
+  (`inv-graph-maintenance`). PASS.
+- **Scope guard**: the two autonomous cases are Parked and now
+  **distinguished** — **P1** in-domain-standing (no seal) vs **P2**
+  cross-domain (grove#36); the `status`/merge divergence is noted
+  Related-out-of-scope; the verified-identity approval mechanism is a
+  deferred D11 follow-up. No new idea landed silently in a Decided
+  (P1/P2 are Parked, not Decided). PASS.
 - **Append-only**: new artifact; supersedes nothing in place. The
   `review-policy.md` split (D10) is flagged as an **append-only
   amendment to `adr-0013`** for the post-approval pass, not done here.
