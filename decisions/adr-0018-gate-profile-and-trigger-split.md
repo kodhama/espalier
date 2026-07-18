@@ -711,5 +711,7 @@ ratification act (`floor-intent-gate`).
   extension is a named follow-up, not a gap left silent.
 
 **Overall: internally sound, consumable, and `gated`** — 11 Decided / 0
-Open (in-domain) / 1 Parked. Routes to `decision-adversary` then the
-**human intent gate**; the shaper does **not** promote past `gated`.
+Open (in-domain) / 2 Parked (P1 in-domain-autonomous, P2 cross-domain).
+Routes to `decision-adversary` (scoped re-review, per the revision
+banner) then the **human intent gate**; the shaper does **not** promote
+past `gated`.
