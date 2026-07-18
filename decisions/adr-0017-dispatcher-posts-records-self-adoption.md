@@ -222,6 +222,24 @@ landing this relies on); all `approved`, no draft consumed. Execution (the
 skill, the workflow, the carrier keys, the forward pointer, the first gated
 PR) is scoped downstream, not performed here.
 
+**Decision-adversary round 1 (2026-07-18): SOUND.** No load-bearing break
+on any of the four axes. It confirmed the load-bearing points against the
+sources: "the dispatcher posts" is a **selection within `adr-0015` Decision
+3's own enumerated space** (*"a CI step or the dispatcher's relay"*) and its
+parked open question — so resolving it is the right instrument, no
+Decision-text amendment owed; `spec-0002` §A.4 admits the maintainer's
+default `OWNER`/`MEMBER` association because no `record_poster_allowlist` is
+configured; the dispatcher-is-the-interactive-session premise is grounded in
+`charters/dispatcher.md`; the direct-commit landing is sound against
+`adr-0014` (policy already on `main` → a PR would gate/red; the workflow
+fires on `pull_request`/`issue_comment` only, so a push fires no run — the
+grove-self analogue of the consumer green-skip); all four `depends_on`
+targets `approved`; every code fact true on the branch. One disclosed
+contingency (the `OWNER`/`MEMBER` claim assumes the session authenticates as
+the human's own GitHub identity, not an app/bot token) is already parked in
+the "Headless/cron posting identity" open question — honest handling of the
+edge, not a gap.
+
 **Not claiming adversary validation** — the decision-adversary pass precedes
 the human gate; the `approved` intent act is the maintainer's
 (`gated → approved` flip), never the shaper's.
