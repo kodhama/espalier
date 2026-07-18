@@ -6,7 +6,7 @@ implements: adr-0012-methodology-delivery-machinery  # the realized contract (ad
 depends_on: [adr-0012-methodology-delivery-machinery, adr-0005-tdd-and-artifact-gated-dispatch, adr-0006-operational-conformance-mechanism, adr-0013-check-scope-mode, adr-0014-install-is-invisible-and-ungated, adr-0015-reviewer-machine-boundary]  # builds-on; adr-0012 retained here too so depends_on-walking machinery keeps the edge until it learns `implements`; adr-0013 added by the 2026-07-17 scope-mode amendment; adr-0014 added by the 2026-07-18 §E pre-install non-gating disclosure (genuine coupling — the disclosed limit tracks adr-0014's move-1b behavior); adr-0015 added by the 2026-07-18 §A reviewer/machine-boundary amendment (genuine coupling — §A's record-author actor and the §A.3 per-file basis both track adr-0015)
 owner: agent
 updated: 2026-07-18
-version: 2  # bumped 1 → 2 by the 2026-07-17 adr-0013 scope-mode amendment — a testable-clause change (INV7/INV15 amended in place; INV19–INV22, S21–S23 added), versioning.md's significance bar; the durable decision the bump requires is adr-0013 itself
+version: 3  # bumped 1 → 2 by the 2026-07-17 adr-0013 scope-mode amendment (INV7/INV15 amended; INV19–INV22, S21–S23 added); bumped 2 → 3 by the 2026-07-18 adr-0015 reviewer/machine-boundary amendment — a testable-clause change (INV3's freshness basis reconciled to the per-owed-pair-path form §A.3/match.mjs enforce; the whole-`S` form was fail-open for multi-path records), versioning.md's significance bar; the durable decision the bump requires is adr-0015 itself
 status_note: promoted draft → gated on the passing self-check (contract-author Method 6); re-derived twice against adr-0012 at HEAD (fifth-pass revisions, `implements:` field, split-pair findings); round-2 spec-adversary APPROVE-READY. The Q5 provisional-upstream deviation RESOLVED 2026-07-16 — adr-0012 was approved by the maintainer's intent act, and this spec's approval was bundled with it on the same PR (Q5's anticipated sequencing). Buildable now.
 ---
 
@@ -70,13 +70,19 @@ is **not** authorization; a human still judges genuineness and merges.
 > Layer-B limit; **records still land on the change request** (AC10),
 > only the actor is corrected; §A.4 poster-admissibility (the
 > `record_poster_allowlist` / default `author_association`) and the §E
-> deletion/forgery concessions stand. **Every EARS invariant and GWT
-> scenario is unedited** — INV2/INV4/S13's `S ∪ U(S, HEAD)` notation
-> stays correct read at the single-path granularity the emitter now
-> guarantees (whole-`S` and per-path coincide when `|S| = 1`). **Which
-> harness component posts is left parked** (`adr-0015` open question),
-> not resolved here. The notes below remain the prior amendments'
-> provenance — superseded as the latest note, not edited.
+> deletion/forgery concessions stand. **One EARS invariant is
+> reconciled** to complete the §A.3 basis alignment: **INV3**'s
+> freshness basis is corrected from the whole-`S` form
+> (`S ∪ U(S, HEAD)`) to the per-owed-pair-path form (`[f]` /
+> `[f] ∪ U(f, HEAD)`) that §A.3 and `match.mjs` enforce — the whole-`S`
+> form was **fail-open** for a multi-path record (it would green what
+> the per-path code reds); the §Terms `fingerprint` shorthand is aligned
+> the same way. **All other INV\*/S\* are byte-unedited** — INV2/INV4/S13
+> retain their "review-class basis" / single-path-example phrasing, which
+> is already consistent with the per-path form. **Which harness
+> component posts is left parked** (`adr-0015` open question), not
+> resolved here. The notes below remain the prior amendments' provenance
+> — superseded as the latest note, not edited.
 > **POINTER:** current truth is the §A body below — this note is
 > provenance only, not itself an acceptance criterion.
 > **VALUE:** as a reviewer, I state my verdict and what I examined and
@@ -89,16 +95,21 @@ is **not** authorization; a human still judges genuineness and merges.
 > `evaluatePair`) were read at HEAD this sitting; the actor correction
 > traces to `adr-0015` Decision 1–3 and Consequence 3, the basis
 > reconciliation to Consequence 2 / adversary N3.
-> **Versioning judgment:** NOT version-significant per `versioning.md`
-> (behavioral spec → agent-judged significance counter): no testable
-> clause (scenario/invariant) changed — §A.1–§A.4's edits are a
-> documentation/interface actor correction (`adr-0015` Consequence 3:
-> "No core algorithm change — a documentation/interface amendment") plus
-> a reconciliation of §A.3's prose to the per-file basis `match.mjs`
-> already computes. `version` stays `2`, so the ledger pin
-> `plugins/grove/check/test-deps.md` (`spec-0002@v2`) stays correct and
-> needs no edit. No new durable decision is minted — `adr-0015` is
-> itself the decision of record.
+> **Versioning judgment:** **version-significant per `versioning.md`**
+> (behavioral spec → agent-judged significance counter): a testable
+> clause changed — **INV3**'s normative freshness basis is edited (and
+> the §Terms `fingerprint` shorthand with it) to close the internal
+> contradiction the §A.3 reconciliation would otherwise leave, in the
+> fail-open direction. `version` **bumped 2 → 3**; the durable decision
+> the bump requires is **`adr-0015`** itself (which mandated the full
+> reconciliation). The §A actor correction alone (§A.1/§A.2/§A.3/§A.4)
+> remains a documentation/interface change (`adr-0015` Consequence 3:
+> "No core algorithm change"); the version bump is carried solely by the
+> INV3 edit. Cascade: the ledger pin
+> `plugins/grove/check/test-deps.md` (`spec-0002@v2` → `@v3`) is updated
+> in the same wave; because the check code (`match.mjs`) already computes
+> per-path, the corrected INV3 **already holds** — the pin bump is a
+> mechanical re-verification, **not an owed code change**.
 >
 > **Amendment (2026-07-18, `adr-0014-install-is-invisible-and-ungated`
 > — the pre-install non-gating exception, disclosed in §E; a §E-only
@@ -326,7 +337,7 @@ is **not** authorization; a human still judges genuineness and merges.
 | **admissible record** | A schema-valid record that also passes §A.4 — unedited carrying comment, authorized poster. Only admissible records enter selection (§C.3). |
 | **subject manifest (S)** | The reviewer-declared set of repo-relative paths a record certifies (§A). |
 | **upstream set (U)** | The check-derived **implements target(s)** of the subjects (§A.3) — the `implements:` id for artifacts, the ledger-named specs for code; **never** the rest of `depends_on`, never trusted from the record. Fidelity reviews only. |
-| **fingerprint** | A deterministic hash over the review-class basis (`S` or `S ∪ U`) content (§A.3). |
+| **fingerprint** | A deterministic hash over the review-class basis of a single subject path `f` (`[f]` quality, `[f] ∪ U(f)` fidelity) content (§A.3). |
 | **owed-map** | The run-time assembly of the one owed-rule from the reviewer charters' declarations (§B). Never a stored table. |
 | **PASS-class** | The pass tokens of a review's own charter verdict grammar (§A.2). |
 | **approved** | Exactly `status: approved` per `lifecycle.md`'s four-state enum. `draft`, `gated`, and `superseded` are all **not** approved — a superseded artifact does not satisfy an approval gate; the consequence is stated where it bites (§C.6). |
@@ -1000,10 +1011,15 @@ These are named, not pretended. Authenticity and policy changes remain
   HEAD content.
 - **INV3 (freshness by review class, AC2).** The check **shall**
   recompute each matched record's fingerprint via `grove-fp-1` over the
-  review-class basis at HEAD — the subject alone for a quality review,
-  `S ∪ U(S, HEAD)` for a fidelity review — and **shall** treat any
-  mismatch as stale, never trusting the recorded fingerprint or
-  `manifest_hashes` for the verdict.
+  review-class basis at HEAD **per owed-pair path `f`** (§A.3) — `[f]`
+  for a quality review, `[f] ∪ U(f, HEAD)` for a fidelity review — and
+  **shall** treat any mismatch as stale, never trusting the recorded
+  fingerprint or `manifest_hashes` for the verdict. *(Amended
+  2026-07-18, `adr-0015` reviewer/machine-boundary reconciliation; was:
+  "the subject alone for a quality review, `S ∪ U(S, HEAD)` for a
+  fidelity review" — the whole-`S` form disagreed with §A.3 and
+  `match.mjs`'s per-path recomputation for a multi-path record, in the
+  fail-open direction.)*
 - **INV4 (derived implements upstream, fidelity).** For fidelity
   records, the check **shall** derive the upstream set `U` itself — from
   the HEAD frontmatter **`implements:`** field for artifacts, from the
@@ -1581,8 +1597,14 @@ ride-along.
 
 The checks above are the prior sittings' provenance and stand unedited;
 this dated subsection is the adr-0015 amendment's own check. The
-amendment is a **documentation/interface correction of §A**, not a
-behavioral change (`adr-0015` Consequence 3: "No core algorithm change").
+amendment is **chiefly a documentation/interface correction of §A**
+(`adr-0015` Consequence 3: "No core algorithm change"); it additionally
+**reconciles one invariant — INV3 — and the §Terms `fingerprint`
+shorthand to the per-owed-pair-path basis**, closing the internal
+contradiction the §A.3 reconciliation would otherwise leave. That
+invariant edit is a testable-clause change and carries the `version`
+bump 2 → 3 (spec-adversary round 2, 2026-07-18, verified against
+`match.mjs`).
 
 **What changed.**
 
@@ -1613,12 +1635,25 @@ behavioral change (`adr-0015` Consequence 3: "No core algorithm change").
   the poster is now the harness, so **whichever component posts must be
   in `record_poster_allowlist`** (a bot is none of `{OWNER, MEMBER,
   COLLABORATOR}`), else the record is rejected and every owed pair reds.
-- **§Terms** — the one-line **verdict record** definition ("a reviewer
-  posts on the PR per review act") was a direct definitional dependent
-  of §A.1's actor; it is corrected to "the reviewer judges, the emitter
-  stamps, the harness posts" to keep the glossary consistent with the
-  corrected §A (a consistency follow-through under the update-dependents
-  rule, flagged; no behavior, no INV/S).
+- **INV3 (freshness by review class)** — the normative freshness basis
+  is reconciled from the whole-`S` form ("the subject alone for a
+  quality review, `S ∪ U(S, HEAD)` for a fidelity review") to the
+  **per-owed-pair-path** form (`[f]` / `[f] ∪ U(f, HEAD)`) that §A.3 and
+  `match.mjs evaluatePair` enforce, carrying an inline
+  `(Amended 2026-07-18, adr-0015…; was: …)` marker with the prior
+  clause. This was **fail-open** as written — for a multi-path record it
+  computes one whole-`S` fingerprint and would green a stale pair the
+  per-path code reds. Its "shall treat any mismatch as stale, never
+  trusting the recorded fingerprint/`manifest_hashes`" clause is kept
+  verbatim. This is the sole testable-clause edit and the reason
+  `version` bumps 2 → 3.
+- **§Terms — two lines.** (1) The **verdict record** definition ("a
+  reviewer posts on the PR per review act") was a direct definitional
+  dependent of §A.1's actor; corrected to "the reviewer judges, the
+  emitter stamps, the harness posts." (2) The **`fingerprint`**
+  definition's "`S` or `S ∪ U`" shorthand is aligned to the per-path
+  form (`[f]` / `[f] ∪ U(f)`), consistent with INV3 and §A.3. Both keep
+  the glossary consistent with the corrected §A (no INV/S renumbered).
 - **Frontmatter** — `adr-0015-reviewer-machine-boundary` added to
   `depends_on`; `updated:` already `2026-07-18`. A top-of-file
   five-field delta note (+ VALUE + CONFIDENCE + versioning judgment) is
@@ -1644,15 +1679,16 @@ not whole-`S`.
 - **AC10** — records still land on the change request; only the actor
   (emitter stamps, harness posts) is corrected. §A.4 poster-admissibility
   and the §E deletion/forgery concessions stand.
-- **Every EARS invariant and GWT scenario is unedited.** INV2/INV4 and
-  S13's `S ∪ U(S, HEAD)` / "the subject alone" notation is **not** a
-  contradiction: it coincides with the per-path form when `|S| = 1`, the
-  granularity the emitter now guarantees, so it remains correct read at
-  record granularity. Surfaced, not silently rewritten (the §Terms
-  `fingerprint` line's "`S` or `S ∪ U`" shorthand is the same coincident
-  notation, likewise left) — a purely notational alignment of those
-  clauses to the `f`-indexed form is available as a follow-up but is not
-  required for correctness and is out of this amendment's bounds.
+- **Every EARS invariant except INV3, and every GWT scenario, is
+  byte-unedited.** INV2 (abstract "recompute fingerprints from PR HEAD
+  content"), INV4 (upstream-derivation rule, no basis-set notation), and
+  S13 (single-subject worked examples — "basis: the spec alone" / "basis:
+  spec + `adr-x`") are already consistent with the per-path form and were
+  left untouched; their semantics (S2/S13 staleness) are unchanged. Only
+  INV3 carried the whole-`S` freshness notation that **contradicted** the
+  reconciled §A.3 in the fail-open direction, so only INV3 (plus the
+  §Terms `fingerprint` shorthand, a glossary line) is aligned — the
+  minimal edit that closes the contradiction, not a sweep.
 - **Which harness component posts** is left parked (`adr-0015` open
   question), per the mandate — the N2 allowlist constraint is stated as
   a wiring requirement without resolving the actor.
@@ -1660,15 +1696,16 @@ not whole-`S`.
 | Criterion | Result | Note |
 |---|---|---|
 | Derives only from the approved decision | PASS | Every §A delta cites `adr-0015` Decision 1–3, Consequence 2–3, or adversary N2/N3; the code referents fix the reconciliation direction. Nothing added beyond the two mandated clauses. |
-| Append-only amendment discipline | PASS | New section-level delta note (five fields + VALUE + CONFIDENCE + versioning judgment) prepended; prior notes unedited; no INV/S renumbered or touched; the actor edits to approved §A text carry their provenance in the delta note and this self-check (§A is prose/interface, not GWT/EARS grammar, so no `Sn (amended…)` tag applies). |
-| Both grammars intact (`adr-0004`) | PASS | The EARS invariants and GWT scenarios are byte-unchanged; this amendment touches only §A prose/tables. |
-| Concretization beyond the decision | PASS | No new requirement invented — the §A.3 basis is stated **against the code the check already runs** (`match.mjs`/`basis.mjs`/`emit.mjs`), the machine-stamping is `adr-0015` Consequence 3's own words, and the N2 allowlist note is `adr-0015`'s stated wiring constraint. |
-| Traceability | PASS | Consequence 3 → §A.1/§A.2/§A.3 actor; Consequence 2 / N3 → §A.3 basis; N2 → §A.4 poster note. AC10/AC7 preservation asserted and located (§A.4, §C.4). |
-| Versioning discipline (`versioning.md`) | PASS | **NOT version-significant** — no testable clause (scenario/invariant) changed; §A.1–§A.4's edits are a documentation/interface actor correction and a reconciliation of §A.3 prose to the per-file basis `match.mjs` already computes. `version` stays `2`; the ledger pin `plugins/grove/check/test-deps.md` (`spec-0002@v2`) stays correct. No new durable decision minted — `adr-0015` is the decision of record. |
+| Append-only amendment discipline | PASS | New section-level delta note (five fields + VALUE + CONFIDENCE + versioning judgment) prepended; prior notes unedited; no INV/S renumbered. INV3's single-invariant edit carries an inline `(Amended 2026-07-18, adr-0015…; was: …)` marker per `adr-0004`'s scenario-level delta form; the §A prose/tables and the two §Terms glossary lines carry their provenance in the delta note and this self-check. |
+| Both grammars intact (`adr-0004`) | PASS-DISCLOSED | Every GWT scenario is byte-unchanged; every EARS invariant except **INV3** is byte-unchanged. INV3's freshness basis is reconciled to the per-path form (marked inline) to close the contradiction the §A.3 edit would otherwise leave; its "shall … stale" obligation is verbatim. Neither grammar stands in for the other. |
+| Concretization beyond the decision | PASS | No new requirement invented — the §A.3 basis and the INV3 reconciliation are stated **against the code the check already runs** (`match.mjs`/`basis.mjs`/`emit.mjs`), the machine-stamping is `adr-0015` Consequence 3's own words, and the N2 allowlist note is `adr-0015`'s stated wiring constraint. |
+| Traceability | PASS | Consequence 3 → §A.1/§A.2/§A.3 actor; Consequence 2 / N3 → §A.3 basis + INV3; N2 → §A.4 poster note. AC10/AC7 preservation asserted and located (§A.4, §C.4). |
+| Versioning discipline (`versioning.md`) | PASS | **Version-significant** — INV3's normative freshness basis is a testable-clause (invariant) edit; `version` **bumped 2 → 3**, durable decision `adr-0015` (which mandated the full §A.3 reconciliation that INV3 completes). Cascade applied in-wave: the ledger pin `plugins/grove/check/test-deps.md` `spec-0002@v2` → `@v3`, and its "whole-`S`… pre-existing discrepancy, not amended here" note reconciled. Because `match.mjs` is already per-path, the corrected INV3 already holds — the pin bump is a mechanical re-verification, **no owed code change**. |
 | Status honesty (`lifecycle.md`) | PASS-DISCLOSED | `status: approved` stands on the recorded 2026-07-16 human act; this amendment claims no fresh spec approval — it rides the maintainer's 2026-07-18 `adr-0015` approval, and the bundle goes to their merge gate. No agent flipped any state. |
 
-**Amendment self-check verdict: PASS.** A bounded §A actor correction and
-a §A.3 basis reconciliation to the referent the check enforces, with the
-trust model, separation authority, AC10, and all EARS/GWT clauses
-untouched. Conformance is not self-declared here — the gates judge, and
-`approved` is the maintainer's to give.
+**Amendment self-check verdict: PASS.** A bounded §A actor correction, a
+§A.3 basis reconciliation to the referent the check enforces, and the
+single INV3 (+ §Terms `fingerprint`) alignment that completes it — with
+the trust model, separation authority, AC10, and every other EARS/GWT
+clause untouched. Conformance is not self-declared here — the gates
+judge, and `approved` is the maintainer's to give.

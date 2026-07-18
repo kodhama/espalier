@@ -66,14 +66,19 @@ judgment, the machine stamps the `§A.2` record with a machine-computed
 the round-trip test (judgment -> emit -> the actual `runCheck` -> GREEN) is
 that agreement's proof. The emitter follows `match.mjs`'s **per-file**
 basis (one record per reviewed file) — the referent the check actually
-verifies; `spec-0002` §A.3's whole-`S` basis prose is a pre-existing
-discrepancy flagged for a follow-up reconciliation wave (not amended here —
-that is a contract-author surface).
+verifies. `spec-0002` §A.3's whole-`S` basis prose has since been
+**reconciled to that per-file referent** by the 2026-07-18
+`adr-0015` amendment (`spec-0002@v3`): §A.3, **INV3**, and the §Terms
+`fingerprint` shorthand now state the per-owed-pair-path basis (`[f]` /
+`[f] ∪ U(f, C)`), closing the discrepancy this note once flagged. Because
+`match.mjs` already computes per-file, the corrected INV3 already holds —
+the `@v2 → @v3` pin bump below is a **mechanical re-verification, not an
+owed code change**.
 
 ```grove-test-deps
 schema: 1
 specs:
-  - spec-0002-review-bookkeeping-check@v2
+  - spec-0002-review-bookkeeping-check@v3
 decisions:
   - adr-0012-methodology-delivery-machinery
   - adr-0005-tdd-and-artifact-gated-dispatch
