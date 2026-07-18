@@ -39,43 +39,54 @@ the check on grove's own PRs** as its first application.
 
 ## Decision
 
-### Part 1 — the dispatcher posts the records (resolves `adr-0015`'s open question)
+### Part 1 — one skill carries the whole CI bridge (resolves `adr-0015`'s open question)
 
-**The dispatcher — the live/interactive session that orchestrates a
-run — runs the emitter and posts each record.** The reviewer agents emit
-only their `grove-review-judgment` (`adr-0015` Decision 1, unchanged and
-CI-oblivious). The dispatcher, which already holds those judgments (it
-dispatched the reviewers and received their outputs), runs the emitter to
-stamp each judgment into a `§A.2` record and **posts it as a PR comment**.
+**A single `record-verdict` skill encapsulates self-detect + emit + post;
+the dispatcher invokes it and knows nothing else.** The reviewer agents
+emit only their `grove-review-judgment` (`adr-0015` Decision 1, unchanged
+and CI-oblivious). At the review seam — a reviewer's judgment lands — the
+dispatcher hands that judgment to the skill. Everything CI-aware lives
+inside the skill:
 
-- **A `post-record` skill** carries the mechanism: judgment(s) in → run
-  `bin/emit-record.mjs` → post each stamped record as a PR comment via the
-  platform API. Thin glue over the existing emitter plus the comment API;
-  the dispatcher invokes it as each reviewer's judgment lands (or at the
-  gate seam).
-- **Why the dispatcher, not CI.** The judgments originate from the
-  dispatched reviewer agents, whose outputs only the dispatcher holds; a CI
-  job has no access to them. A CI/bot poster would also fail `§A.4`
-  admissibility by default (`github-actions[bot]` is not
-  `OWNER`/`MEMBER`/`COLLABORATOR`) and would need an explicit
-  `record_poster_allowlist` entry. The dispatcher posts under the
-  **human's authenticated session identity** — `OWNER`/`MEMBER` — so records
-  are admissible with **no allowlist entry required** (`spec-0002` §A.4;
-  `adr-0015` N2 honored). This is exactly *"what has been done by hand all
-  along"* that `adr-0015` named, now given a repeatable skill.
-- **The reviewer stays CI-oblivious** (`adr-0015` Decision 1 preserved):
-  it emits only judgment; the **dispatcher, not the reviewer**, runs the
-  emitter and posts. The separation authority is unaffected — it remains
-  the record's `producer`/`reviewer` **fields** (`adr-0012` AC7), which the
-  emitter transcribes from the judgment; the *poster* is orthogonal.
-- **Append-only** (`spec-0002` §A.1): a re-review posts a **new** record;
-  the skill never edits a prior record comment (an edited record is rejected,
-  §A.4). One record per comment (§A.1) — the skill posts per record, never
-  batched into one comment.
+- **Self-detect first (the `adr-0014` discriminator).** The skill's first
+  act: is a `grove-review-policy` block present on `origin/<default>`? If
+  absent — the check is not installed — the skill **no-ops** (nothing
+  gates, so nothing owes a record). Keyed on **policy-block presence,
+  never workflow-file presence** (workflow-file absence is `adr-0013`'s
+  carrier-red condition — the `adr-0014` F1 trap, avoided the same way).
+- **Emit.** The skill runs the record-emitter (`bin/emit-record.mjs`) on
+  the judgment, in the PR checkout — the exact command is the skill's
+  internal detail, visible to no agent outside it.
+- **Post.** Each stamped `§A.2` record posts as a **new** PR comment via
+  the platform API — one record per comment, append-only (a re-review is a
+  new comment, never an edit — `spec-0002` §A.1/§A.4). The machine block
+  rides inside a collapsed `<details>` wrapper with a one-line human
+  summary — §A.1 explicitly allows surrounding prose (only the block is
+  the record) — so the PR thread stays readable.
+- **Poster identity.** The skill posts under the session's authenticated
+  identity — the maintainer's `OWNER`/`MEMBER` — admissible under §A.4
+  with **no `record_poster_allowlist` entry** (`adr-0015` N2 honored).
 
-This mechanism is **general** — every consumer's dispatcher posts records the
-same way; the check (CI) stays read-only and only *reads* them. grove-self is
-its first application, not a special case.
+**The knowledge budget** (the point of this shape — the maintainer's
+decoupling call, 2026-07-18):
+
+- the **reviewer** knows nothing of CI (`adr-0015`, unchanged);
+- the **dispatcher** knows exactly one thing: *hand each reviewer's
+  judgment to `record-verdict`*. No emitter command, no workflow path, no
+  installed-or-not conditional — it need not know a check exists;
+- the **skill** alone is CI-aware: self-detect, emitter, comment API.
+
+The separation authority is unaffected throughout — it remains the
+record's `producer`/`reviewer` **fields** (`adr-0012` AC7), which the
+emitter transcribes from the judgment; the *poster* is orthogonal.
+
+This mechanism is **general** — every consumer's dispatch flow invokes the
+same skill; the check (CI) stays read-only and only *reads* the comments.
+grove-self is its first application, not a special case. Why the
+dispatcher invokes it (rather than CI): the judgments originate in the
+dispatched reviewers, whose outputs only the dispatcher holds — a CI job
+has neither the judgments nor an admissible default identity
+(`github-actions[bot]` fails §A.4 absent an allowlist entry).
 
 ### Part 2 — grove adopts the check on its own PRs
 
@@ -106,13 +117,14 @@ its first application, not a special case.
 
 `adr-0015`'s open question — *"Which harness component runs the emitter +
 posts — a dedicated CI step vs. the dispatcher relaying (what has been done
-by hand all along)"* — is **answered here: the dispatcher, via the
-`post-record` skill.** `adr-0015`'s bounding constraint (N2: the poster must
+by hand all along)"* — is **answered here: the dispatcher's relay, packaged
+as the `record-verdict` skill.** `adr-0015`'s bounding constraint (N2: the poster must
 satisfy `§A.4` admissibility) is honored — the dispatcher's session identity
 is `OWNER`/`MEMBER`, admissible by default, so no `record_poster_allowlist`
 entry is needed. `adr-0015` Decision 1 (the reviewer emits only judgment,
-knows nothing of CI) is **preserved**, not weakened: the dispatcher — a
-distinct actor — does the emitting and posting. A forward pointer is added on
+knows nothing of CI) is **preserved and extended one level up**: the
+emitting and posting live inside the skill, so even the dispatcher carries
+no CI knowledge beyond the single invocation. A forward pointer is added on
 `adr-0015`'s open question pointing here (append-only, same change).
 
 ## Considered and rejected
@@ -121,6 +133,19 @@ distinct actor — does the emitting and posting. A forward pointer is added on
   reviewer judgments (they live in the dispatcher that ran the reviewers), and
   a bot poster fails `§A.4` by default (needs allowlisting). It would also
   re-couple posting to CI when the judgments are a dispatch-side artifact.
+- **The dispatcher runs the emitter directly** (the first-cut shape of this
+  very decision). Rejected on the maintainer's decoupling call (2026-07-18):
+  it puts the emitter command, the installed-or-not conditional, and the
+  posting mechanics into the dispatcher — the same knows-about-CI category
+  error `adr-0015` removed from the reviewers, one level up. The skill
+  absorbs all of it; the dispatcher keeps a single methodology-level
+  invocation.
+- **A completion hook auto-invokes the skill** (zero dispatcher
+  involvement). Rejected with the maintainer: a hook must itself be declared
+  in harness configuration, so the coupling is not removed — only relocated
+  into less-legible config — and the judgment would have to be captured
+  out-of-band. The dispatcher's one explicit invocation at the review seam
+  is the smaller, more legible thing.
 - **A dedicated posting agent/role.** Rejected as heavier than needed — the
   dispatcher already holds the judgments and has an admissible identity; a new
   cold role would have to be *handed* the judgments it doesn't originate.
@@ -140,22 +165,25 @@ distinct actor — does the emitting and posting. A forward pointer is added on
 
 ## Consequences (execution — after approval)
 
-1. **The `post-record` skill** (`plugins/grove/skills/` + reference bundle):
-   input = one or more reviewer `grove-review-judgment` blocks; runs
-   `bin/emit-record.mjs`; posts each stamped `§A.2` record as a **new** PR
-   comment via the platform API; never edits a prior record. Built and
-   tested (its record output round-trips through the real `runCheck` to
-   green, mirroring the `adr-0015` emitter tests).
+1. **The `record-verdict` skill** (`plugins/grove/skills/` + reference
+   bundle): input = one or more reviewer `grove-review-judgment` blocks;
+   first self-detects on `grove-review-policy`-block presence on
+   `origin/<default>` (no-op when absent); runs `bin/emit-record.mjs`;
+   posts each stamped `§A.2` record as a **new** PR comment (one record per
+   comment, `<details>`-wrapped with a one-line summary); never edits a
+   prior record. Built and tested (its record output round-trips through
+   the real `runCheck` to green, mirroring the `adr-0015` emitter tests).
 2. **grove's workflow** — `.github/workflows/grove-review-bookkeeping.yml`,
    pointed at `plugins/grove/check/bin/check.mjs`, Node pinned; **landed by
    direct-commit to `main`** (not via a PR).
 3. **grove's policy carrier** (`charters/review-policy.md`) — add
    `check_runtime_dir: plugins/grove/check` and `check_workflow_path:
    .github/workflows/grove-review-bookkeeping.yml`; `scope: strict` unchanged.
-4. **The dispatcher's run flow** — the post-gate step now runs `post-record`
-   for each completed reviewer's judgment, so records land on the PR. Where
-   this is documented (dispatcher charter vs. a run-workflow note) is settled
-   during the build.
+4. **The dispatcher's run flow** — at the review seam, the dispatcher
+   invokes `record-verdict` with each completed reviewer's judgment, so
+   records land on the PR. The **skill is the documentation home** for the
+   mechanism; the dispatcher charter carries only a one-line pointer to it
+   (the decoupling call resolves the former where-documented question).
 5. **Forward pointer on `adr-0015`** at its open question → this decision
    (append-only annotation).
 6. **First gated grove PR** — the next grove PR after the workflow commit is
@@ -164,9 +192,12 @@ distinct actor — does the emitting and posting. A forward pointer is added on
 
 ## Acceptance criteria
 
-- **AC1** A `post-record` mechanism exists that turns reviewer judgment(s)
+- **AC1** A `record-verdict` skill exists that turns reviewer judgment(s)
   into **posted** `§A.2` record comments via the emitter, from an admissible
-  poster, append-only (never editing a prior record), one record per comment.
+  poster, append-only (never editing a prior record), one record per
+  comment — and **no-ops** when no `grove-review-policy` block exists on the
+  protected default branch (the `adr-0014` discriminator; never
+  workflow-file presence).
 - **AC2** grove's `.github/workflows/grove-review-bookkeeping.yml` runs
   `plugins/grove/check/bin/check.mjs` on grove's PRs and reads policy +
   declarations from grove's native layout (`charters/`).
@@ -181,13 +212,18 @@ distinct actor — does the emitting and posting. A forward pointer is added on
 - **AC6** The adoption lands without self-gating: the workflow is committed
   such that no run fires on its own landing, and the first PR afterward runs
   the check for real.
+- **AC7** The dispatcher-facing surface is a **single skill invocation** at
+  the review seam: no emitter command, workflow path, or installed-or-not
+  conditional appears in any dispatcher-facing duty — the skill alone is
+  CI-aware.
 
 ## Open questions (parked, ≤3)
 
-- **Where the dispatcher's post-record step is documented** — a dispatcher
-  charter duty vs. a run-workflow note vs. the `post-record` skill's own
-  usage. Execution detail; recommend the skill is the home and the dispatcher
-  charter points at it.
+- **Comment volume under strict** — one record per reviewed path
+  (`spec-0002` §A.1/§A.3 basis granularity) means a wide PR posts many
+  record comments; the `<details>` wrapper keeps the thread readable but
+  not shorter. The first gated grove PRs are the empirical read; any
+  batching relief would be a `spec-0002` evolution, not this decision's.
 - **Headless/cron posting identity** — the dispatcher posts under the
   session's authenticated identity; in a headless/cron run that identity may
   differ (or be absent). For grove-self the maintainer's session posts, so
@@ -221,6 +257,24 @@ the carrier keys the config sets), `adr-0014` (the self-detect / push-fires-no-r
 landing this relies on); all `approved`, no draft consumed. Execution (the
 skill, the workflow, the carrier keys, the forward pointer, the first gated
 PR) is scoped downstream, not performed here.
+
+**Shaping round 2 (2026-07-18, the maintainer's decoupling call).** The
+first-cut Part 1 had the dispatcher itself run the emitter and post. The
+maintainer pushed the decoupling one level further: the dispatcher should
+not know the emitter command, nor condition on whether the CI machinery is
+installed. Revised: a single `record-verdict` skill encapsulates
+self-detect (policy-block presence on the protected branch, the `adr-0014`
+discriminator — never workflow-file presence) + emit + post; the
+dispatcher's whole knowledge is one skill invocation at the review seam.
+The hook alternative (zero dispatcher involvement) was weighed with the
+maintainer and rejected — a hook must itself be declared in harness
+config, so the coupling is relocated, not removed. The former
+where-documented open question resolves into the decision (the skill is
+the home; the dispatcher charter carries a pointer); a comment-volume
+observation is parked in its place, with the `<details>`-wrapped
+presentation (§A.1's prose-around-block allowance) adopted for thread
+readability. A round-2 decision-adversary pass scoped to this revision
+precedes the human gate.
 
 **Decision-adversary round 1 (2026-07-18): SOUND.** No load-bearing break
 on any of the four axes. It confirmed the load-bearing points against the
