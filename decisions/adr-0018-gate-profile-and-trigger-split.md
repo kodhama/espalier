@@ -71,22 +71,65 @@ updated: 2026-07-18
       *another* domain. Needs the seal. *(→ `## Parked`.)*
     The single distinguishing fact: `initiator` has a local human ship
     gate; `autonomous/standing` has no local human gate whatsoever.
+- **D4 — C1 is grove-fixed; the profile is a single (C2) axis
+  (Model A)** *(maintainer, 2026-07-18)*. Enforcement strength (**C1**:
+  `enforced` / `default-on-but-skippable` / `expressed`) is **grove's
+  design call per gate**, not a consumer-tunable dial. **The gate-profile
+  configures only C2** (who owns each gate). C1 defaults live in a
+  **grove-managed internal file grove does NOT surface to users** (a
+  power-user can technically set them, but it is not a supported
+  surface). Rationale: one axis to configure and validate
+  (`inv-minimal-first`); avoids the under-gating footgun of quietly
+  setting a gate advisory; and it matches how grove already keeps
+  enforcement knobs **gate-locally** (`adr-0007` severity threshold,
+  `adr-0013` scope mode) rather than as a global dial. Floor untouched —
+  the intent gate stays C1 = `enforced`, C2 = `human`. *(Resolves former
+  Open item 1.)*
+- **D5 — the consumer `.grove/` layout, split by AUTHORITY**
+  *(maintainer, 2026-07-18; recorded here in adr-0018 by the maintainer's
+  call)*. Organizing principle: **placement by who is authoritative on a
+  file's contents** — *not* machinery-vs-config. *(This supersedes an
+  earlier "machinery vs user-editable" framing the maintainer flagged as
+  wrong: `review-policy.md`'s strict/scoped mode is a **consumer choice**,
+  so that axis mis-split it.)*
+  - **`.grove/` root — consumer-authoritative** (setup writes defaults;
+    grove **NEVER clobbers**): **`gates.toml`** — the gate-profile (C2 +
+    per-gate overrides), **NEW**; and **`review-policy.md`** — the
+    strict|scoped scope choice (`adr-0013`), stays on the user surface.
+  - **`.grove/internal/` — grove-authoritative** (copied/regenerated
+    verbatim on update; hand-edits overwritten): the companions
+    `lifecycle.md` (`adr-0008`), `versioning.md` (`adr-0010`),
+    `relations.md` (`adr-0011`); the `check/` tool; and the C1
+    **`enforcement.toml`** (D4's grove-managed C1 file).
+  - Subfolder name: **`internal/`**.
+- **D6 — the setup UX for presets** *(maintainer, 2026-07-18)*. The
+  preset choice is an **optional `/grove:setup` question with `steward`
+  as default** — **NOT a forced pick** (honors `adr-0014`
+  invisible/ungated install and D1). Setup shows brief one-liners:
+  - **steward** — "you approve direction + final result; agents handle
+    spec and build";
+  - **guardian** — "you also approve the spec before build";
+  - **initiator** — "you kick off intent and approve only the final
+    result";
+
+    and points to **`.grove/gates.toml`** for finer per-gate overrides.
 
 ### Open
-1. **Which dials are per-gate configurable** — both C1 (enforcement
-   strength) and C2 (owner), or is C1 fixed per gate by grove and only
-   C2 (who owns it) tunable per profile?
-2. **Where the gate-profile artifact lives and its format** — a
-   `.grove/` companion file, a managed `CLAUDE.md` block, or frontmatter
-   on an existing artifact; YAML vs. a companion-doc table.
-3. **How the trigger row is represented** alongside the four gate rows
-   (K2) — same table, separate section, what its cells hold.
-4. **What the floor validator checks, and when it fires** — presumably
+1. **The `gates.toml` format / schema** — the *location* is settled
+   (`.grove/gates.toml`, consumer-authoritative, D5) and it configures
+   **only C2** (D4); open is the file's *shape*: how the four gate rows
+   (intent/spec/build/ship) + the trigger row (Open 2) + the
+   external-intent slot (design constraint) are expressed as TOML, and
+   how a per-gate override reads.
+2. **How the trigger row is represented** alongside the four gate rows
+   (K2) — same table/section, what its cells hold (a `gates.toml` shape
+   question paired with Open 1).
+3. **What the floor validator checks, and when it fires** — presumably
    "reject any profile with 0 human-owned intent gates" at setup and on
    every hand-edit, but the exact check surface and firing points are
    open (does it read only C2 on the intent row, or also the external
    slot once that lands?).
-5. **Approval authenticity per channel (in-domain).** D2 leaves the
+4. **Approval authenticity per channel (in-domain).** D2 leaves the
    approval *channel* unrestricted — but the approval must genuinely
    originate from the accountable human, and **channels differ in
    forgeability**: a tracker/GitHub comment "can be faked," whereas a
@@ -96,6 +139,14 @@ updated: 2026-07-18
    (how *this* domain trusts its *own* approval channels); adjacent to
    grove#36's O3 (cross-domain seal verification) but **not** folded
    into it.
+5. **`review-policy.md` mixes consumer-choice + grove-wiring.** It is
+   consumer-authoritative in *purpose* (the strict|scoped scope mode,
+   `adr-0013`) — which is why D5 keeps it on the `.grove/` root surface —
+   but `adr-0013` has setup **also** write machinery keys into it
+   (`check_runtime_dir`, `check_workflow_path`). So a user-surface file
+   carries grove-wiring. Options to weigh later: keep it on the surface
+   and rely on non-clobber discipline, or split choice-from-wiring. **Do
+   not resolve here** — `adr-0007`/`adr-0013` territory; flagged.
 
 ### Parked
 - **The `autonomous/standing`-across-domains preset** — all of a repo's
@@ -149,9 +200,11 @@ then defers.
 
 ### K1 — gate-profile mechanism + presets
 
-A **gate-profile** assigns C1/C2 to each of grove's four gates, is
-**installed at setup**, and is **hand-editable after**. The shipped
-default is **`steward`** (**D1**). Candidate presets:
+A **gate-profile** assigns **C2** (who owns each gate) to grove's four
+gates — **C1 is grove-fixed, not in the profile** (**D4**). It lives at
+**`.grove/gates.toml`** (consumer-authoritative, **D5**), is written by
+setup with the **`steward`** default (**D1**, **D6**), and is
+**hand-editable after**. The three shipped presets (**D3**):
 
 | Preset | intent | spec | build | ship | one-line character |
 |---|---|---|---|---|---|
@@ -166,8 +219,8 @@ default is **`steward`** (**D1**). Candidate presets:
   channel** — in-session approval, merge, or tracker comment alike — not
   by a merge specifically.
 - **Per-gate override.** On top of a chosen preset, the human may flip
-  any single gate's dial(s) — the preset is a starting point, not a
-  cage.
+  any single gate's **C2** in `gates.toml` — the preset is a starting
+  point, not a cage. (C1 is not exposed here — D4.)
 - **The floor validator** rejects any resulting profile with **0
   human-owned intent gates** (`floor-intent-gate`). guardian and steward
   satisfy it with a human-owned *first* intent gate; initiator satisfies
@@ -228,23 +281,48 @@ default is **`steward`** (**D1**). Candidate presets:
   channel among several (in-session approval, merge, tracker comment);
   hardcoding it would forbid the in-session approvals the maintainer
   already performs.
+- **Make C1 (enforcement strength) a consumer-tunable per-gate dial
+  (Model B).** Rejected (**D4**, maintainer 2026-07-18): a second axis to
+  configure and validate (`inv-minimal-first`), and it opens the
+  under-gating footgun of quietly setting a gate advisory. C1 is grove's
+  gate-local design call (matching `adr-0007`/`adr-0013`), not a profile
+  dial.
+- **Split `.grove/` by machinery-vs-user-editable.** Rejected (**D5**,
+  maintainer 2026-07-18): `review-policy.md`'s strict/scoped mode is a
+  **consumer choice**, so that axis mis-classifies it as machinery. The
+  correct axis is **authority** (who is authoritative on the contents).
 
-## Consequences / propagation (draft — flagged, not chased here)
+## Consequences / propagation (draft — POST-approval executor work, NOT part of this canvas)
 
-- **Propagation flag (record, do not chase in this canvas).** The shaper
+The canvas records the decision and this propagation list; **it does not
+move files or edit dependents.** The moves below are a **stage-4
+`executor` pass after adr-0018 is approved** — flagged now so no
+dependent is silently missed (`inv-graph-maintenance`).
+
+- **D5 layout move — required dependent updates when the layout lands:**
+  - Relocating the companions into `.grove/internal/` changes documented
+    install paths in **`adr-0008`** (lifecycle), **`adr-0010`**
+    (versioning), **`adr-0011`** (relations).
+  - The `review-policy.md` / `check/` placement touches **`adr-0007`**
+    and **`adr-0013`**.
+  - The paths are referenced by the **setup, check-install, remove,
+    record-verdict skills** and **`reference/ci/`** — all must be updated
+    when the layout lands.
+- **D2 wording flag (record, do not chase in this canvas).** The shaper
   charter and `floor-intent-gate` phrase ratification as "the merge is
   the approval." Under **D2** that is the **GitHub-repo reference
   convention**, not a channel restriction — the wording may want a later
   clarifying touch so it is not misread as merge-only. Noted for a future
-  propagation pass; **not** edited here (`inv-graph-maintenance` — surfaced,
-  its dependents named, deliberately deferred rather than silently
-  patched).
+  propagation pass; **not** edited here.
 
 ## Open questions
 
 The five live items are enumerated in `## Decision state → Open` above
-(single source of truth). They are surfaced one per turn, most
-consequential first; the rest wait their turn in the Open list.
+(single source of truth): (1) the `gates.toml` schema, (2) trigger-row
+representation, (3) floor-validator check surface + firing points, (4)
+per-channel approval authenticity, (5) `review-policy.md`
+choice-vs-wiring mix. They are surfaced one per turn, most consequential
+first; the rest wait their turn in the Open list.
 
 ## Self-check (draft — not a gate pass)
 
@@ -265,9 +343,8 @@ consequential first; the rest wait their turn in the Open list.
 - **Scope guard**: the across-domains preset is parked to grove#36, not
   shaped; the schema leaves its slot. New ideas mid-shaping go to Open or
   Parked, never silently into a Decided.
-- **Not converged**: 3 Decided (D1 default preset, D2 channel-agnostic
-  intent gate, D3 ship all three presets) / 5 Open / 1 Parked as of
-  2026-07-18. Still a canvas, not a finished decision — the shaper does
-  not promote past `draft`.
-</content>
-</invoke>
+- **Not converged**: 6 Decided (D1 default preset; D2 channel-agnostic
+  intent gate; D3 ship all three presets; D4 C1 grove-fixed, profile is
+  C2-only; D5 `.grove/` layout split by authority; D6 optional preset
+  setup question) / 5 Open / 1 Parked as of 2026-07-18. Still a canvas,
+  not a finished decision — the shaper does not promote past `draft`.
