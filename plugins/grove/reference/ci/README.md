@@ -97,3 +97,42 @@ Install lands three pieces plus one recorded choice:
 
 `/grove:check-install` runs exactly this install standalone — invoking
 it *is* the opt-in. `/grove:remove` reverses all of it (and only it).
+
+## grove does not gate its own arrival
+
+Installing grove will **not** red the very change that introduces it.
+The check self-detects a fresh install — it sees that grove is not yet
+present on your protected branch — and stays out of the way, activating
+only on your **next** PR, once grove is actually in place. So there is no
+"red on arrival" to work around: the first thing you see is not CI
+failing on grove's own just-added files.
+
+(This is a fact about how the check behaves — not a recommendation about
+*how* to land the install. That's yours; see below.)
+
+## grove is invisible to your linters and formatters
+
+`.grove/` is grove's vendored namespace — the companions, the policy
+carrier, and (if you installed the check) the runtime. It is a
+**dependency, not your source**, so your linters and formatters should
+not read it. Setup **detects** the linters/formatters you use (ESLint,
+Prettier, Biome, markdownlint) and **offers** — never imposes — to add
+the whole `.grove/` namespace to each one's ignore, augment-never-clobber
+and only with your say-so.
+
+Why the *whole* namespace, and why formatters too: a linter reading
+`.grove/` is noise, but a **formatter rewriting** it is corruption —
+`.grove/`'s companions and policy carrier are markdown, and any integrity
+the runtime relies on is broken, not merely flagged, by a reformat.
+`/grove:remove` strips the ignore line back out (only that line, only
+with your consent).
+
+## Installing writes no git — landing is yours
+
+Setup and `/grove:check-install` **perform no git**: no add, no commit,
+no branch, no push, no PR — and recommend no landing approach. They
+compose the files, surface plainly what is now uncommitted in your
+working tree, and hand the decision back to you. Landing the install is
+yours to do, your project's own way. (Setup runs inline in your own
+session, so it deliberately injects no git opinion that would bias how
+you handle git for your own work.)

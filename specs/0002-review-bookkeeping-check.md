@@ -3,9 +3,9 @@ id: spec-0002-review-bookkeeping-check
 type: spec
 status: approved  # gated → approved: the maintainer's explicit intent act ("approved. merge", 2026-07-16), bundled with adr-0012's approval on the same PR per Open Q5's sequencing; recorded in-PR by the shaper per lifecycle.md
 implements: adr-0012-methodology-delivery-machinery  # the realized contract (adr-0012 implements-edge); machine-readable fidelity selector
-depends_on: [adr-0012-methodology-delivery-machinery, adr-0005-tdd-and-artifact-gated-dispatch, adr-0006-operational-conformance-mechanism, adr-0013-check-scope-mode]  # builds-on; adr-0012 retained here too so depends_on-walking machinery keeps the edge until it learns `implements`; adr-0013 added by the 2026-07-17 scope-mode amendment
+depends_on: [adr-0012-methodology-delivery-machinery, adr-0005-tdd-and-artifact-gated-dispatch, adr-0006-operational-conformance-mechanism, adr-0013-check-scope-mode, adr-0014-install-is-invisible-and-ungated]  # builds-on; adr-0012 retained here too so depends_on-walking machinery keeps the edge until it learns `implements`; adr-0013 added by the 2026-07-17 scope-mode amendment; adr-0014 added by the 2026-07-18 §E pre-install non-gating disclosure (genuine coupling — the disclosed limit tracks adr-0014's move-1b behavior)
 owner: agent
-updated: 2026-07-17
+updated: 2026-07-18
 version: 2  # bumped 1 → 2 by the 2026-07-17 adr-0013 scope-mode amendment — a testable-clause change (INV7/INV15 amended in place; INV19–INV22, S21–S23 added), versioning.md's significance bar; the durable decision the bump requires is adr-0013 itself
 status_note: promoted draft → gated on the passing self-check (contract-author Method 6); re-derived twice against adr-0012 at HEAD (fifth-pass revisions, `implements:` field, split-pair findings); round-2 spec-adversary APPROVE-READY. The Q5 provisional-upstream deviation RESOLVED 2026-07-16 — adr-0012 was approved by the maintainer's intent act, and this spec's approval was bundled with it on the same PR (Q5's anticipated sequencing). Buildable now.
 ---
@@ -29,6 +29,52 @@ is **not** authorization; a human still judges genuineness and merges.
 > approved` field's claim of a human act, record *deletion*). The values
 > it trusts are the Layer B surface (§E), named here, not pretended away.
 
+> **Amendment (2026-07-18, `adr-0014-install-is-invisible-and-ungated`
+> — the pre-install non-gating exception, disclosed in §E; a §E-only
+> disclosure, NOT a version bump).**
+> **WHAT:** §E gains one disclosed-limit row, **Pre-install non-gating
+> exception** — when grove is not yet installed on the protected default
+> branch (no `grove-review-policy` block on `origin/<default>`), the
+> check's bootstrap self-detect exits green (non-gating) instead of
+> running, so a consumer's grove-install PR does not red on grove's own
+> just-vendored machinery; `adr-0014` (approved 2026-07-18) move 1b
+> governs it. `adr-0014` added to `depends_on` (genuine coupling — the
+> disclosed limit tracks its move-1b behavior); `updated:` bumped.
+> **WHY:** the check governs its own machinery (adr-0013 F3), so an
+> atomic install PR that *adds* `.grove/check/**` + the workflow would
+> otherwise red on files owing reviews they cannot yet have — red CI on
+> grove's own arrival, the opposite of "just works." The workflow's
+> bootstrap self-detect skips gating in exactly the cleanly-read,
+> grove-absent case.
+> **SCOPE:** §E only, plus the frontmatter `depends_on` + `updated:`
+> edits. §C, every INV, every scenario, the reason grammar, and the
+> pure-core algorithm are **byte-unchanged** — this behavior lives in
+> `adr-0014`'s workflow/check *shell*, not this spec's core, which is
+> why it is a §E disclosure and not a §C rule. Fail-closed is preserved:
+> a protected-branch **read failure** still reds (INV1); an *established*
+> install (policy present on base) never skips, so §C.2's carrier
+> fail-close fires as specified. The notes below remain the prior
+> amendments' provenance — superseded as the latest note, not edited.
+> **POINTER:** current truth is the §E body below — this note is
+> provenance only, not itself an acceptance criterion.
+> **VALUE:** as a first-run consumer, my grove-install PR does not greet
+> me with red CI on grove's own files; as the maintainer, nothing inside
+> an *established* install got softer — the exception is only the
+> grove-absent bootstrap case, and a read failure still reds.
+> **CONFIDENCE:** `verified` — the disclosed behavior traces to
+> `adr-0014` move 1b (self-detect: `grove-review-policy` absent on
+> `origin/<default>` ⇒ green skip; read failure still reds), read at
+> HEAD this sitting.
+> **Versioning judgment:** NOT version-significant per `versioning.md`
+> (behavioral spec → agent-judged significance counter): no testable
+> clause (scenario/invariant) changed; §E is a disclosure section, not a
+> gate rule; the gated behavior lives in `adr-0014`'s shell, not this
+> spec's core. `version` stays `2`, so the ledger pin
+> `plugins/grove/check/test-deps.md` (`spec-0002@v2`) stays correct and
+> needs no edit — flagged for the dispatcher, not touched here. No
+> durable decision is minted — `adr-0014` is itself the decision of
+> record.
+>
 > **Amendment (2026-07-17, `adr-0013-check-scope-mode` — the check's
 > scope mode, `strict` | `scoped`). Citation, stated honestly: every
 > delta below derives from the approved `adr-0013` (maintainer intent
@@ -819,6 +865,7 @@ This spec does **not** specify, and its check does **not** provide
 | **Autonomous loop-bounding** | A non-converging revise ↔ re-review cycle is bounded by the **human** (v1); a force-push-stable mechanical bound is Layer B (E7). |
 | **Scoped-mode ledger-presence proxy** *(row added per adr-0013 AC8 — the conceded class, disclosed not silently traded)* | In `scoped` mode, code's in-scope test is test-deps-ledger presence — a proxy **the producing agent controls**. A grove-run change whose executor omits its ledger generates no owed pairs: `adr-0005` dec 3's mechanical second catch does not fire, where `strict` would red the identical PR. Layer A cannot mechanically attest *who produced* a change (the same limit class as record genuineness, above). Conceded, named, and **backstopped**, never closed: (1) the executor charter's standing duty — the ledger is part of the deliverable, and code shipped without one is non-conformant at build review; (2) the human at merge — new code with no ledger is visible in the diff, and the §D mode-naming banner keeps the green honest about what it did not examine; (3) `strict` mode as the ratchet for a project whose grove-run share has grown past trusting the prose duty. `scoped` trades the mechanical catch, knowingly, for adoption — the trade is adr-0013's point, stated here rather than discovered later. |
 | **Run-from-PR-HEAD** *(row added per adr-0013 AC8 — both modes; the wave-2 code-review finding, previously unrecorded here)* | The check's own code runs from the PR's checkout: a **malicious** PR can alter the running check itself, and no output of that run is trustworthy. Policy-from-protected-branch (INV1) and the §C.2 carrier scoping preserve the **non-malicious** tripwire — an honest edit to the gate's machinery is never silent, in either mode — but a deliberately subverted runner is the same conceded class as forged records: Layer B, judged by the human at merge, never claimed caught. |
+| **Pre-install non-gating exception** *(row added per adr-0014 — grove does not gate its own arrival; a shell behavior, not a core-algorithm change)* | When grove is **not yet installed on the protected default branch** — no `grove-review-policy` block on `origin/<default>` (INV1's HEAD-independent base read) — the check's bootstrap self-detect **exits green (non-gating)** instead of running, so a consumer's grove-install PR does not red on grove's own just-vendored machinery (`adr-0014` move 1b). This lives in the **workflow/check shell**, not the pure core: §C, every INV, every scenario, and the reason grammar are **unchanged** — a cleanly-read base with no policy block is a green skip only in the bootstrap shell, a deliberate decision-backed exception to §C.8's "green iff every gate passes" and to fail-closed-on-empty-policy. Fail-closed is preserved where it bites: a genuine protected-branch **read failure** still reds (the exception is only the cleanly-read, grove-absent case), and an *established* install (policy present on base) never skips — §C.2's carrier fail-close fires exactly as specified. Governed by `adr-0014`, judged by the human at merge. |
 
 These are named, not pretended. Authenticity and policy changes remain
 **human-owned** (AC8).
