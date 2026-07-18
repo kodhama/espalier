@@ -10,9 +10,9 @@ updated: 2026-07-18
 
 # ADR-0014: installing grove is invisible to the consumer's tooling, and grove does not gate its own arrival
 
-> **STATUS: `gated` — self-checked converged, awaiting the decision-adversary
-> pass and the maintainer's intent act** (`draft → approved`; the shaper
-> never sets `approved`). Opened as a shaping change-request cross-read by
+> **STATUS: `approved`** (maintainer intent act 2026-07-18, after
+> decision-adversary rounds 1–2 → SOUND; see the self-check). Opened as a
+> shaping change-request cross-read by
 > the parallel `/trellis:setup` session; that cross-review is settled (its
 > sibling decisions `trellis/decision-0048` and `decision-0049` carry the
 > shared-pattern findings back into trellis, and their refinements are
