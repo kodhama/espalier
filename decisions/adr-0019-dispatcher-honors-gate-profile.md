@@ -23,12 +23,13 @@ updated: 2026-07-18
 > `## Decision state` first — it is the live state of the decision in one
 > place.
 >
-> **The crux (Q1) is Decided — D1: dispatcher-central.** The dispatcher is
-> the single component that reads the profile and enforces pause-vs-proceed
-> at each gate. The remaining Open items are the *how* (granularity,
-> gate→stage mapping, deterministic realization, fallback timing, D11). Every
-> other entry is either an inherited **Given** (from `adr-0018`, cited, not
-> reopened) or an **Open** question.
+> **The crux (Q1) is Decided — D1: dispatcher-central**, refined so the
+> gate fires **post-convergence** (the independent check always runs; the
+> profile only decides whether a human ratification is *additionally*
+> required). The remaining Open items are the *how* (read granularity,
+> gate→stage mapping, guardian-fallback timing, D11 channels, and
+> backprop-cascade gate ordering). Every other entry is either an inherited
+> **Given** (from `adr-0018`, cited, not reopened) or an **Open** question.
 
 ## Decision state
 
@@ -38,15 +39,34 @@ updated: 2026-07-18
   Q1 crux (Option A over B/C — see `## Rejected options`).
   - **The dispatcher is the single component that reads
     `.grove/gates.toml`** (via `resolve-profile`) **and enforces
-    pause-vs-proceed at each handover.** At each gate it resolves the
-    owner and routes accordingly:
-    - **`C2 = human`** → route to the **human** for that gate's approval
-      (merge / in-session, per D11's self-authenticating channels).
-    - **`C2 = agent`** → route to that gate's **agent gate-keeper** (e.g.
-      `decision-adversary` at `intent`, `conformance-reviewer` at
-      `build`). **"Proceed on agent authority" means route-to-agent-
-      ratifier, NOT skip the check** — the gate still fires; only *who
-      ratifies* changes from human to the independent agent.
+    pause-vs-proceed at each handover.**
+  - **The gate fires POST-convergence, never on raw producer output**
+    *(correction, maintainer 2026-07-18 — supersedes the earlier
+    "`C2=agent` → route to the agent gate-keeper" phrasing, which wrongly
+    read the adversary as an **alternative** to the human).* The human
+    must never see an unconverged draft. The ordering holds for **every**
+    stage:
+    1. **producer** produces a draft (`shaper`/`contract-author`/
+       `executor`);
+    2. **convergence — ALWAYS runs.** The stage's independent check
+       (`decision-adversary` for a decision, `spec-adversary` for a spec,
+       conformance + code-review for a build) runs and emits its verdict
+       record — the builder never grades its own work
+       (`inv-independent-verification`). **The human sees nothing yet.**
+    3. **the gate (ratification), on the CONVERGED artifact.** The profile
+       decides only whether a human ratification is *additionally* required
+       on top of convergence:
+       - **`C2 = agent`** → the **convergence verdict IS the ratification**
+         (the independent adversary's `SOUND`; adversary ≠ producer, so
+         independence holds). No human required.
+       - **`C2 = human`** → the converged artifact goes to the **human**;
+         their **recorded approval** ratifies it (merge / in-session, per
+         D11's self-authenticating channels).
+    - **So the adversary/reviewer is NOT an alternative to the human** — it
+      **always** runs as convergence; the profile only decides whether a
+      human ratification is *additionally* required. *(This is exactly how
+      adr-0018/0019 themselves ran: shaper converged → `decision-adversary`
+      `SOUND` → then the human intent gate.)*
   - **Stage charters shed their ownership assertions.** The
     `shaper`/`contract-author`/`executor` charters stop *asserting* who
     owns their gate (e.g. `shaper.md`'s "the merge is the approval; the
@@ -69,12 +89,20 @@ updated: 2026-07-18
     emergent (the profile configures that structure, it does not replace
     it).
   - **What D1 settles about agent-owned gate semantics (folds former Q5).**
-    The general shape is now decided: `C2 = agent` routes to the agent
-    gate-keeper (not a skip). For the `initiator` front `intent` gate
-    specifically, that gate-keeper is the `decision-adversary`
-    (soundness-ratify) with the human intent-ratification relocated to
-    `ship` (`adr-0018` D3, Given). The remaining *"how, deterministically,
-    in a charter-driven v0"* question survives as **Q4**.
+    Convergence always runs; under `C2 = agent` its verdict record IS the
+    ratification. For the `initiator` front `intent` gate specifically,
+    that convergence check is the `decision-adversary` (soundness-ratify)
+    with the human intent-ratification relocated to `ship` (`adr-0018` D3,
+    Given).
+  - **Deterministic realization — resolves former Q4.** The gate advances
+    **only on a posted record**, never on the dispatcher's memory of the
+    profile: convergence **always** produces its verdict record; under
+    `C2 = agent` **that convergence record IS the gate record**; under
+    `C2 = human` an **additional post-convergence human-approval record**
+    is required (the human-approval-record shape leans on grove#74). This
+    mirrors grove's standing "a review the dispatcher *remembers* ran does
+    not count — only a posted verdict record does" boundary, so a
+    charter-following v0 dispatcher cannot skip a human gate from recall.
 
 ### Open
 - **Q2 — read granularity.** Resolve the profile **once per run at the
@@ -90,19 +118,6 @@ updated: 2026-07-18
   spec approval (`contract-author` → spec gate); **build** = conformance
   (`executor` → conformance gate); **ship** = PR merge. Confirm/correct
   the mapping and name which stage consults which gate's owner.
-- **Q4 — what "enforce" IS for a charter-driven dispatcher (v0 = the
-  interactive session).** The dispatcher is "cold-started: the interactive
-  session (v0)" (`charters/dispatcher.md`) — it follows a charter, it is
-  not a runner-hosted process. So enforcement is **charter instructions
-  that tell the dispatching agent to call `resolve-profile` and
-  pause/proceed accordingly**, not a code hook. How does an
-  agent-following-a-charter realize per-gate pause/proceed
-  **deterministically** (so it cannot "remember" the profile said proceed
-  and skip a human gate — the same failure the "a review the dispatcher
-  remembers ran does not count" boundary guards against)? *(Also carries
-  the residual "what does the dispatcher do differently, step by step, at a
-  `C2=agent` vs `C2=human` gate" from former Q5 — D1 settled the general
-  shape, Q4 is the deterministic realization.)*
 - **Q6 — guardian fallback at run time.** When/how does the dispatcher
   detect a **missing/unreadable/floor-violating** profile mid-sequencing
   and surface the loud D8 warning + run under `guardian`? The CLI already
@@ -116,6 +131,30 @@ updated: 2026-07-18
   at human gates (checks the channel is self-authenticating before
   counting the gate satisfied), or does that stay **separate** (candidate
   grove#74)?
+- **Q9 — gate enforcement during a backprop cascade (W4).** Convergence
+  can cascade **upstream**: a build change forces a spec revision, so one
+  convergence touches **multiple** gated artifacts across dependency edges.
+  How does the dispatcher sequence the (possibly several) human gates a
+  cascade raises? **Maintainer's candidate model — sequence across edges,
+  batch within independent sets:**
+  - **Serial across a dependency edge is *forced*, not just cautious.** A
+    dependent artifact must NOT re-sync against an **unratified** upstream
+    (`inv-ratifiable-artifacts` / build-on-settled-ground). So in a
+    build→spec cascade: the **spec gate clears first → the build re-syncs
+    against the *ratified* spec → then the build gate.**
+  - **Batch within an antichain.** Where a cascade touches artifacts with
+    **no dependency edge** between them and both are human-gated, their
+    ratifications **batch into one prompt** (minimize human interruptions).
+  - **Net:** topologically order the human gates by the dependency graph —
+    **sequential across edges, batched within antichains.** Interacts with
+    the dispatcher's existing **W4 backprop-interrupt** handling
+    (`charters/dispatcher.md`: surface upstream, repair, one scoped audit,
+    cascade bound at generation 2).
+  - **Rejected alternative — speculative re-sync:** build against the
+    *proposed* (unratified) spec and batch **all** gates at the end.
+    Rejected — it builds on **unsettled ground** and wastes the downstream
+    work if the human revises the upstream at its gate. *(Candidate, not
+    yet Decided — awaiting maintainer confirmation.)*
 
 ### Parked
 - **Implementation.** This is a decision; the `executor` pass (charter
