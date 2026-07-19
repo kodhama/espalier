@@ -11,7 +11,7 @@
 
 import { buildArtifactIndex } from './artifact-index.mjs';
 import { artifactMeta } from './frontmatter.mjs';
-import { allowlistExempts } from './policy.mjs';
+import { allowlistExempts, allowlistEligible } from './policy.mjs';
 import { prepareRecords, evaluatePair, sortReasons } from './match.mjs';
 import { resolveGraph } from './graph.mjs';
 import { decisionGate, approvedUpstreamGate } from './gates.mjs';
@@ -137,6 +137,23 @@ export function runCheck({ changed = [], tree, comments = [], policy, protectedP
       }
       pairRowsForFile.push(row);
       rows.push(row);
+    }
+
+    // §D allowlist remedy hint (presentation-only, adr-0022 D1): a
+    // no-frontmatter, allowlist-eligible orientation-prose file whose fidelity
+    // pair reds `no-reviewable-upstream` names the explicit
+    // `non_behavioral_allowlist` cure. Gated on the actual reason so a prose
+    // file WITH a ledger (satisfiable by a record) is never told to allowlist
+    // itself, and on `!hasFrontmatter` so a typed artifact missing an
+    // `implements:` edge (a different cure) never draws it. No verdict or
+    // reason token changes; INV14 is upheld (the cure is a human-owned per-file
+    // add, not an automatic exemption).
+    if (
+      !meta.hasFrontmatter &&
+      allowlistEligible(policy, f, content) &&
+      pairRowsForFile.some((r) => r.reasons.some((x) => x.token === 'no-reviewable-upstream'))
+    ) {
+      for (const r of pairRowsForFile) r.allowlistRemedy = { path: f };
     }
 
     // §C.5 decision-layer human gate — attach to the decision-adversary pair

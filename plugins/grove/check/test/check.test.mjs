@@ -163,3 +163,21 @@ test('rejected records are surfaced in the derivation even when non-blocking', (
   assert.equal(d.rejectedRecords.length, 1);
   assert.equal(d.rejectedRecords[0].cause, 'unauthorized');
 });
+
+test('adr-0022 D1 (AC1) — a no-frontmatter prose file with no reviewable upstream carries the allowlist remedy marker', () => {
+  const tree = new Map([['docs/GUIDE.md', '# Guide\n\norientation prose, no frontmatter\n']]);
+  const d = runCheck({ changed: ['docs/GUIDE.md'], tree, comments: [], policy });
+  const conf = d.rows.find((r) => r.kind === 'pair' && r.review === 'conformance');
+  assert.ok(conf, 'expected a conformance pair row');
+  assert.ok(conf.reasons.some((x) => x.token === 'no-reviewable-upstream'), JSON.stringify(reasonCodes(d.rows)));
+  assert.deepEqual(conf.allowlistRemedy, { path: 'docs/GUIDE.md' });
+});
+
+test('adr-0022 D1 (AC2) — a non-prose code file with no reviewable upstream carries NO allowlist marker (its cure is a ledger)', () => {
+  const tree = new Map([['config/thing.toml', '# config\nkey = 1\n']]);
+  const d = runCheck({ changed: ['config/thing.toml'], tree, comments: [], policy });
+  const conf = d.rows.find((r) => r.kind === 'pair' && r.review === 'conformance');
+  assert.ok(conf, 'expected a conformance pair row');
+  assert.ok(conf.reasons.some((x) => x.token === 'no-reviewable-upstream'), JSON.stringify(reasonCodes(d.rows)));
+  assert.equal(conf.allowlistRemedy, undefined);
+});

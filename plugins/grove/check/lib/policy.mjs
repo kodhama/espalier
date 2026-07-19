@@ -249,6 +249,24 @@ export function allowlistExempts(policy, path, content) {
   return true;
 }
 
+// §D remedy-hint support (adr-0022 D1): a path that WOULD be honored by the
+// allowlist prose predicate (prose extension, not a shebang) but is NOT
+// currently listed — the discoverability case the allowlist remedy hint
+// targets. This is `allowlistExempts` with the membership test inverted; it
+// grants no exemption (INV14 is untouched), it only reports that the explicit,
+// human-owned allowlist add is an available cure. Frontmatter is checked by the
+// caller (the hint is for no-frontmatter orientation prose).
+export function allowlistEligible(policy, path, content) {
+  const norm = normalizePath(path);
+  if (norm == null) return false;
+  if (policy.allowlist.includes(norm)) return false; // already exempt — nothing to hint
+  const ext = extOf(norm);
+  if (!policy.proseExtensions.includes(ext)) return false;
+  const firstLine = String(content == null ? '' : content).split(/\r\n?|\n/, 1)[0] || '';
+  if (firstLine.startsWith('#!')) return false;
+  return true;
+}
+
 function extOf(path) {
   const base = path.slice(path.lastIndexOf('/') + 1);
   const dot = base.lastIndexOf('.');

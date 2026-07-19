@@ -65,6 +65,19 @@ function remedyHint(type) {
   );
 }
 
+// §D allowlist remedy hint (presentation-only, adr-0022 D1): a red
+// `no-reviewable-upstream` row on allowlist-eligible orientation prose names
+// the explicit-allowlist cure. INV14 is upheld — the cure is a human-owned
+// per-file allowlist add, not an automatic exemption.
+function allowlistHint(path) {
+  return (
+    `  hint: \`${path}\` is orientation prose with no reviewable upstream — ` +
+    `if it is README-class orientation, add it to \`non_behavioral_allowlist\` ` +
+    `(\`charters/review-policy.md\`); the allowlist stays explicit and ` +
+    `human-owned per file (INV14).`
+  );
+}
+
 // renderView(derivation) -> the human-facing text summary.
 export function renderView(derivation) {
   const { green, rows = [], rejectedRecords = [], scope = null } = derivation;
@@ -87,6 +100,9 @@ export function renderView(derivation) {
       out.push(renderRow(row));
       if (row.remedy && !hinted.has(row.subject)) {
         out.push(remedyHint(row.remedy.type));
+        hinted.add(row.subject);
+      } else if (row.allowlistRemedy && !hinted.has(row.subject)) {
+        out.push(allowlistHint(row.allowlistRemedy.path));
         hinted.add(row.subject);
       }
     }
