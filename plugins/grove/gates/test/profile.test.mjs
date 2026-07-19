@@ -194,6 +194,16 @@ test('adr-0021 D2 — parseGatesToml reports runtimeDir null when the key is abs
   assert.equal(parseGatesToml(STEWARD_TOML).runtimeDir, null);
 });
 
+test('adr-0021 D2 — a whitespace-PADDED valid path is accepted and surfaced VERBATIM (no trim, no rewrite)', () => {
+  const padded = ['runtime_dir = " plugins/grove/gates/ "', STEWARD_TOML].join('\n');
+  const r = resolveProfile({ text: padded });
+  assert.equal(r.source, 'file');
+  assert.equal(r.warning, null);
+  // verbatim pass-through: visibly padded in the output, loud at invocation —
+  // never silently normalized (documented at parseGatesToml's return).
+  assert.equal(r.runtimeDir, ' plugins/grove/gates/ ');
+});
+
 test('adr-0021 AC3 — a floor-satisfying profile WITH runtime_dir resolves from the file with the key surfaced', () => {
   const r = resolveProfile({ text: RUNTIME_DIR_TOML });
   assert.equal(r.source, 'file');
