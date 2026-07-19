@@ -3,9 +3,9 @@ id: charter-decision-adversary
 type: charter
 status: gated
 implements: adr-0012-methodology-delivery-machinery  # the realized contract (adr-0012 AC9/F8); machine-readable fidelity selector
-depends_on: [adr-0012-methodology-delivery-machinery, adr-0015-reviewer-machine-boundary]
+depends_on: [adr-0012-methodology-delivery-machinery, adr-0015-reviewer-machine-boundary, adr-0023-review-triage-blackboard]
 owner: agent
-updated: 2026-07-18
+updated: 2026-07-19
 ---
 
 # decision-adversary — stage 2½: break gated decisions before ratification

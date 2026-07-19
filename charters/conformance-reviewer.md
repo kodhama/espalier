@@ -3,9 +3,9 @@ id: charter-conformance-reviewer
 type: charter
 status: gated
 implements: adr-0012-methodology-delivery-machinery  # the realized contract for the every-layer fidelity remit (adr-0012); machine-readable fidelity selector
-depends_on: [adr-0005-tdd-and-artifact-gated-dispatch, adr-0006-operational-conformance-mechanism, adr-0012-methodology-delivery-machinery, adr-0015-reviewer-machine-boundary, charter-versioning, charter-relations]
+depends_on: [adr-0005-tdd-and-artifact-gated-dispatch, adr-0006-operational-conformance-mechanism, adr-0012-methodology-delivery-machinery, adr-0015-reviewer-machine-boundary, charter-versioning, charter-relations, adr-0023-review-triage-blackboard]
 owner: agent
-updated: 2026-07-18
+updated: 2026-07-19
 ---
 
 # conformance-reviewer — the fidelity instrument, at every layer
