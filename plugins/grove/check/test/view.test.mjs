@@ -173,3 +173,29 @@ test('render() emits the SAME single derivation as structured output alongside t
   assert.equal(out.structured, derivation);
   assert.equal(typeof out.text, 'string');
 });
+
+test('§D allowlist remedy hint — an allowlist-eligible prose no-reviewable-upstream row names the allowlist cure (adr-0022 D1)', () => {
+  const text = renderView({
+    green: false,
+    rows: [{
+      kind: 'pair', review: 'conformance', subject: 'docs/GUIDE.md', latestVerdict: null, fresh: null, covers: false, separated: null,
+      recordSequence: [], reasons: [{ code: 'no-reviewable-upstream', token: 'no-reviewable-upstream' }], allowlistRemedy: { path: 'docs/GUIDE.md' },
+    }],
+    rejectedRecords: [],
+    scope: null,
+  });
+  assert.ok(text.includes('docs/GUIDE.md'), text);
+  assert.ok(text.includes('non_behavioral_allowlist'), text);
+  assert.ok(text.includes('charters/review-policy.md'));
+  assert.ok(text.includes('INV14'));
+});
+
+test('§D allowlist remedy hint — appears once per subject, not once per owed row', () => {
+  const row = (review) => ({
+    kind: 'pair', review, subject: 'docs/GUIDE.md', latestVerdict: null, fresh: null, covers: false, separated: null,
+    recordSequence: [], reasons: [{ code: 'no-reviewable-upstream', token: 'no-reviewable-upstream' }], allowlistRemedy: { path: 'docs/GUIDE.md' },
+  });
+  const text = renderView({ green: false, rows: [row('conformance'), row('code-reviewer')], rejectedRecords: [], scope: null });
+  const hits = text.split('non_behavioral_allowlist').length - 1;
+  assert.equal(hits, 1, `expected one hint per subject, got ${hits}`);
+});

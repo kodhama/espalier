@@ -3,7 +3,7 @@
 // INV1, INV7, INV14; S4, S6, S11, S12.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { assemblePolicy, allowlistExempts } from '../lib/policy.mjs';
+import { assemblePolicy, allowlistExempts, allowlistEligible } from '../lib/policy.mjs';
 
 const reviewPolicyText = [
   '```grove-review-policy',
@@ -110,4 +110,27 @@ test('an allowlisted prose path with a shebang first line is NOT exempt (S11)', 
 test('a path not on the allowlist is never exempt', () => {
   const p = assemblePolicy({ reviewPolicyText, charterTexts: fullCharters });
   assert.equal(allowlistExempts(p, 'specs/foo.md', '# spec\n'), false);
+});
+
+// --- allowlistEligible: the remedy-hint discoverability predicate (adr-0022 D1) ---
+const eligPolicy = (allow = []) => assemblePolicy({
+  reviewPolicyText: ['```grove-review-policy', 'schema: 1',
+    ...(allow.length ? ['non_behavioral_allowlist:', ...allow.map((a) => `  - ${a}`)] : []), '```'].join('\n'),
+  charterTexts: [],
+});
+
+test('allowlistEligible — an unlisted prose path is eligible (adr-0022 D1)', () => {
+  assert.equal(allowlistEligible(eligPolicy(), 'docs/GUIDE.md', '# guide\n'), true);
+});
+
+test('allowlistEligible — a path already on the allowlist is not "eligible" (already exempt)', () => {
+  assert.equal(allowlistEligible(eligPolicy(['README.md']), 'README.md', '# hello\n'), false);
+});
+
+test('allowlistEligible — a non-prose extension is not eligible (never a review-free zone for code, INV14)', () => {
+  assert.equal(allowlistEligible(eligPolicy(), 'config/thing.toml', 'key = 1\n'), false);
+});
+
+test('allowlistEligible — a prose path whose first line is a shebang is not eligible', () => {
+  assert.equal(allowlistEligible(eligPolicy(), 'docs/x.md', '#!/usr/bin/env node\n# tricked\n'), false);
 });

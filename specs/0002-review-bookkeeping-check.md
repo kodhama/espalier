@@ -1066,6 +1066,25 @@ recorded self-guiding principle (2026-07-17 call, the same sitting as
 the deferred-install path): products surface the salient next step in
 context.
 
+**Remedy hint for allowlist-eligible orientation prose (presentation-layer;
+adr-0022 D1).** Where a red row's reason is `no-reviewable-upstream` and its
+subject is a **no-frontmatter** file that would pass the §C.2/INV14 prose
+predicate (extension in `prose_extensions`, first line not a shebang) but is
+**not yet listed** in `non_behavioral_allowlist`, the rendered view names the
+explicit-allowlist cure in context, approximately: *"`<path>` is orientation
+prose with no reviewable upstream — if it is README-class orientation, add it
+to `non_behavioral_allowlist` (`charters/review-policy.md`); the allowlist
+stays explicit and human-owned per file (INV14)."* Like the unclaimed-type
+hint above, this changes **no verdict and no reason token** — rendered text
+only, keyed off the derivation's own reason and §C.2 classification. **INV14 is
+untouched**: the hint points at the *existing* human-owned per-file allowlist
+add, granting no automatic exemption (the auto-exempt-by-rule alternative was
+considered and rejected — adr-0022 D2, upholding adr-0013's rejection of
+path-class exemptions). It fires only where the allowlist could actually honor
+the path and where that is the fitting cure — so a typed artifact missing an
+`implements:` edge, or a non-prose code file with no ledger (whose cures are an
+edge or a `test-deps.md` ledger, not the allowlist), never draws it.
+
 Reason **naming** uses the record's `manifest_hashes` and the check's
 own recomputation; the **verdict** never depends on the recorded hashes
 (§A.3). *(`vacuous-evidence` is decision-backed: the sixth enumerated

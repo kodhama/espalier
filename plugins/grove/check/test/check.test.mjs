@@ -163,3 +163,38 @@ test('rejected records are surfaced in the derivation even when non-blocking', (
   assert.equal(d.rejectedRecords.length, 1);
   assert.equal(d.rejectedRecords[0].cause, 'unauthorized');
 });
+
+test('adr-0022 D1 (AC1) — a no-frontmatter prose file with no reviewable upstream carries the allowlist remedy marker', () => {
+  const tree = new Map([['docs/GUIDE.md', '# Guide\n\norientation prose, no frontmatter\n']]);
+  const d = runCheck({ changed: ['docs/GUIDE.md'], tree, comments: [], policy });
+  const conf = d.rows.find((r) => r.kind === 'pair' && r.review === 'conformance');
+  assert.ok(conf, 'expected a conformance pair row');
+  assert.ok(conf.reasons.some((x) => x.token === 'no-reviewable-upstream'), JSON.stringify(reasonCodes(d.rows)));
+  assert.deepEqual(conf.allowlistRemedy, { path: 'docs/GUIDE.md' });
+});
+
+test('adr-0022 D1 (AC2) — a non-prose code file with no reviewable upstream carries NO allowlist marker (its cure is a ledger)', () => {
+  const tree = new Map([['config/thing.toml', '# config\nkey = 1\n']]);
+  const d = runCheck({ changed: ['config/thing.toml'], tree, comments: [], policy });
+  const conf = d.rows.find((r) => r.kind === 'pair' && r.review === 'conformance');
+  assert.ok(conf, 'expected a conformance pair row');
+  assert.ok(conf.reasons.some((x) => x.token === 'no-reviewable-upstream'), JSON.stringify(reasonCodes(d.rows)));
+  assert.equal(conf.allowlistRemedy, undefined);
+});
+
+test('adr-0022 D1 (reason-gate) — an allowlist-eligible prose file that reds for a reason OTHER than no-reviewable-upstream (it has an ancestor ledger) draws NO allowlist marker', () => {
+  const tree = new Map([
+    ['docs/GUIDE.md', '# Guide\n\nprose, but ledgered so its upstream resolves\n'],
+    ['docs/test-deps.md', ledger(['spec-foo'])],
+    ['specs/foo.md', spec('spec-foo', 'adr-x')],
+    ['decisions/adr-x.md', adr('adr-x', 'approved')],
+  ]);
+  const d = runCheck({ changed: ['docs/GUIDE.md'], tree, comments: [], policy });
+  const conf = d.rows.find((r) => r.kind === 'pair' && r.review === 'conformance');
+  assert.ok(conf, 'expected a conformance pair row');
+  // the ancestor ledger resolves the upstream, so the row reds never-reviewed —
+  // NOT no-reviewable-upstream — even though the file is allowlist-eligible prose
+  assert.ok(!conf.reasons.some((x) => x.token === 'no-reviewable-upstream'), JSON.stringify(reasonCodes(d.rows)));
+  // ...so the reason-gate withholds the allowlist marker (its cure is a record, not the allowlist)
+  assert.equal(conf.allowlistRemedy, undefined);
+});
