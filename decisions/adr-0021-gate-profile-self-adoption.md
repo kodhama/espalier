@@ -1,7 +1,7 @@
 ---
 id: adr-0021-gate-profile-self-adoption
 type: adr
-status: gated  # shaper self-check 2026-07-19; routes to decision-adversary, then the intent gate per the resolved profile (human, in-session — the de-facto steward this decision makes declared)
+status: approved  # maintainer's intent act (in-session approval), 2026-07-19 — recorded flip per lifecycle.md; decision-adversary SOUND (non-blocking findings folded pre-gate, d2469b6); author (shaper) ≠ approver (maintainer); the PR merge is the ship/landing act
 depends_on: [adr-0018-gate-profile-and-trigger-split, adr-0020-dispatcher-honors-gate-profile]
 informed_by: [adr-0017-dispatcher-posts-records-self-adoption, adr-0012-methodology-delivery-machinery]
 owner: agent
