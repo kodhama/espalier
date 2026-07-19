@@ -114,6 +114,26 @@ regression proof — a `grove-review-ask` fence is invisible to the
 `grove-verdict` extractor. The `spec-0002@v4` pin below is untouched
 (spec-0003 amends no clause of it).
 
+The **audit** tests (`test/audit.test.mjs`, over `lib/audit.mjs`) rest
+on the same `spec-0003` (@v1) pin, §B–§C, and `adr-0023` D4 — the
+phase-1 build (Consequence 3): the two deterministic residues
+(`coverage residue = diff_files ∖ ask_covered_files`; the judgment
+residue via the shared `scope.mjs` jurisdiction and `frontmatter.mjs`
+type bases) and the §B.2 residue-conditional rule; the `grove-audit`
+record class under the `adr-0015` judgment/stamp split (the emitter
+stamps the coverage-residue manifest with per-path hashes, the
+content/policy `grove-fp-1` fingerprints, the typed record-stream HWM
+with the pinned `record_hwm: 0` empty-stream sentinel, and the flagged
+rows — the auditor supplies only `auditor`/`dispositions`/`findings`);
+§C.3 freshness (content, policy-carrier content/membership, and
+typed-HWM staleness under the inherited exact-tag tokenizer — prose and
+`grove-audit` blocks never invalidate); §C.4 auditor separation
+including `resumed_by` dual attribution over the full stream
+(rejection never un-produces); and §C.5's vacuity rule one level up.
+Shadow machinery like the ask suite: the INV1 regression proves a
+`grove-audit` fence invisible to both the `grove-verdict` extractor
+and the ask reader.
+
 ```grove-test-deps
 schema: 1
 specs:
