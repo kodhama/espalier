@@ -5,7 +5,9 @@
 // (env + event payload), assembles runCheck's four inputs from git + the PR
 // record stream, runs the pure core, renders the §D status view, prints the
 // summary, and sets the check-run conclusion via the exit code — non-zero on
-// red (or any hard error, e.g. INV9's truncated read), zero on green.
+// red (or any hard error, e.g. INV9's truncated read), zero on green. After
+// the verdict it also prints the spec-0003 §D shadow-comparator report to
+// stdout — log-only and report-only, never a gate input (spec-0003 INV16).
 //
 // Before any gating work it applies the adr-0014 move-1b bootstrap self-detect:
 // if grove is not yet installed on the protected default branch (no
@@ -34,6 +36,8 @@ import { readRecordStream } from '../shell/record-stream.mjs';
 import { assemblePolicy } from '../lib/policy.mjs';
 import { runCheck } from '../lib/check.mjs';
 import { render } from '../lib/view.mjs';
+import { normalizePath } from '../lib/normalize.mjs';
+import { computeComparison, renderComparison } from '../lib/compare.mjs';
 
 function readEvent(env) {
   if (!env.GITHUB_EVENT_PATH) return {};
@@ -128,6 +132,45 @@ async function main() {
       /* summary is best-effort; the exit code is the authoritative signal */
     }
   }
+
+  // spec-0003 §D — the report-only shadow comparator (adr-0023 D5 phase 2).
+  // Runs AFTER the verdict derivation + view render above and writes ONE
+  // clearly-delimited section to STDOUT ONLY — the workflow run log. It never
+  // touches the job summary, the structured output (the JSON below is the
+  // derivation, unchanged), the exit code, a status, a label, or any PR
+  // comment (INV16). It is printed BEFORE the structured-output line so a
+  // consumer reading that line's position stays unaffected — the comparator
+  // is log prose, excluded from structured output entirely. Any comparator
+  // error is swallowed into a stdout note: report-only means it can never red
+  // (or green) the shipped check — the verdict, view, summary, and exit code
+  // are already fixed above, byte-identical with or without this section
+  // (spec-0003 INV1, adr-0023 AC3).
+  try {
+    // The §C.3.2 policy-fingerprint recomputation basis: the SAME protected-
+    // branch carrier texts the policy above was assembled from (Terms: the
+    // review-policy source + every discovered reviewer-declaration file).
+    const protectedTree = new Map();
+    if (policy.reviewPolicyPath != null) protectedTree.set(policy.reviewPolicyPath, reviewPolicyText);
+    for (const e of charterEntries) {
+      const p = normalizePath(e.path);
+      if (p != null && !protectedTree.has(p)) protectedTree.set(p, e.text);
+    }
+    const comparison = computeComparison({
+      diffFiles: changed,
+      tree,
+      comments,
+      policy,
+      derivation,
+      protectedTree,
+    });
+    process.stdout.write('\n' + renderComparison(comparison) + '\n');
+  } catch (err) {
+    process.stdout.write(
+      `\ngrove shadow comparator: skipped on error (report-only, never gating): ` +
+        `${err && err.message ? err.message : err}\n`,
+    );
+  }
+
   if (env.GROVE_STRUCTURED_OUTPUT) {
     process.stdout.write('\n' + JSON.stringify(structured) + '\n');
   }

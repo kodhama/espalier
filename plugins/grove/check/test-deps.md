@@ -134,6 +134,28 @@ Shadow machinery like the ask suite: the INV1 regression proves a
 `grove-audit` fence invisible to both the `grove-verdict` extractor
 and the ask reader.
 
+The **shadow-comparator** tests (`test/compare.test.mjs`, over
+`lib/compare.mjs`) rest on the same `spec-0003` (@v1) pin, §D, and
+`adr-0023` D5 — the phase-2 build (Consequence 4): the five §D.1
+per-PR metrics, derived by reuse only — the table-side owed set is
+READ from `runCheck`'s own derivation (never re-derived), the
+audit-side owed set composes `asks.mjs` effectiveness + the
+fail-closed union, `audit.mjs` residues/§C.5 selection-and-vacuity/
+§C.3 freshness (metric 4 naming the failed binding), and
+`policy.owed`; metric 5's HWM races share `audit.mjs`'s
+typed-fence membership rule via `typedRacesPast` (single-homed);
+metric 3 pins the `0/0 (empty diff)` rendering (N1). §C.5 selection
+is exercised as the read side (latest admissible audit wins; an
+`auditor ∈ P` exclusion is reported, S7), and the §D.1 findings
+surface covers flagged rows plus stamped-field-vs-recomputation
+mismatches (INV9). The suite carries the phase's LOAD-BEARING
+regression (adr-0023 AC3 / spec-0003 INV1, S11): the shipped check's
+derivation, rendered view, and structured output are byte-identical
+with and without ask/audit records in the stream — the comparator is
+report-only (INV16), wired in `bin/check.mjs` as a stdout-only
+section after the verdict, excluded from the job summary and the
+structured output.
+
 ```grove-test-deps
 schema: 1
 specs:

@@ -208,6 +208,16 @@ export function typedRecordHwm(comments) {
   return hwm;
 }
 
+// The typed-record comments past a given HWM, in stream order (§C.3 rule 3's
+// invalidating class; §D.1 metric 5's race count). Exported so the comparator
+// counts races over the SAME membership rule freshness stales on — one home,
+// never a second implementation (spec-0003 §D.1, phase 2).
+export function typedRacesPast(comments, hwm) {
+  return (comments || []).filter(
+    (c) => typeof c.id === 'number' && c.id > hwm && carriesTypedFence(c.body),
+  );
+}
+
 // --- freshness (§C.3; INV13 — evaluated, during shadow only reported) ---
 
 // An audit record is fresh iff all three bindings recompute equal:
@@ -221,10 +231,7 @@ export function auditFreshness(record, { diffFiles, tree, carrierPaths, protecte
   const stale = [];
   if (groveFp1(diffFiles || [], tree) !== record.content_fingerprint) stale.push('content');
   if (groveFp1(carrierPaths || [], protectedTree) !== record.policy_fingerprint) stale.push('policy');
-  const raced = (comments || []).some(
-    (c) => typeof c.id === 'number' && c.id > record.record_hwm && carriesTypedFence(c.body)
-  );
-  if (raced) stale.push('stream');
+  if (typedRacesPast(comments, record.record_hwm).length > 0) stale.push('stream');
   return { fresh: stale.length === 0, stale };
 }
 
