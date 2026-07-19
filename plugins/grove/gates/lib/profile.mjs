@@ -140,7 +140,9 @@ export function parseGatesToml(text) {
     // searched — the key keeps "declared elsewhere on purpose" distinguishable
     // from "missing, broken" (adr-0018 D8 stays loud). Top-level only: a
     // runtime_dir inside [gates] is an unknown gate row and fails the floor
-    // validator's strictness.
+    // validator's strictness. The value passes through VERBATIM — no trim or
+    // normalization — so a whitespace-padded path is surfaced as written
+    // (visibly padded, loud at invocation), never silently rewritten.
     runtimeDir: 'runtime_dir' in root ? root.runtime_dir : null,
     gates: root.gates || {},
     trigger: root.trigger || {},

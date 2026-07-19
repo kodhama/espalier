@@ -26,6 +26,10 @@ seeded_from = "steward"
 # Declared, never searched: setting it says "my machinery lives elsewhere on
 # purpose"; a missing default install still fails LOUD (the adr-0018 D8
 # guardian fallback), never silently resolved from some other path.
+# Slash convention: write the value WITH a trailing slash (as the examples
+# do); the dispatcher composes `<runtime_dir>/bin/resolve-profile.mjs`, so a
+# trailing slash merely yields a harmless doubled slash. The value is used
+# verbatim — no trimming or normalization.
 # runtime_dir = ".grove/internal/gates/"
 
 [gates]
