@@ -86,6 +86,21 @@ test('grove#92 — a following key after a closed multi-line array still parses'
   assert.equal(t.scope, 'scoped');
 });
 
+test('grove#92 — a double comma throws (fail-closed) — the pin for the safety claim in the code comment', () => {
+  assert.throws(() => parseToml('non_behavioral_allowlist = ["a",,"b"]'), /non-string array item/);
+  assert.throws(() => parseToml('non_behavioral_allowlist = [\n  "a",\n  ,\n  "b",\n]'), /non-string array item/);
+});
+
+test('grove#92 — brackets INSIDE a quoted path do not miscount depth (bracketDepth respects strings)', () => {
+  const t = parseToml('non_behavioral_allowlist = [\n  "weird[0].md",\n  "b.md"\n]');
+  assert.deepEqual(t.non_behavioral_allowlist, ['weird[0].md', 'b.md']);
+});
+
+test('grove#92 — trailing junk after the closing bracket fails closed (inline and multi-line)', () => {
+  assert.throws(() => parseToml('non_behavioral_allowlist = ["a"] extra'), /unsupported value/);
+  assert.throws(() => parseToml('non_behavioral_allowlist = [\n  "a"\n] extra'), /unsupported value/);
+});
+
 test('grove#92 — a multi-line allowlist survives the review.toml synthesis path the check actually reads', () => {
   const reviewToml = [
     'scope = "strict"',
