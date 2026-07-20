@@ -91,9 +91,14 @@ test('grove#92 — a double comma throws (fail-closed) — the pin for the safet
   assert.throws(() => parseToml('non_behavioral_allowlist = [\n  "a",\n  ,\n  "b",\n]'), /non-string array item/);
 });
 
-test('grove#92 — brackets INSIDE a quoted path do not miscount depth (bracketDepth respects strings)', () => {
-  const t = parseToml('non_behavioral_allowlist = [\n  "weird[0].md",\n  "b.md"\n]');
-  assert.deepEqual(t.non_behavioral_allowlist, ['weird[0].md', 'b.md']);
+test('grove#92 — an UNBALANCED bracket inside a quoted path does not miscount depth (bracketDepth respects strings)', () => {
+  // "weird].md" carries a LONE ] inside the quote. A naive counter that ignored
+  // string state would hit depth<=0 at that ] and truncate the array early → a
+  // false parse. Only a string-respecting bracketDepth reaches the real close.
+  // (A balanced in-quote "[…]" would net zero and survive the naive bug too, so
+  // it would not bite — code-review mutation finding, fold.)
+  const t = parseToml('non_behavioral_allowlist = [\n  "weird].md",\n  "b.md"\n]');
+  assert.deepEqual(t.non_behavioral_allowlist, ['weird].md', 'b.md']);
 });
 
 test('grove#92 — trailing junk after the closing bracket fails closed (inline and multi-line)', () => {
