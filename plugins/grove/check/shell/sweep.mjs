@@ -48,6 +48,17 @@ export async function sweepPr({ fetchImpl, gitRunner, owner, repo, prNumber, tok
   const comments = await readRecordStream({ fetchImpl, owner, repo, prNumber, token, apiBase });
   const changed = await computeChanged({ gitRunner, base, head });
   const { reviewPolicyText, reviewPolicyPath, charterEntries } = await readProtectedPolicy({ gitRunner, defaultBranch });
+  // A sweep with no visible reviewer declarations would degrade every type to
+  // the fail-closed full set and silently inflate owed pairs — correct for the
+  // CHECK (spec-0002 Q7 fail-closed), junk for a MEASUREMENT. Refuse loudly.
+  // (First real run: git pathspecs are cwd-relative, so a subdirectory cwd
+  // found 0 carriers while the root-relative policy read still succeeded.)
+  if (charterEntries.length === 0) {
+    throw new Error(
+      `no reviewer-declaration carriers found at origin/${defaultBranch} — ` +
+        `refusing to sweep with a degraded owed-map (git pathspecs are cwd-relative; run from the repo root)`,
+    );
+  }
   const policy = assemblePolicy({ reviewPolicyText, reviewPolicyPath, charterTexts: charterEntries });
   const tree = await buildTree({ gitRunner, head, artifactDirs: policy.artifactDirs, changed });
 

@@ -41,7 +41,16 @@ async function main() {
     process.exit(2);
   }
   const [owner, name] = repo.split('/');
-  const gitRunner = makeExecGitRunner();
+  // git pathspecs are cwd-relative (the first real run mis-measured from a
+  // subdirectory): pin the runner to the repo root, loudly.
+  let repoRoot;
+  try {
+    repoRoot = execFileSync('git', ['rev-parse', '--show-toplevel'], { encoding: 'utf8' }).trim();
+  } catch {
+    process.stderr.write('shadow-metrics: not inside a git repository\n');
+    process.exit(2);
+  }
+  const gitRunner = makeExecGitRunner({ cwd: repoRoot });
   const tok = token();
 
   const results = [];

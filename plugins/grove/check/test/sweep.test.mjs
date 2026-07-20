@@ -92,6 +92,19 @@ test('sweepPr — composes both metric families from injected runners, read-only
   assert.equal(m.noAsk.count, 2);
 });
 
+test('sweepPr — zero declaration carriers rejects loudly, never a degraded owed-map (the cwd-relative pathspec bug)', async () => {
+  const files = { 'pkg/code.mjs': '// code\n' }; // no charters/* declarations visible
+  const comments = [];
+  const fetchImpl = async (url) => {
+    if (url.includes('/pulls/')) return { ok: true, json: async () => ({ base: { sha: 'B', repo: { default_branch: 'main' } }, head: { sha: 'H' } }), headers: { get: () => null } };
+    return { ok: true, json: async () => comments, headers: { get: () => null }, status: 200 };
+  };
+  await assert.rejects(
+    () => sweepPr({ fetchImpl, gitRunner: fakeGit(files), owner: 'o', repo: 'r', prNumber: 5 }),
+    /no reviewer-declaration carriers found/,
+  );
+});
+
 test('sweepPr — PR-meta fetch failure is loud, never a partial result', async () => {
   const fetchImpl = async () => ({ ok: false, status: 404, json: async () => ({}), headers: { get: () => null } });
   await assert.rejects(
