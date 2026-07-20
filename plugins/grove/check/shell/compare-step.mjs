@@ -8,8 +8,8 @@
 // `write` — stdout only at the bin call site. Any error is swallowed into a
 // written note: report-only means this step can never red (or green) the
 // shipped check, alter its exit code, or touch its structured output
-// (spec-0003 INV1/INV16, adr-0023 AC3). Throws only if BOTH writes throw
-// (the injected sink failing twice) — the honest bound its test pins.
+// (spec-0003 INV1/INV16, adr-0023 AC3). Throws only when the catch-path
+// write itself throws — the honest bound its test pins.
 
 import { computeComparison, renderComparison } from '../lib/compare.mjs';
 import { normalizePath } from '../lib/normalize.mjs';

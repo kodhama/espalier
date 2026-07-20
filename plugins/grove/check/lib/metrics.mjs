@@ -132,7 +132,7 @@ export function aggregateWindow(perPr) {
   for (const pr of perPr) {
     pairsTotal += pr.closure.pairsTotal;
     pairsClosed += pr.closure.pairsClosed;
-    orderedClosed += pr.closure.pairsOrdered != null ? pr.closure.pairsOrdered : Math.round(pr.closure.orderedFraction * pr.closure.pairsClosed);
+    orderedClosed += pr.closure.pairsOrdered; // exact count, always present (askClosure returns it; no rounded fallback)
     verdictsTotal += pr.annotations.verdictsTotal;
     consultingCount += pr.annotations.consultingCount;
   }

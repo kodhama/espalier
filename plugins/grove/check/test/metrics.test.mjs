@@ -108,12 +108,13 @@ test('annotation consumption — a verdict findings body naming the ask annotati
 
 test('aggregateWindow — sums pairs, averages rates, guards 0/0', () => {
   const w = aggregateWindow([
-    { closure: { pairsTotal: 2, pairsClosed: 2, closureRate: 1, orderedFraction: 1 }, annotations: { verdictsTotal: 2, consultingCount: 1 } },
-    { closure: { pairsTotal: 2, pairsClosed: 1, closureRate: 0.5, orderedFraction: 0 }, annotations: { verdictsTotal: 1, consultingCount: 0 } },
+    { closure: { pairsTotal: 2, pairsClosed: 2, pairsOrdered: 2, closureRate: 1, orderedFraction: 1 }, annotations: { verdictsTotal: 2, consultingCount: 1 } },
+    { closure: { pairsTotal: 2, pairsClosed: 1, pairsOrdered: 0, closureRate: 0.5, orderedFraction: 0 }, annotations: { verdictsTotal: 1, consultingCount: 0 } },
   ]);
   assert.equal(w.pairsTotal, 4);
   assert.equal(w.pairsClosed, 3);
   assert.equal(w.closureRate, 0.75);
+  assert.equal(w.orderedFraction, 2 / 3); // window-level pin on the exact-count branch
   assert.equal(w.consultingFraction, 1 / 3);
   const empty = aggregateWindow([]);
   assert.equal(empty.pairsTotal, 0);
