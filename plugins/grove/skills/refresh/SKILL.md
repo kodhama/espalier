@@ -68,7 +68,8 @@ consumer's, the template is grove's):
 - `.claude/skills/grove-status/SKILL.md` *(if the telemetry skill is
   installed — setup step 9)* ← `reference/skills/grove-status/SKILL.md`,
   vendoring header stripped — resolution: `<WISP_VENDOR_PATH>`, read from
-  the installed copy.
+  the installed copy; drop its `## Placeholders` section once resolved
+  (setup step 9's closing instruction — the reference copy carries one).
 
 **Agent charters (`.claude/agents/`) — the same idea, per role:**
 
@@ -84,6 +85,15 @@ consumer's, the template is grove's):
   conventions (package.json scripts, docs), else the honest explicit
   *"none exists yet — flagged rather than silently assumed"* statement
   (setup step 3's idiom). Drop `## Placeholders` once resolved.
+- **Grove-self-relative paths are not tokens but still need adapting:**
+  a reference charter may carry paths that only resolve in the grove repo
+  itself (e.g. `plugins/grove/check/lib/…`, a bare `charters/…` file). A
+  verbatim copy would dangle in the consumer. Adapt each: an installed
+  counterpart exists → the install-layout path (`.grove/internal/check/…`);
+  grove-only content → the absolute grove URL (the grove#55 convention).
+  **Flag every such adaptation in the hand-back** — it is a judgment,
+  not a copy. *(Surfaced by the auditor charter in the 2026-07-21
+  rollout, math-quest #329.)*
 - `.claude/agents/README.md`: update the roster prose; keep the
   repo-specific resolved prose.
 - Removing a role the consumer chose at setup is **not** refresh's call —
