@@ -1,7 +1,7 @@
 ---
 id: adr-0026-thin-vendor-boundary
 type: adr
-status: gated  # self-checked (shaper) 2026-07-21 after in-session convergence (7 Decided, 0 Open); no decision rubric exists in grove-self (honest-absent) — checked against the house axes (adr-0025 pattern); awaiting decision-adversary verdict, then the maintainer's intent act
+status: gated  # self-checked (shaper) 2026-07-21 after in-session convergence (7 Decided, 0 Open); no decision rubric exists in grove-self (honest-absent) — checked against the house axes (adr-0025 pattern); decision-adversary NEEDS-REVISION at 61e68f6 (F1 blocking: adr-0012 pointer omitted from Propagation) — F1–F6 folded; scoped re-review pending, then the maintainer's intent act
 depends_on: [adr-0012-methodology-delivery-machinery, adr-0018-gate-profile-and-trigger-split, adr-0021-gate-profile-self-adoption, spec-0002-review-bookkeeping-check]
 informed_by: [adr-0008-lifecycle-enum-companion, adr-0014-install-is-invisible-and-ungated, adr-0023-review-triage-blackboard, adr-0010-versioning-is-operational, adr-0001-corpus-reviewer-lift]
 owner: agent
@@ -24,9 +24,11 @@ updated: 2026-07-21
 > cost is priced rather than hidden (D4: ratification becomes a **record with
 > loud divergence disclosure, not a lock** — per-project plugin pinning does
 > not exist in the harness, verified against Claude Code docs 2026-07-21).
-> Seven items Decided, none Open — **converged 2026-07-21** — three Parked;
-> awaiting self-check → `gated`, the decision-adversary pass, then the
-> intent gate.
+> Seven items Decided, none Open — **converged 2026-07-21** — three Parked.
+> Adversary pass at `61e68f6`: **NEEDS-REVISION** — F1 (blocking: the
+> adr-0012 pointer was missing from Propagation; its carrier-siting letter
+> is genuinely amended by D2) + F2–F6 folded same-day; scoped re-review on
+> the delta, then the intent gate.
 
 ## Decision state
 
@@ -58,16 +60,23 @@ updated: 2026-07-21
     existing platform primitives"*) and INV1 (policy from the protected
     branch, never PR HEAD) already forbid any plugin fetch; every CI input —
     declarations, policy, wiring, runtime, workflow — remains protected-branch
-    git content. The check and gates runtimes read **no companion or charter
-    prose** (verified: the runtimes implement their semantics in code and only
-    cite the companions in comments).
+    git content. The check and gates runtimes read **no companion prose**
+    (verified: their semantics are implemented in code; companions are cited
+    only in comments). The check runtime *does* read charter files today —
+    precisely to extract the `grove-review-declaration` blocks, i.e. the
+    carrier this decision relocates; post-D2 it reads the declarations
+    carrier instead (adversary F4 scoped this claim).
   - **The arrow of authority is fixed.** The repo's declarations carrier **is
     the source**; plugin charters read it; setup/refresh **never generate it
     from charters**. adr-0012 requires the owed-map *"assembled from the
     charters' declarations (**not a generated file**)"* — the prohibition is
     source-vs-generated, not repo-vs-plugin. An authored, hand-edited,
-    PR-reviewed carrier preserves "changing what a type owes is a
-    declaration edit, nothing to regenerate." A setup-compiled cache would
+    PR-reviewed carrier preserves the substance of adr-0012's *"changing
+    what a type owes is a charter edit, nothing to regenerate"* — it stays a
+    hand edit to the authored source, nothing to regenerate, with the
+    carrier relocated by this decision (an adaptation, not a quotation —
+    adversary F3; the carrier-siting letter is amended by name,
+    Propagation 3). A setup-compiled cache would
     reintroduce the compiled-table drift class adr-0012 exists to kill —
     rejected by construction (see Rejected options). Concrete filename/format:
     settled at spec time (the spec-0002 amendment, Propagation).
@@ -216,10 +225,17 @@ changelog link is the consumer's record.
 
 - **spec-0002 INV1/INV12 + §C.1**: the floor — protected-branch git content
   only, owed-map *assembled* from discovered declarations (*"discovered, not
-  hardcoded"*). D2 relocates a carrier; the invariants bind unchanged.
+  hardcoded"*). D2 relocates a carrier; the invariants' **substance** binds
+  unchanged, and their **letter** (INV1's *"reviewer charters'
+  declarations"*, §B's *"charter edit"*) rides the Propagation-1 amendment —
+  INV21's term *"reviewer-declaration file"* is already carrier-generic
+  (adversary F5).
 - **adr-0012**: *"assembled from the charters' declarations (not a generated
   file)"*; *"changing what a type owes is a charter edit, nothing to
-  regenerate."* D2's authority arrow is this decision's preservation.
+  regenerate."* D2 preserves the **prohibition** (assemble-never-compile,
+  source-vs-generated) in substance; the **carrier-siting letter** ("the
+  charters'", "charter edit", AC5) is genuinely amended — annotated by name
+  at approval (Propagation 3, adversary F1), never silently.
 - **adr-0018 D5/D10**: placement by authority; the split-by-reader precedent
   D2 repeats. D3's surfaces take the consumer-authoritative class.
 - **adr-0021 D1/D4**: the collapsed case (grove-self runs native payload
@@ -268,23 +284,32 @@ changelog link is the consumer's record.
 
 1. **spec-0002 amendment**: §C.0/§C.1 carrier set gains the D2 declarations
    carrier; assembly discovery covers it plus `.claude/agents/` (D5 own
-   roles); check-runtime discovery code follows the spec.
+   roles); the letter of INV1 and §B (*"reviewer charters'"* / *"charter
+   edit"*) re-worded carrier-generically, as INV21's *"reviewer-declaration
+   file"* already is (adversary F5); check-runtime discovery code follows
+   the spec.
 2. **Skills rewritten to the thin model**: setup (shrinks to floor + config
    seeding), refresh (floor re-copy + stamp bump; the charter three-way-merge
    engine retires), remove, check-install (gains the D4 mismatch
    disclosure); setup seeds and refresh regenerates the D7 dial-explainer;
    the generic charters carry the D3 verified-prior posture. The plugin
    grows the `agents/` payload; `plugin.json` gains an explicit `version`.
-3. **Supersession pointers** (append-only rule, same change): adr-0007
-   superseded in part (placeholder door → D3); adr-0008's companion-location
-   note amended again if O1 = move (`.grove/internal/` → plugin payload);
-   adr-0018 D5's layout table amended (`internal/` shrinks); adr-0001's
-   three-copy kept-in-sync rule collapses to the two-copy lockstep (P1).
+3. **Supersession pointers** (append-only rule, same change): **adr-0012
+   annotated at its three carrier-siting loci** (*"the charters'
+   declarations"*, *"charter edit"*, AC5) — carrier relocated by adr-0026,
+   the source-vs-generated prohibition unchanged; house precedent is
+   adr-0012's own inline annotations from adr-0015/adr-0019 (adversary F1);
+   adr-0007 superseded in part (placeholder door → D3); adr-0008's
+   companion-location note amended again — unconditionally, D7 decided the
+   move (adversary F2) — (`.grove/internal/` → plugin payload); adr-0018
+   D5's layout table amended (`internal/` shrinks); adr-0001's three-copy
+   kept-in-sync rule collapses to the two-copy lockstep (P1).
 4. **D6 campaign** across math-quest, wisp, design-system, trellis — the
    final vendored-charter harvest; trellis's own corpus-reviewer stays
    in-repo per D5.
 5. **Riders**: fix stale "thirteen" roster counts (`plugin.json`, root
-   README); fold the orphan `<TEST_DEPS_LEDGER>` token into the D3 config
+   README, `plugins/grove/README.md` — adversary F6); fold the orphan
+   `<TEST_DEPS_LEDGER>` token into the D3 config
    schema (it is absent from setup's token table today — found during #112
    evidence-gathering).
 6. **grove#112 closes** linked here; **grove#91** (dogfooding tracker) gains
@@ -312,12 +337,16 @@ the house axes, the same four the `decision-adversary` judges.)*
   makes the existing stock ride the adopting change. No decision here
   contradicts another.
 - **Contradiction sweep**: every standing decision this touches is either
-  preserved by construction (adr-0012 — D2's authority arrow; adr-0014 —
-  the bootstrap discriminator's carriers stay repo-committed) or amended
-  **by name with a pointer owed at approval** (adr-0007 in part, adr-0008's
-  companion location, adr-0018 D5's layout table, adr-0001's copy count) —
-  none silently. adr-0021 is generalized (collapsed case, lockstep valve),
-  not reversed; adr-0008's non-restatement rule is explicitly held (D7).
+  untouched by construction (adr-0014 — the bootstrap discriminator's
+  carriers stay repo-committed) or amended **by name with a pointer owed at
+  approval** (adr-0012's carrier-siting loci — its prohibition is preserved
+  in substance, its letter amended; adr-0007 in part; adr-0008's companion
+  location; adr-0018 D5's layout table; adr-0001's copy count) — none
+  silently. adr-0021 is generalized (collapsed case, lockstep valve), not
+  reversed; adr-0008's non-restatement rule is explicitly held (D7).
+  *Corrected after adversary F1: the first self-check wrongly claimed
+  adr-0012 "preserved by construction" whole — the prohibition is; the
+  carrier-siting letter is not, and is now amended by name.*
 - **Build-on-settled-ground**: the four `depends_on` are all `approved`
   (verified against their frontmatter 2026-07-21); the harness facts D1/D4
   rest on were verified against Claude Code docs 2026-07-21, not assumed;
