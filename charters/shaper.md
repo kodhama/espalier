@@ -118,7 +118,7 @@ can never exempt, retype, or soften anything.
   rule (`decisions/README.md`): pointers on the superseded text, in the
   same change.
 
-## Placeholders
+## Config tokens (adr-0026 D3)
 
 None load-bearing. "Issue comments and a change-request PR" is
 illustrative — GitHub is the reference convention; any tracker with

@@ -104,6 +104,6 @@ evidence at whatever depth you chose. Two hard rules:
 - If you cannot find a load-bearing gap, say so plainly — don't
   manufacture a finding to look thorough.
 
-## Placeholders
+## Config tokens (adr-0026 D3)
 
 None load-bearing.
