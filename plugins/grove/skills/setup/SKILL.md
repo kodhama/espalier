@@ -36,8 +36,8 @@ header-stripping; create the `.grove/internal/` directory if it doesn't exist) �
 companion (`adr-0008`, as amended by `adr-0018` D5): the artifact-lifecycle state enum, stated once,
 that every role and the `corpus-reviewer`'s lifecycle check source. It lands in grove's own
 **`.grove/internal/`** namespace — the grove-authoritative subtree (copied/regenerated verbatim on
-update; `adr-0018` D5), kept apart from the consumer-authoritative `.grove/` root (`gates.toml`,
-`review.toml`) and from `.claude/agents/`, which is Claude Code's loader directory and parses files
+update; `adr-0018` D5), kept apart from the consumer-authoritative `.grove/` root (`gates.toml`)
+and from `.claude/agents/`, which is Claude Code's loader directory and parses files
 as subagents (the same overlay move as trellis's `.trellis/`). It is not an agent role and is not
 optional per role — every install gets it. Likewise copy
 `${CLAUDE_PLUGIN_ROOT}/reference/versioning.md` into
@@ -211,103 +211,14 @@ diff, and the intended block, and say plainly that the write misfired. **Never l
 armed trigger in grove's `decisions/adr-0003-managed-block-routing-rule.md`: report it as an issue
 on `kodhama/grove`, so this prose edit gets replaced by a bundled deterministic upsert script.
 
-## 7. Optionally install the GitHub bookkeeping check
+## 7. Offer to make grove invisible to the consumer's tooling (whole `.grove/`)
 
-grove ships a **review-bookkeeping check** (`spec-0002`, `adr-0012` Layer A) — a zero-dependency
-CI job that renders a read-only status view of a PR's verdict-record comments and goes red on any
-completeness / freshness / coverage / separation / approved-upstream / graph-resolution /
-record-integrity gap. **Green is not approval** — a human still judges genuineness and merges.
-
-**Gate on both**: (a) this project uses **GitHub** — you already learned the VCS/host in step 3
-(the `<PR_CONTRACT_SECTIONS>` question); if it's GitLab, plain git, or anything but GitHub Actions,
-**skip this step** and say so, and (b) the user **opts in** — offer it, don't force it.
-
-**If they decline, never dead-end them** (maintainer call, 2026-07-17: the product teaches itself
-at the moment of relevance — name the next step here, in the conversation, rather than relying on
-the user having read docs). Your reply must name both: what the check does is written up in this
-plugin's `${CLAUDE_PLUGIN_ROOT}/reference/ci/README.md` (offer to show it), and they can install
-it any time later — standalone, without re-running setup — with **`/grove:check-install`**. Then
-move on.
-
-If they opt in, compose **four** pieces (augment-never-clobber; **ask before overwriting** any
-existing file, honoring their answer per file):
-
-1. **The check runtime.** Copy `${CLAUDE_PLUGIN_ROOT}/check/` — its `lib/`, `shell/`, `bin/`, and
-   `package.json` — into this project's **`.grove/internal/check/`** (the grove-authoritative
-   `.grove/internal/` subtree, the same place this install already put the companions; `adr-0018`
-   D5). It is **zero-dependency** (`type: module`, no runtime packages), so **do not run
-   `npm install`**. Do **not** copy grove's own `test/` dir or `test-deps.md` — those are grove's
-   test suite and its test-deps ledger, not part of the consumer runtime.
-
-2. **The workflow.** Copy `${CLAUDE_PLUGIN_ROOT}/reference/ci/grove-review-bookkeeping.yml` into
-   this project's **`.github/workflows/grove-review-bookkeeping.yml`**, resolving its two
-   placeholders (same inline-resolution idiom as step 3): `<INSTALL_PATH>` → `.grove/internal/check`
-   (where piece 1 above put the runtime), and `<NODE_VERSION>` → this project's Node version (ask —
-   e.g. `20`).
-   Drop no other content; the workflow's permissions are already minimal (`contents: read`,
-   `pull-requests: read`).
-
-3. **The policy carrier — split by authority** (`adr-0018` D10). Copy **two** files (no vendoring
-   header to strip — both are `.toml`):
-
-   - `${CLAUDE_PLUGIN_ROOT}/reference/ci/review.toml` → this project's **`.grove/review.toml`** (the
-     consumer surface: the scope choice + corpus policy). A consumer has no `charters/`, so this is
-     where the check's **auto-discovery** finds the non-charter policy inputs (`spec-0002` §C.0
-     precedence: `charters/review-policy.md` else `.grove/review.toml`). Tell the user to **review
-     its `artifact_dirs` and `non_behavioral_allowlist`** against their own corpus layout — the
-     vendored defaults are a starting point, and an allowlist entry that matches no file is inert.
-     It ships with one unresolved slot — `<SCOPE>` — which piece 4 resolves.
-   - `${CLAUDE_PLUGIN_ROOT}/reference/ci/review-wiring.toml` → this project's
-     **`.grove/internal/review-wiring.toml`** (grove-authoritative wiring: the two carrier keys). It
-     ships with two unresolved slots — `<CHECK_RUNTIME_DIR>`, `<CHECK_WORKFLOW_PATH>` — which piece 4
-     resolves. **Zero literal slots may remain across both files when step 7 is done.**
-
-4. **The scope mode — ask one question, write three keys across the two files** (`adr-0013`
-   Decisions 1, 2, 4; the choice is surfaced here, at the moment it's relevant, never left to
-   documentation). Ask the user ONE plain-language question:
-
-   > Should the check watch only grove-managed artifacts (**scoped** — recommended to start), or
-   > hold the whole repo to review-required (**strict**)?
-
-   Recommend **`scoped`** as the starting default — it keeps the check's jurisdiction to what's
-   declared into the methodology (artifacts, typed files, opted-in code, the gate's own
-   machinery), so ordinary application code in an ordinary PR doesn't go red; `strict` is the
-   ratchet for a repo whose changes are mostly grove-run work. Then resolve the slots (same
-   inline-resolution idiom as step 3):
-
-   - in **`.grove/review.toml`**: `<SCOPE>` → `scoped` or `strict` — the user's answer, verbatim;
-   - in **`.grove/internal/review-wiring.toml`**: `<CHECK_RUNTIME_DIR>` → the path piece 1 actually
-     used (`.grove/internal/check/`); `<CHECK_WORKFLOW_PATH>` → the path piece 2 actually used
-     (`.github/workflows/grove-review-bookkeeping.yml`).
-
-   **Every install writes all three keys explicitly — no install path leaves any of them absent
-   silently** (`adr-0013` AC5; an install that writes `scope` but not the carrier keys fails that
-   criterion). Tell the user the fail-closed backstop plainly: if `scope` is later deleted or
-   hand-edited to an unrecognized value, the check falls back to **`strict`** — a hand-edit can
-   never soften the gate — and absent carrier keys (in the wiring file) fall to the install
-   defaults, never to silent exclusion (`adr-0013` AC4, preserved across the `adr-0018` D10 split).
-
-**Say plainly how the check reads policy** (`adr-0012` "assemble `f(A)`, never compile it"): the
-owed-review map is **assembled LIVE at runtime** from the reviewer-agent declarations installed in
-`.claude/agents/` (step 2) on the protected default branch — the check auto-discovers that
-directory and reads it fresh every run. Setup wires **where** the check reads (the `.claude/agents/`
-declarations + `.grove/review.toml` + `.grove/internal/review-wiring.toml`); it **never bakes a
-compiled owed-map** into a stored table. Editing what a type owes is an agent-declaration edit, not a
-regenerate step.
-
-Confirm exactly what was written (the `.grove/internal/check/` runtime, the workflow file,
-`.grove/review.toml` with the recorded `scope` mode, and `.grove/internal/review-wiring.toml` with
-the two carrier-path keys), and note that `/grove:remove` reverses all of it.
-
-## 8. Offer to make grove invisible to the consumer's tooling (whole `.grove/`)
-
-`.grove/` is grove's vendored namespace — the companions, the policy carrier, and (if the check was
-installed in step 7) the runtime. It is a **dependency, not the consumer's own source**, so the
-consumer's linters and formatters have no business reading it. A *formatter* is the acute danger,
-not just lint noise: `.grove/`'s companions and the policy carrier are **markdown**, and any
-integrity the vendored runtime later relies on (a manifest/checksum over `.grove/internal/check/**`) is
-**corrupted**, not merely flagged, when a formatter rewrites those files. So **offer** — never
-impose — to add the whole `.grove/` namespace to each detected tool's ignore.
+`.grove/` is grove's vendored namespace — the companions and the gate-profile machinery. It is a
+**dependency, not the consumer's own source**, so the consumer's linters and formatters have no
+business reading it. A *formatter* is the acute danger, not just lint noise: `.grove/`'s companions
+are **markdown**, and a formatter that rewrites vendored files **corrupts** them rather than merely
+flagging them. So **offer** — never impose — to add the whole `.grove/` namespace to each detected
+tool's ignore.
 
 **Detect** which of these the project uses, by config presence. Report each honestly: a tool whose
 config is genuinely absent is **"none found,"** never a false claim of having ignored it.
@@ -333,14 +244,10 @@ nothing without it.** If declined, note that plainly and move on; nothing is cha
 
 **This is the one place setup writes outside grove's own footprint** — outside the `.grove/` overlay
 and the managed `CLAUDE.md` block. Treat it as exactly that: an **offered, consented,
-augment-never-clobber exception**, and in the step 11 confirm name precisely which ignore file and
+augment-never-clobber exception**, and in the step 10 confirm name precisely which ignore file and
 which line you touched (or that none were, or that the offer was declined). Never a silent write.
 
-(This ignore is a *separate tool* from grove's own check: ignoring `.grove/` in ESLint, Prettier,
-Biome, or markdownlint does **not** affect grove's check gating edits to `.grove/internal/check/` — the check
-reads those files at runtime regardless, from the protected branch.)
-
-## 9. Telemetry (optional — grove never requires it)
+## 8. Telemetry (optional — grove never requires it)
 
 Ask whether [wisp](https://github.com/kodhama/wisp) is vendored or otherwise available in this
 project.
@@ -352,7 +259,7 @@ project.
 - **If no:** don't install the skill. Mention `github.com/kodhama/wisp` as where it lives if they
   want live dashboard telemetry later, and move on — grove's agent roles work fully without it.
 
-## 10. Recommend, don't install, Trellis
+## 9. Recommend, don't install, Trellis
 
 Close by telling the user grove pairs with the governance layer it runs under, but do **not**
 install it yourself:
@@ -361,29 +268,19 @@ install it yourself:
 > it runs under. If you want that too: `/plugin install trellis@kodhama` then `/trellis:setup`.
 > Recommended, not required — grove works standalone.
 
-## 11. Confirm
+## 10. Confirm
 
 Tell the user exactly what you wrote: which roles landed in `.claude/agents/` (and which existing
 files, if any, you skipped rather than overwrote), every placeholder you resolved and to what value
 (or the honest "none exists yet" statements you wrote instead), the **gate-profile** — which preset
 you seeded `.grove/gates.toml` from (or `steward` by default) and that the floor-guard machinery
 (`.grove/internal/gates/`) and C1 defaults (`.grove/internal/enforcement.toml`) landed — whether
-`decisions/`/`specs/` were seeded, the `CLAUDE.md` block, whether the GitHub bookkeeping check was installed (the `.grove/internal/check/`
-runtime, the workflow, `.grove/review.toml` with its recorded `scope` mode, and
-`.grove/internal/review-wiring.toml` with the carrier keys) — or, if it was declined, that
-`/grove:check-install` installs it later — whether the
-telemetry skill was composed, and **which tooling-ignore files and lines step 8 touched** (naming
+`decisions/`/`specs/` were seeded, the `CLAUDE.md` block, whether the
+telemetry skill was composed, and **which tooling-ignore files and lines step 7 touched** (naming
 each `.grove/` line and its file — or that no linter/formatter was found, or that the offer was
 declined). They can remove all of it any time with `/grove:remove`.
 
-**Say one thing first-time installers often worry about, so they never have to ask: installing grove
-does not gate the install itself.** grove's check self-detects a fresh install and only begins
-gating on the consumer's *next* PR — there is no "red on arrival" on the very change that introduces
-grove. (This is a fact about how the check behaves; *how* you land that change is a separate matter,
-and entirely yours — see the hand-back in step 12. Do not turn "no red on arrival" into a landing
-recommendation.)
-
-## 12. Hand back — grove wrote no git; landing is yours
+## 11. Hand back — grove wrote no git; landing is yours
 
 Setup composes files; it does **not** land them. Perform **no git** of your own — no `add`, no
 `commit`, no branch, no push, no PR — and **recommend no landing approach**: not a direct commit,

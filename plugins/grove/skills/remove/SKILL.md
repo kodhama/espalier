@@ -15,10 +15,11 @@ List the agent files present in `.claude/agents/` (the thirteen possible roles:
 `executor`, `conformance-reviewer`, `code-reviewer`, `validator`, `dispatcher`, `run-resumer`,
 `propagation-remediator`, `corpus-reviewer`, plus their `README.md`), and check whether
 `.claude/skills/grove-status/` exists. Also check whether the **GitHub bookkeeping check** was
-installed — whether via setup step 7 or the standalone `/grove:check-install`, both write the same
-pieces: the `.grove/internal/check/` runtime directory, the workflow file
-`.github/workflows/grove-review-bookkeeping.yml`, and the split policy carrier — `.grove/review.toml`
-plus `.grove/internal/review-wiring.toml` (`adr-0018` D10).
+installed by a pre-`adr-0027` setup — whether via that setup's optional check step or the
+then-standalone `/grove:check-install` skill (both retired by `adr-0027-retire-ci-for-now`; grove
+no longer installs the check) — both wrote the same pieces: the `.grove/internal/check/` runtime
+directory, the workflow file `.github/workflows/grove-review-bookkeeping.yml`, and the split policy
+carrier — `.grove/review.toml` plus `.grove/internal/review-wiring.toml` (`adr-0018` D10).
 
 Also look for the **tooling-ignore entry** setup (or `/grove:check-install`) may have added: a
 `.grove/` line (or a `.grove/**` glob) in any of the consumer's ignore files — `.eslintignore`,
@@ -56,10 +57,11 @@ added real decisions/specs into those directories, **do not delete the directori
 same as step 2. An empty seeded store with nothing added since is safe to remove if the user
 confirms; a store with real content is not grove's to delete.
 
-## 5. Remove the GitHub bookkeeping check, if installed
+## 5. Remove the GitHub bookkeeping check, if a pre-adr-0027 install left one
 
-If the check was installed (setup step 7 or `/grove:check-install` — same pieces either way),
-reverse exactly those three pieces (augment-never-clobber in reverse — remove only what the
+If the check was installed (a pre-`adr-0027` setup's check step or the retired
+`/grove:check-install` — same pieces either way),
+reverse exactly those pieces (augment-never-clobber in reverse — remove only what the
 install wrote, and **ask before deleting anything unexpected**):
 
 - **`.grove/internal/check/`** — the vendored check runtime. Safe to delete if it matches the vendored copy;

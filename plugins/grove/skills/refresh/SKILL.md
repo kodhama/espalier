@@ -36,12 +36,19 @@ worktree** — never the shared checkout. The plugin source
 - **Layout generation:** companions at `.grove/` **root** = pre-`adr-0018`
   → step 4 (migration) applies. Companions under `.grove/internal/` =
   modern → skip step 4.
-- **What's installed:** which roles in `.claude/agents/`, whether the
-  check is installed (`.grove/internal/check/` + the workflow +
-  `.grove/review.toml`), whether gates machinery exists
-  (`.grove/internal/gates/` + `.grove/gates.toml`), and whether the
-  optional telemetry skill is installed
-  (`.claude/skills/grove-status/SKILL.md` — setup step 9).
+- **What's installed:** which roles in `.claude/agents/`, whether gates
+  machinery exists (`.grove/internal/gates/` + `.grove/gates.toml`), and
+  whether the optional telemetry skill is installed
+  (`.claude/skills/grove-status/SKILL.md` — setup's telemetry step).
+- **Retired CI check (pre-adr-0027 installs):** a repo set up before
+  `adr-0027-retire-ci-for-now` may carry the retired review-bookkeeping
+  check — `.grove/internal/check/`, the
+  `.github/workflows/grove-review-bookkeeping.yml` workflow,
+  `.grove/review.toml`, `.grove/internal/review-wiring.toml`. Refresh
+  **no longer maintains those** (grove stopped vendoring CI carriers);
+  do not re-copy or update them — flag their presence in the hand-back
+  and point at adr-0027 (removal is `/grove:remove`'s check step, the
+  consumer's call).
 
 ## 2. The authority split — the load-bearing table
 
@@ -51,7 +58,6 @@ no longer exist upstream; never copy grove's `test/` dirs or
 
 | Destination | Source |
 |---|---|
-| `.grove/internal/check/{lib,shell,bin,package.json}` *(if check installed)* | `${CLAUDE_PLUGIN_ROOT}/check/` |
 | `.grove/internal/gates/{lib,bin,package.json}` | `${CLAUDE_PLUGIN_ROOT}/gates/` |
 | `.grove/internal/enforcement.toml` | `reference/gates/enforcement.toml` |
 | `.grove/internal/{lifecycle,versioning,relations}.md` | `reference/{lifecycle,versioning,relations}.md` — strip a first-line `<!-- vendored from … -->` comment |
@@ -61,15 +67,12 @@ re-applying the resolutions the install already made** (read the resolved
 values out of the currently-installed file; the resolutions are the
 consumer's, the template is grove's):
 
-- `.github/workflows/grove-review-bookkeeping.yml` *(if check installed)* —
-  resolutions: `<INSTALL_PATH>`, `<NODE_VERSION>`.
-- `.grove/internal/review-wiring.toml` *(if check installed)* —
-  resolutions: the two carrier-path keys.
 - `.claude/skills/grove-status/SKILL.md` *(if the telemetry skill is
-  installed — setup step 9)* ← `reference/skills/grove-status/SKILL.md`,
+  installed — setup's telemetry step)* ←
+  `reference/skills/grove-status/SKILL.md`,
   vendoring header stripped — resolution: `<WISP_VENDOR_PATH>`, read from
   the installed copy; drop its `## Placeholders` section once resolved
-  (setup step 9's closing instruction — the reference copy carries one).
+  (that step's closing instruction — the reference copy carries one).
 
 **Agent charters (`.claude/agents/`) — the same idea, per role:**
 
@@ -98,20 +101,20 @@ consumer's, the template is grove's):
   (setup step 3's idiom). Drop `## Placeholders` once resolved.
 - **Grove-self-relative paths are not tokens but still need adapting:**
   a reference charter may carry paths that only resolve in the grove repo
-  itself (e.g. `plugins/grove/check/lib/…`, a bare `charters/…` file). A
+  itself (e.g. `plugins/grove/gates/bin/…`, a bare `charters/…` file). A
   verbatim copy would dangle in the consumer. Adapt each: an installed
-  counterpart exists → the install-layout path (`.grove/internal/check/…`);
+  counterpart exists → the install-layout path (`.grove/internal/gates/…`);
   grove-only content → the absolute grove URL (the grove#55 convention).
   **Flag every such adaptation in the hand-back** — it is a judgment,
-  not a copy. *(Surfaced by the auditor charter in the 2026-07-21
-  rollout, math-quest #329.)*
+  not a copy. *(Surfaced in the 2026-07-21 rollout, math-quest #329.)*
 - `.claude/agents/README.md`: update the roster prose; keep the
   repo-specific resolved prose.
 - Removing a role the consumer chose at setup is **not** refresh's call —
   refresh adds and updates, never subtracts roles.
 
 **Consumer-authoritative — NEVER touch:** `.grove/gates.toml`,
-`.grove/review.toml` (including its allowlist), `decisions/`, `specs/`,
+`.grove/review.toml` where a pre-adr-0027 install left one (including
+its allowlist), `decisions/`, `specs/`,
 the repo's own code and docs — with exactly one carve-out: step 4's
 **migration repointing** edits consumer files, but only the stale
 old-root companion paths in them, each edit listed in the hand-back. A
@@ -152,17 +155,11 @@ When step 2 is done: `grep -rn '<[A-Z_]\+>' .claude/agents/` must return
 - `node .grove/internal/gates/bin/resolve-profile.mjs .grove/gates.toml`
   exits 0.
 - `node --check` passes on the refreshed runtime's entry points (at
-  minimum `check/bin/check.mjs`, `check/bin/preview.mjs`,
-  `gates/bin/resolve-profile.mjs` — those that exist).
-- *(check installed)* The refreshed runtime parses this repo's own policy
-  (`parseToml` over `.grove/review.toml` succeeds), and the live proof:
-  `node .grove/internal/check/bin/preview.mjs` runs exit-0 and prints the
-  branch's owed-map — the refreshed machinery working on the very change
-  that refreshes it.
+  minimum `gates/bin/resolve-profile.mjs` — those that exist).
 - Placeholder grep (step 3) returns zero.
 - `git status --short` touches **only**: `.grove/`, `.claude/agents/`,
   `.claude/skills/grove-status/` (if the telemetry skill was refreshed),
-  CLAUDE.md, the workflow file (if re-copied), and step-4 pointer files.
+  CLAUDE.md, and step-4 pointer files.
   Anything else in the diff is a bug in this refresh — fix or revert it.
 
 ## 6. Hand back
