@@ -29,7 +29,8 @@ A current (thin-vendor, post-`adr-0026`) install comprises:
 **Older installs left more** — check for each of these too:
 
 - **Pre-`adr-0026` (vendored-fleet) installs:** grove role files vendored into
-  `.claude/agents/` (up to thirteen roles plus their `README.md`) and installed companions —
+  `.claude/agents/` (up to fourteen roles — the pre-`adr-0026` roster included `auditor`, since
+  retired by `adr-0027` — plus their `README.md`) and installed companions —
   `.grove/internal/{lifecycle,versioning,relations}.md` (or, older still, at the `.grove/` root).
 - **Pre-`adr-0027` (CI check) installs:** the `.grove/internal/check/` runtime, the workflow file
   `.github/workflows/grove-review-bookkeeping.yml`, and the split policy carrier —

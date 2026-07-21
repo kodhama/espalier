@@ -14,6 +14,24 @@ floor, the shared role config, a short dial-explainer, and the managed `CLAUDE.m
 never clobber — the same discipline Trellis's own `/trellis:setup` uses; nothing outside what's
 listed below is touched.
 
+## 0. Gate on the install's generation — a pre-`adr-0026` layout stops here
+
+**First runs proceed; a re-run onto an unmigrated (pre-thin-vendor) layout does not.** Before
+composing anything, check whether this repo already carries a **pre-`adr-0026` install**: a
+**vendored fleet** (grove role files in `.claude/agents/` — charter-length role definitions,
+possibly locally adapted; a repo's *own* roles under their bare names are **not** this) or
+**installed companions** (`.grove/lifecycle.md`, `.grove/versioning.md`, `.grove/relations.md`, or
+their `.grove/internal/` forms). If either is present, this layout predates the thin-vendor
+boundary — **do not compose the new-form managed block or bump the stamp (step 6).** A stamp that
+records the thin-vendor shape onto a layout that still has the old one is exactly the misrecording
+`/grove:refresh` refuses (its step 1 generation gate); setup must refuse it symmetrically rather
+than stamp a shape the repo doesn't have. **Stop and route the user to the one-time D6 migration
+campaign** (grove#116): harvest local charter adaptations into `.grove/config.toml` /
+`.grove/agents/` addenda, delete the vendored copies and installed companions, then setup/refresh
+applies normally. A **clean repo** (no vendored fleet, no installed companions) is a first run —
+proceed to step 1 unchanged; a current thin-vendor re-run (step 6's re-run path) is likewise fine,
+it is only the **pre-`adr-0026`** layout that stops here.
+
 ## 1. Orient the user (nothing to pick, nothing copied)
 
 Tell the user the thirteen roles are already loaded as `grove:<role>` subagents by the plugin
