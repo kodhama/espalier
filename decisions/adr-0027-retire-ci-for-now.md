@@ -1,7 +1,7 @@
 ---
 id: adr-0027-retire-ci-for-now
 type: adr
-status: gated  # self-checked (shaper) 2026-07-21 after the maintainer's in-session direction ("Yes, let's retire CI"); answers grove#119; supersedes-in-part adr-0026 (CI-floor parts) and operationally suspends spec-0002/spec-0003/adr-0023; awaiting decision-adversary, then the maintainer's intent act
+status: gated  # self-checked (shaper) 2026-07-21 after the maintainer's in-session direction ("Yes, let's retire CI"); answers grove#119; supersedes-in-part adr-0026 (CI-floor parts) and operationally suspends spec-0002/spec-0003/adr-0023; decision-adversary SOUND at 7494a8f (3 non-blocking findings folded, with the maintainer's ask-function refinement — the hand-off survives as prose, D2); scoped re-review pending, then the maintainer's intent act
 depends_on: [adr-0026-thin-vendor-boundary, adr-0012-methodology-delivery-machinery]
 informed_by: [adr-0013-check-scope-mode, adr-0022-strict-mode-review-friction, adr-0024-enforced-gate-under-ship-agent, adr-0025-decline-review-waiver, adr-0023-review-triage-blackboard, spec-0002-review-bookkeeping-check, spec-0003-review-asks-and-audit]
 owner: agent
@@ -23,7 +23,12 @@ updated: 2026-07-21
 > findings), and its friction is a **five-decision lineage that never closed**
 > (adr-0013/0022/0024/0025/0023). A backstop that blocks nothing backstops
 > nothing. So we stop paying for it now and bring it back when there is a real
-> enforcement need to justify it. Five Decided, none Open, one Parked.
+> enforcement need to justify it. The **ask function survives the medium**
+> (D2): producers still close every pass with a prose hand-off — the nudge,
+> the dispatcher-routing signal, the reviewer orientation — only the record
+> machinery goes. Five Decided, none Open, one Parked. Adversary: **SOUND at
+> `7494a8f`** (3 non-blocking findings, folded with the maintainer's
+> ask-function refinement; scoped re-review on the delta pending).
 
 ## Decision state
 
@@ -36,7 +41,9 @@ updated: 2026-07-21
   **PR-comment record protocol** (`grove-verdict` / `grove-review-ask` /
   `grove-audit`), the **spec-0003 asks/audit** layer, and the **auditor** role
   (a shadow instrument for the check's owed-set — no check, no owed-set to
-  audit). **Preserve, don't delete:** the `check/` runtime and its specs stay
+  audit). **What retires is the record *medium*, never the ask *function*** —
+  the producer's closing hand-off survives as prose (D2).
+  **Preserve, don't delete:** the `check/` runtime and its specs stay
   in-repo, unwired and dormant, so revival (D4) is a re-wiring, not a rebuild.
   The retirement is the *machinery*, never the *principle* — independent review
   still matters (D2).
@@ -52,6 +59,24 @@ updated: 2026-07-21
   / `record-ask` / `record-audit` / `review-preview` / `check-install` skills
   retire with the protocol; `grove-status` and the non-CI skills stay.
 
+  **The producer's closing hand-off survives the medium** *(maintainer
+  refinement, 2026-07-21: keep the "nudge value … driving the dispatcher
+  choice, and letting the reviewer know what the producers think should be
+  reviewed — not the medium itself")*. Every producing pass still ends by
+  declaring, in plain prose on its change-request (body or closing comment):
+  its **subjects**, their **type**, and the producer's **advisory read on what
+  deserves review and why**. Three functions kept: the **nudge** (work is
+  surfaced for review, unconditionally — the mini-PR rule survives as
+  discipline: you hand off however good you think the work is), **dispatcher
+  routing input** (the signal drives which reviewer gets dispatched — with the
+  mechanical owed-map gone this is a real input to a routing judgment, not
+  paperwork feeding a machine), and **reviewer orientation**. It stays
+  **advisory and non-self-exempting** (the adr-0023 D3 lineage): a hand-off
+  can never exempt, retype, or soften anything. So adr-0023 D2's closing-ask
+  **principle is preserved, re-homed as prose**; only its **record mechanism**
+  (the fenced `grove-review-ask` block, the `record-ask` skill, the spec-0003
+  §A layer) suspends with D1.
+
 - **D3 — this supersedes adr-0026's CI-floor parts; the plugin thin-vendor build
   proceeds without the CI-coupled slice** *(shaper)*. adr-0026 kept a repo-side
   "CI-read floor" and its **D2 declarations-carrier split** exists *only* to let
@@ -60,9 +85,12 @@ updated: 2026-07-21
   keeps the CI-read floor" framing is reversed here (append-only pointer on
   adr-0026, Propagation). adr-0026's **still-live** core stands unchanged: fleet
   + skills + companions into the plugin (D1/D7), the shared config + per-role
-  addenda (D3), the version stamp (D4), own-role exception (D5). The build is
-  now just that clean plugin slice — the `grove-review-declaration` blocks are
-  removed from charters (nothing reads them) rather than split into a carrier.
+  addenda (D3), the version stamp (D4), and the own-role exception (D5) — D5
+  precisely: its namespacing/own-role core survives; its "declaration blocks
+  feeding the §C.1 assembly" sub-clause moots with the check (adversary F2).
+  The build is now just that clean plugin slice — the
+  `grove-review-declaration` blocks are removed from charters (nothing reads
+  them) rather than split into a carrier.
 
 - **D4 — the revival route is a provider-agnostic installer, not the plugin**
   *(maintainer's insight, 2026-07-21)*. The check is **zero-dep Node that runs in
@@ -153,15 +181,26 @@ updated: 2026-07-21
 2. **spec-0002 / spec-0003** — a suspension banner (kept `approved`, dormant):
    *operationally retired by adr-0027; code preserved, unwired; revival via D4.*
 3. **adr-0023** — the blackboard/auditor lineage suspended with the check; pointer
-   to adr-0027.
+   to adr-0027 noting D2's closing-ask principle survives re-homed as prose.
+   **adr-0024** — courtesy suspension pointer (adversary F3): its head-SHA
+   delivery presupposes the check; its `ship = agent` trigger *is* D4's revival
+   trigger — same event, no divergence.
 4. **The build (follow-up, executor):** dormant/unwire the `plugins/grove/check/`
    runtime + the `grove-review-bookkeeping` workflow; retire the record skills
    (`record-verdict`/`record-ask`/`record-audit`/`review-preview`/`check-install`)
    and the `auditor` charter; strip the `grove-review-declaration` blocks from
-   the reviewer charters; simplify `setup`/`refresh` to stop vendoring CI carriers
-   (`review.toml`, wiring, check runtime, workflow). Folds into the adr-0026
-   plugin thin-vendor build (its CI-coupled follow-ups #114 and the CI parts of
-   #115 are **cancelled**, not built).
+   the reviewer charters; **update the kept charters' protocol prose** (adversary
+   F1 + the D2 hand-off): the four reviewer charters' output sections
+   (`decision-adversary`, `spec-adversary`, `code-reviewer`,
+   `conformance-reviewer`) rewritten from "emit a judgment block a machine
+   stamps" to plain verdict + findings reporting; the three producer charters'
+   "Closing ask" sections (`executor`, `contract-author`, `shaper`) rewritten —
+   not deleted — to the D2 prose hand-off; `dispatcher`/`run-resumer`/
+   `propagation-remediator` ask references updated to match; simplify
+   `setup`/`refresh` to stop vendoring CI carriers (`review.toml`, wiring, check
+   runtime, workflow). Folds into the adr-0026 plugin thin-vendor build (its
+   CI-coupled follow-ups #114 and the CI parts of #115 are **cancelled**, not
+   built).
 5. **grove#119 closes** answered (D5); **grove#118** (dispatch gap) note: the
    check is no longer the reporter of that gap — it stands as its own open
    question. **grove#91** tracker gains the retire-CI line.
