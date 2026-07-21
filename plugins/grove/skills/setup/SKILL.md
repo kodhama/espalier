@@ -1,68 +1,37 @@
 ---
 name: setup
-description: Compose grove onto this project — pick which agent roles to install, resolve every placeholder to this project's real conventions, and wire the managed CLAUDE.md block (augment-never-clobber). Use when the user asks to set up, add, install, or compose grove in their repo.
+description: Compose grove's repo-owned floor onto this project — the gate-profile, the shared role config (.grove/config.toml), the dial-explainer, and the managed CLAUDE.md block with the plugin version stamp. The agent roles themselves are plugin-carried (grove:<role>) and are never copied. Use when the user asks to set up, add, install, or compose grove in their repo.
 ---
 
 # Compose grove into this project
 
 You are composing **grove** — a portable agent-swarm operating model — onto the user's project.
-This is **composition, not code generation**: you copy vendored, ready-to-run agent definitions
-out of this plugin's `reference/` payload and resolve their placeholders to this project's real
-values. Nothing here is invented from scratch, and nothing outside what's listed below is touched
-(augment, never clobber — the same discipline Trellis's own `/trellis:setup` uses).
+Since `adr-0026` (the thin-vendor boundary), the thirteen agent roles are **plugin-carried**: they
+load automatically as namespaced `grove:<role>` subagents wherever this plugin is enabled, so
+**setup copies no charter prose and no agent definitions** — there is no role-picking step, and
+unused roles are simply inert. What you compose is exactly what the repo owns: the gate-profile
+floor, the shared role config, a short dial-explainer, and the managed `CLAUDE.md` block. Augment,
+never clobber — the same discipline Trellis's own `/trellis:setup` uses; nothing outside what's
+listed below is touched.
 
-## 1. Pick which agent roles to compose
+## 1. Orient the user (nothing to pick, nothing copied)
 
-Ask which of the thirteen agent roles to install; default to **all thirteen** if the user has no
-preference. Show the roster (from `${CLAUDE_PLUGIN_ROOT}/reference/agents/README.md`) so they can
-pick a subset if they want a lighter install:
+Tell the user the thirteen roles are already loaded as `grove:<role>` subagents by the plugin
+itself: `divergent-researcher`, `shaper`, `decision-adversary`, `contract-author`,
+`spec-adversary`, `executor`, `conformance-reviewer`, `code-reviewer`, `validator`, `dispatcher`,
+`run-resumer`, `propagation-remediator`, `corpus-reviewer`. A role the repo genuinely owns keeps
+living in its own `.claude/agents/` under its bare name — namespacing makes coexistence
+collision-free (`adr-0026` D5); setup neither adds nor removes anything there.
 
-`divergent-researcher`, `shaper`, `decision-adversary`, `contract-author`, `spec-adversary`,
-`executor`, `conformance-reviewer`, `code-reviewer`, `validator`, `dispatcher`, `run-resumer`,
-`propagation-remediator`, `corpus-reviewer`.
-
-## 2. Copy the chosen agent definitions
-
-For each chosen role, copy `${CLAUDE_PLUGIN_ROOT}/reference/agents/<role>.md` into this project's
-`.claude/agents/<role>.md`, **stripping the vendoring header** (the first line, a
-`<!-- vendored from ... -->` HTML comment — it exists only so the payload inside this plugin stays
-traceable to grove's own canonical copy; the file Claude Code loads as a subagent must start with
-its `---` frontmatter delimiter, not a comment above it).
-
-Also copy `reference/agents/README.md` into `.claude/agents/README.md` (same header-stripping),
-adapted in step 3 below along with everything else. And copy
-`${CLAUDE_PLUGIN_ROOT}/reference/lifecycle.md` into `.grove/internal/lifecycle.md` (same
-header-stripping; create the `.grove/internal/` directory if it doesn't exist) — the lifecycle
-companion (`adr-0008`, as amended by `adr-0018` D5): the artifact-lifecycle state enum, stated once,
-that every role and the `corpus-reviewer`'s lifecycle check source. It lands in grove's own
-**`.grove/internal/`** namespace — the grove-authoritative subtree (copied/regenerated verbatim on
-update; `adr-0018` D5), kept apart from the consumer-authoritative `.grove/` root (`gates.toml`)
-and from `.claude/agents/`, which is Claude Code's loader directory and parses files
-as subagents (the same overlay move as trellis's `.trellis/`). It is not an agent role and is not
-optional per role — every install gets it. Likewise copy
-`${CLAUDE_PLUGIN_ROOT}/reference/versioning.md` into
-`.grove/internal/versioning.md` (same header-stripping) — the versioning
-companion (`adr-0010`): the conformance-detection semantics (version
-kinds and forms, `@version` pins, the `changes:` cross-check), stated
-once, that the versioning-touching roles source. Likewise copy
-`${CLAUDE_PLUGIN_ROOT}/reference/relations.md` into
-`.grove/internal/relations.md` (same header-stripping) — the relations companion
-(`adr-0011`): the artifact **edge taxonomy** (`depends_on`, `informed_by`,
-`superseded_by`/`superseded_in_part_by`, `changes:` — which is flow,
-which bears drift), stated once, that `shaper`, `corpus-reviewer`,
-`conformance-reviewer`, and `validator` source. If any copied file (a role's, the README, or a
-companion — lifecycle, versioning, relations) already exists at the destination, **never overwrite it silently** — ask
-the user whether to overwrite, skip, or diff first, and honor their answer per file.
-
-### 2a. The gate-profile — every install gets one (`adr-0018`)
+## 2. The gate-profile floor — every install gets one (`adr-0018`)
 
 The **gate-profile** assigns **C2** — who is *required* at each of grove's four
 gates (`intent` / `spec` / `build` / `ship`), `human` or `agent` — and is core,
-not optional: every install gets it (like the companions above). Three pieces:
+not optional. Three pieces:
 
 1. **The floor-guard machinery.** Copy `${CLAUDE_PLUGIN_ROOT}/gates/` — its
    `lib/`, `bin/`, and `package.json` — into this project's
-   **`.grove/internal/gates/`** (grove-authoritative; regenerated on update).
+   **`.grove/internal/gates/`** (grove-authoritative; regenerated on refresh).
    Zero-dependency, so **no `npm install`**. Do **not** copy grove's own `test/`
    dir or `test-deps.md`. This is the load-time floor-guard (`adr-0018` D8):
    whatever sequences a run reads `.grove/gates.toml` through
@@ -100,7 +69,7 @@ not optional: every install gets it (like the companions above). Three pieces:
    Keep the template's `[trigger]` and `[intent_external]` sections verbatim.
    The four rows are the **source of truth**; `seeded_from` is provenance only.
    **Non-clobber:** if `.grove/gates.toml` already exists, ask before
-   overwriting (same discipline as the companions). Then **validate the write**
+   overwriting (same discipline as everything below). Then **validate the write**
    with `node .grove/internal/gates/bin/resolve-profile.mjs .grove/gates.toml` —
    it must exit `0` (a clean, floor-satisfying profile); exit `2` means the
    guard fell back to `guardian`, which a fresh preset seed should never trigger
@@ -110,57 +79,63 @@ not optional: every install gets it (like the companions above). Three pieces:
    gate (`intent = human` OR `ship = human`), enforced on every run-sequencing
    read.
 
-## 3. Resolve every placeholder, interactively
+## 3. Seed the shared role config — `.grove/config.toml` (`adr-0026` D3)
 
-Grep the freshly copied files for every remaining angle-bracket placeholder:
+One file, shared across roles (tokens cross roles — `TEST_CMD` feeds `executor` *and*
+`conformance-reviewer`; per-role duplication would reintroduce drift). **Consumer-authoritative:
+you seed it once; grove never clobbers it.** Ask about each token **once**, interactively, and
+write one key per token (key = the token name). **Where the project genuinely has no such
+convention, write an explicit honest statement as the value instead of inventing process** — e.g.
+`"none — no PR-body contract exists as of this writing; check by hand until one does"`.
+Honest-absent is a *value*, not a gap, and repo evolution never requires re-running setup: agents
+treat every value as a **verified prior** (verify on use; disclose + route a fix here on mismatch;
+self-detect on absence — `adr-0026` D3).
 
-```sh
-grep -rn '<[A-Z_]\+>' .claude/agents/
-```
-
-This project's copies carry these tokens (not all appear in every file):
-
-| Token | Appears in | What to ask |
+| Key | Read by | What to ask |
 |---|---|---|
-| `<TEST_CMD>` | `executor.md`, `conformance-reviewer.md` | this project's test command |
-| `<TYPECHECK_CMD>` | `executor.md`, `conformance-reviewer.md` | this project's typecheck command (or "none — untyped" if genuinely none) |
-| `<PR_CONTRACT_SECTIONS>` | `conformance-reviewer.md`, `propagation-remediator.md`, `run-resumer.md` | which sections a PR body must carry (e.g. `## Propagation`, `## Recommended next task`) — first ask which VCS/host and issue tracker this project uses (GitHub PRs, GitLab MRs, plain git + no tracker, …), since the answer shapes how this resolves |
-| `<PARKED_ITEM_STORE>` | `conformance-reviewer.md`, `propagation-remediator.md` | where this project tracks deferred/parked items (a TODO/ROADMAP file, a `decisions/` entry, issue labels, …) |
-| `<CONVENTIONS_PATH>` | `code-reviewer.md` | where this project declares its code conventions — its CLAUDE.md, a style guide, or equivalent ("none exists yet" is a valid honest resolution; the charter's language-agnostic fallback then applies, and the role flags the absence as a finding) |
-| `<LINT_CMD>` | `code-reviewer.md` | this project's lint/formatter command (or "none — no linter configured" if genuinely none) |
-| `<QUALITY_RUBRIC_PATH>` | `code-reviewer.md` | this project's code-quality rubric path — optional by charter, so "none exists yet" is a fully valid resolution |
-| `<SPEC_RUBRIC_PATH>` | `contract-author.md` | this project's spec-quality rubric path |
-| `<RESEARCH_RUBRIC_PATH>` | `divergent-researcher.md` | this project's research-quality rubric path |
-| `<ARTIFACT_DIRS>` | `corpus-reviewer.md` | this project's corpus directories (family default: `decisions/`, `specs/`; add what the project keeps) |
-| `<ARTIFACT_CONTRACT_PATHS>` | `corpus-reviewer.md` | where this project declares its artifact contract (family default: `decisions/README.md` + `specs/README.md`) |
-| `<REPO_TYPED_CHECKS>` | `corpus-reviewer.md` | any repo-typed extra checks this project declares beyond the family core ("none" is a valid resolution) |
+| `TEST_CMD` | executor, conformance-reviewer | this project's test command |
+| `TYPECHECK_CMD` | executor, conformance-reviewer | this project's typecheck command (or "none — untyped") |
+| `LINT_CMD` | code-reviewer | this project's lint/formatter command (or "none — no linter configured") |
+| `TEST_DEPS_LEDGER` | executor, conformance-reviewer | this project's per-package test-deps ledger location/convention (`adr-0006`; grove's worked example: a nearest-ancestor `test-deps.md` with a fenced `grove-test-deps` block) |
+| `PR_CONTRACT_SECTIONS` | conformance-reviewer, propagation-remediator, run-resumer | which sections a PR body must carry — first ask which VCS/host and issue tracker this project uses, since the answer shapes how this resolves |
+| `PARKED_ITEM_STORE` | conformance-reviewer, propagation-remediator | where this project tracks deferred/parked items (a TODO/ROADMAP file, a `decisions/` entry, issue labels, …) |
+| `CONVENTIONS_PATH` | code-reviewer | where this project declares its code conventions (its CLAUDE.md, a style guide; "none exists yet" is valid — the charter's fallback then applies) |
+| `QUALITY_RUBRIC_PATH` | code-reviewer | this project's code-quality rubric path — optional by charter |
+| `SPEC_RUBRIC_PATH` | contract-author | this project's spec-quality rubric path |
+| `RESEARCH_RUBRIC_PATH` | divergent-researcher | this project's research-quality rubric path |
+| `ARTIFACT_DIRS` | corpus-reviewer | this project's corpus directories (family default: `decisions/`, `specs/`) |
+| `ARTIFACT_CONTRACT_PATHS` | corpus-reviewer | where this project declares its artifact contract (family default: `decisions/README.md` + `specs/README.md`) |
+| `REPO_TYPED_CHECKS` | corpus-reviewer | any repo-typed extra checks beyond the family core ("none" is valid) |
+| `SEVERITY_TAXONOMY` | dispatcher (full charter, bug pipeline) | this project's bug-severity tiers, if it wants them ("none declared" is valid) |
 
-Ask about each token **once** (the same answer applies everywhere it appears), then edit it inline
-in every file that carries it — the resolved value replaces the token, in place, in running prose.
+Head the file with a short comment naming what it is (the `adr-0026` D3 shared config, key = token
+name, consumer-authoritative, values are verified priors). Use TOML strings; the two list-shaped
+keys (`ARTIFACT_DIRS`, `ARTIFACT_CONTRACT_PATHS`) may be arrays. This file is **agent-read config**
+— grove agents read it with judgment; it is never a deterministic machinery read (`adr-0026` D3's
+boundary).
 
-**Where the project genuinely has no such convention, write an explicit honest statement instead of
-inventing process** — e.g. "this project has no CI-enforced PR-body contract as of this writing (no
-`.github/workflows`, no PR template) — flagged here rather than silently assumed; check this by hand
-until one exists." This is not a fallback of last resort — it is the correct resolution whenever the
-convention genuinely doesn't exist yet. The precedent for this exact move is
-[wisp's own B4 install](https://github.com/kodhama/wisp) (grove composed onto wisp itself,
-lane B4 of the suite-lift plan): several of its resolved placeholders read exactly this way.
+Also mention (do not create): **optional per-role addenda** at `.grove/agents/<role>.md` — local
+rules and worked examples a generic `grove:<role>` agent reads when present and replaces with
+judgment when absent. Consumer-authored; seed nothing empty.
 
-**`.claude/agents/README.md` needs the same treatment, but in prose, not tokens.** Its own text
-mentions placeholder tokens illustratively (e.g. "angle-bracketed tokens like `<TEST_CMD>`") — once
-real values are resolved, rewrite that sentence to describe what was resolved (test command,
-typecheck command, spec-rubric path, parked-item store, PR-contract sections, and so on — named in
-words, not repeating the bracket syntax) rather than leaving a literal token sitting in a file that
-claims to be fully resolved. Follow wisp's own vendored `README.md` as the model for this rewrite.
+## 4. Seed the dial-explainer — `.grove/README.md` (`adr-0026` D7)
 
-**Zero literal `<[A-Z_]+>` markers may remain in `.claude/agents/` when this step is done.** Re-run
-the grep above to confirm.
+Grove-managed (regenerated by `/grove:refresh` — say so in its header). A short file explaining
+the **effect** of each consumer-facing dial, so a repo reader needs no plugin to understand what
+the knobs do — while the normative model itself is **never restated per-repo** (`adr-0008` holds):
 
-## 4. Drop the `## Placeholders` section from each resolved file
+- `gates.toml` — yours: who must approve at each of the four gates; the floor (intent or ship =
+  human); `/grove:set-profile` to switch presets.
+- `config.toml` — yours: the shared role tokens grove agents resolve at use time, as verified
+  priors (mismatches get disclosed and routed back here, never silently worked around).
+- `agents/<role>.md` — yours, optional: per-role addenda.
+- `internal/` — grove's: floor-guard machinery + C1 defaults, re-copied verbatim on refresh; not
+  a consumer surface.
 
-Once a file's placeholders are all resolved inline, delete its trailing `## Placeholders` section
-entirely (the wisp/math-quest precedent: a fully resolved file doesn't carry a section listing
-tokens that no longer exist in it).
+Close it citing the companions **standard-form**: *"the operating model (lifecycle enum,
+versioning grammar, edge taxonomy) ships in the grove plugin — per the grove lifecycle /
+versioning / relations companions, `plugin@<stamp>` (the stamp in this repo's CLAUDE.md)."* No
+copy of the companions is installed (`adr-0026` D7).
 
 ## 5. Seed minimal `decisions/` and `specs/` stores, if missing
 
@@ -168,30 +143,38 @@ If this project has no `decisions/README.md` or `specs/README.md`, seed minimal 
 grove's own (`decisions/README.md`, `specs/README.md` in the grove repo). Each should cover: the
 shared artifact frontmatter (`id/type/status/depends_on/owner/updated`) and — for `decisions/` —
 the append-only rule (never edit a ratified decision in place; supersede with a forward pointer).
-Do **not** seed the lifecycle state enum or its state semantics — those live in the lifecycle
-companion this install already landed at `.grove/internal/lifecycle.md` (step 2, `adr-0008` as amended); a
-seeded README points there instead of restating them. Adapt, don't invent a heavier process than
+Do **not** seed the lifecycle state enum or its state semantics — the seeded README cites the
+lifecycle companion standard-form (*"per the grove lifecycle companion, `plugin@<stamp>`"*),
+never a restatement (`adr-0008`; `adr-0026` D7). Adapt, don't invent a heavier process than
 grove's own.
 
-## 6. Compose the managed block into `CLAUDE.md`
+## 6. Compose the managed block into `CLAUDE.md` — the stamp + the skew rule (`adr-0026` D4)
 
-Append this block to the project's `CLAUDE.md` (create the file if it doesn't exist). Touch
-**nothing else** in the file. **Before editing, save a pre-write copy** of the existing `CLAUDE.md`
-somewhere temporary (skip if the file doesn't exist yet) — the verification below diffs against it.
-Fill in `<ROLES_LIST>` with the roles actually installed (e.g. "all fourteen roles" or a named
-subset) and `<SHA>` with the output of
-`git -C "${CLAUDE_PLUGIN_ROOT}" rev-parse --short HEAD` (if that command fails — not a git checkout
-— use `unknown`; an honest stamp beats none):
+Read the installed plugin version from `${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json` (the
+`version` field). Append this block to the project's `CLAUDE.md` (create the file if it doesn't
+exist). Touch **nothing else** in the file. **Before editing, save a pre-write copy** of the
+existing `CLAUDE.md` somewhere temporary (skip if the file doesn't exist yet) — the verification
+below diffs against it. Fill `<VERSION>` with that version:
 
 ```
-<!-- grove:begin (managed by grove — edit .claude/agents/, not this block) -->
-Work items matching a grove workflow (W1–W6 — e.g. a bug report → the bug pipeline, a
-research ask → divergent research) run as grove runs, sequenced through the chartered
-agent roles in `.claude/agents/` (<ROLES_LIST>). Anything else — conversation, trivial
-asks, out-of-scope questions — proceeds normally.
-grove plugin@<SHA>
+<!-- grove:begin (managed by grove — dials live in .grove/, not this block) -->
+Work items matching a grove workflow (W1–W6 — e.g. a bug report → the bug
+pipeline, a research ask → divergent research) run as grove runs, sequenced
+through grove's chartered agent roles, loaded from the grove plugin as
+`grove:<role>` subagents (all thirteen). Anything else — conversation, trivial
+asks, out-of-scope questions — proceeds normally. This repo's dials live in
+`.grove/` (see its README). Version skew (adr-0026 D4): at role start, if the
+installed grove plugin's version differs from the stamp below, disclose the
+divergence loudly in your report and continue — the stamp is the in-repo
+ratified record, never a lock; grove never enforces it.
+grove plugin@<VERSION>
 <!-- grove:end -->
 ```
+
+This block is **the D4 mismatch check's home**: the stamp is the record, and the instruction
+travels in every session's context — every `grove:<role>` agent (and the driving session) sees it
+at role start. On a **re-run** of setup, additionally compare the installed version against the
+existing stamp yourself and disclose any divergence before updating.
 
 If a `grove:begin … grove:end` block already exists (a re-run), **replace only what is between the
 markers** — idempotent, never a second block, never a change outside the markers.
@@ -213,12 +196,11 @@ on `kodhama/grove`, so this prose edit gets replaced by a bundled deterministic 
 
 ## 7. Offer to make grove invisible to the consumer's tooling (whole `.grove/`)
 
-`.grove/` is grove's vendored namespace — the companions and the gate-profile machinery. It is a
-**dependency, not the consumer's own source**, so the consumer's linters and formatters have no
-business reading it. A *formatter* is the acute danger, not just lint noise: `.grove/`'s companions
-are **markdown**, and a formatter that rewrites vendored files **corrupts** them rather than merely
-flagging them. So **offer** — never impose — to add the whole `.grove/` namespace to each detected
-tool's ignore.
+`.grove/` is grove's per-repo namespace — the dials and the gate-profile machinery. It is a
+**dependency surface, not the consumer's own source**, so the consumer's linters and formatters
+have no business reading it. A *formatter* is the acute danger, not just lint noise: `.grove/`
+carries markdown and TOML a formatter could rewrite. So **offer** — never impose — to add the
+whole `.grove/` namespace to each detected tool's ignore.
 
 **Detect** which of these the project uses, by config presence. Report each honestly: a tool whose
 config is genuinely absent is **"none found,"** never a false claim of having ignored it.
@@ -242,8 +224,8 @@ nothing without it.** If declined, note that plainly and move on; nothing is cha
 - Create an ignore file **only** when the tool uses a dedicated one and none exists (per the table
   above); never create config a tool doesn't already use.
 
-**This is the one place setup writes outside grove's own footprint** — outside the `.grove/` overlay
-and the managed `CLAUDE.md` block. Treat it as exactly that: an **offered, consented,
+**This is the one place setup writes outside grove's own footprint** — outside the `.grove/`
+namespace and the managed `CLAUDE.md` block. Treat it as exactly that: an **offered, consented,
 augment-never-clobber exception**, and in the step 10 confirm name precisely which ignore file and
 which line you touched (or that none were, or that the offer was declined). Never a silent write.
 
@@ -253,9 +235,11 @@ Ask whether [wisp](https://github.com/kodhama/wisp) is vendored or otherwise ava
 project.
 
 - **If yes:** copy `${CLAUDE_PLUGIN_ROOT}/reference/skills/grove-status/SKILL.md` into this
-  project's `.claude/skills/grove-status/SKILL.md` (stripping the vendoring header, same as step 2),
+  project's `.claude/skills/grove-status/SKILL.md` (stripping the first-line vendoring header),
   resolve `<WISP_VENDOR_PATH>` to wherever wisp actually lives in this project (e.g. `tools/wisp/`,
   or `.` if this project *is* wisp), and drop its own `## Placeholders` section once resolved.
+  (This is the one per-repo-vendored skill left — parked as `adr-0026` P3, to ride into the plugin
+  with a config lookup at a later migration.)
 - **If no:** don't install the skill. Mention `github.com/kodhama/wisp` as where it lives if they
   want live dashboard telemetry later, and move on — grove's agent roles work fully without it.
 
@@ -270,15 +254,16 @@ install it yourself:
 
 ## 10. Confirm
 
-Tell the user exactly what you wrote: which roles landed in `.claude/agents/` (and which existing
-files, if any, you skipped rather than overwrote), every placeholder you resolved and to what value
-(or the honest "none exists yet" statements you wrote instead), the **gate-profile** — which preset
-you seeded `.grove/gates.toml` from (or `steward` by default) and that the floor-guard machinery
-(`.grove/internal/gates/`) and C1 defaults (`.grove/internal/enforcement.toml`) landed — whether
-`decisions/`/`specs/` were seeded, the `CLAUDE.md` block, whether the
-telemetry skill was composed, and **which tooling-ignore files and lines step 7 touched** (naming
-each `.grove/` line and its file — or that no linter/formatter was found, or that the offer was
-declined). They can remove all of it any time with `/grove:remove`.
+Tell the user exactly what you wrote: the **gate-profile** — which preset you seeded
+`.grove/gates.toml` from (or `steward` by default) and that the floor-guard machinery
+(`.grove/internal/gates/`) and C1 defaults (`.grove/internal/enforcement.toml`) landed — every
+`config.toml` key you seeded and to what value (or the honest "none exists yet" statements you
+wrote instead), the dial-explainer (`.grove/README.md`), whether `decisions/`/`specs/` were
+seeded, the `CLAUDE.md` block + the exact version stamped, whether the telemetry skill was
+composed, and **which tooling-ignore files and lines step 7 touched** (naming each `.grove/` line
+and its file — or that no linter/formatter was found, or that the offer was declined). Remind them
+nothing was copied into `.claude/agents/` — the roles are the plugin's. They can remove all of it
+any time with `/grove:remove`.
 
 ## 11. Hand back — grove wrote no git; landing is yours
 
