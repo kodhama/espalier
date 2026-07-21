@@ -23,8 +23,9 @@ updated: 2026-07-21
 > cost is priced rather than hidden (D4: ratification becomes a **record with
 > loud divergence disclosure, not a lock** — per-project plugin pinning does
 > not exist in the harness, verified against Claude Code docs 2026-07-21).
-> Six items Decided, one Open (companions — maintainer leans *move*; the
-> constraint-6 dissolution below supports it), three Parked.
+> Seven items Decided, none Open — **converged 2026-07-21** — three Parked;
+> awaiting self-check → `gated`, the decision-adversary pass, then the
+> intent gate.
 
 ## Decision state
 
@@ -87,6 +88,23 @@ updated: 2026-07-21
   the customization mechanism (pointer at approval). Honest-absent stays a
   value: "none exists yet" is config, not a gap.
 
+  **Tokens are a verified prior, not ground truth** *(maintainer refinement,
+  2026-07-21)*. The file buys the cheap path — verifying a stated value costs
+  far less than deriving it cold ("checking a delta is less costly") — but
+  plugin agents must stay correct without it. **Present** → verify on use
+  (does the command still run, the path still resolve?); on mismatch,
+  **disclose loudly and route a fix to the config file** — the stale token is
+  the root cause (`inv-self-improvement`), ideally proposed in the same
+  pass — and **never silently substitute** a "better" value over the
+  consumer's declared intent, never silently work around a broken one.
+  **Absent** (deleted, or never seeded) → self-detect and use judgment,
+  disclosed. Consequence: **repo evolution never requires re-running
+  setup** — drift is caught at use, not at install time. Boundary, so the
+  postures never blur: this resilience discipline is **agent-read config
+  only**; the D2 declarations carrier and the machinery configs
+  (`gates.toml`, `review.toml`, wiring) are **literal deterministic reads** —
+  CI and the runtimes apply them as written, no verification judgment, ever.
+
 - **D4 — ratification: versioned releases + the stamp as record + loud
   mismatch, disclosed as skew, not sold as a lock** *(maintainer, 2026-07-21,
   fork choice)*. grove adopts explicit plugin versioning (the `plugin.json`
@@ -120,17 +138,30 @@ updated: 2026-07-21
   no prose exemption. After it, refresh shrinks to: floor re-copy + stamp
   bump; the three-way charter-merge class is **deleted, not mitigated**.
 
+- **D7 — companions move with the fleet; visibility rides the dials, the
+  model rides the pin** *(maintainer confirm, 2026-07-21, after the
+  constraint-6 dissolution below)*. The companions ship in the plugin
+  payload under the **single D4 pin** (one payload — charter↔companion
+  lockstep by construction, which *removes* the skew surface a split home
+  would create); repo citations switch from path-form to standard-form
+  (*"per the grove lifecycle companion, `plugin@<stamp>`"*); the D4 mismatch
+  check covers divergence. **Visibility mitigation** *(the maintainer's ask,
+  evaluated and adopted)*: what a repo reader needs locally is the **effect
+  of the consumer-facing dials**, and that documentation rides the consumer
+  surfaces themselves — the config files stay self-documenting (the existing
+  pattern: `.grove/gates.toml` explains every row inline) and setup seeds /
+  refresh regenerates a short dial-explainer citing the companions
+  standard-form (home settled at spec time). The line held: adr-0008's *"no
+  repo restates the enum"* stands — dials documented at **effect level**,
+  the normative model **never restated per-repo**, so the restatement-drift
+  class stays closed. Residual, accepted with eyes open: the model prose
+  itself is not inline-readable without the plugin; the pin + linked
+  changelog is the consumer's record.
+
 ### Open
 
-- **O1 — companions: move with the fleet, or stay repo-installed?**
-  *(maintainer lean, 2026-07-21: move; awaiting confirm on the dissolution
-  below — the turn's one question.)* The proposed resolution: **move**, with
-  constraint 6 dissolved as follows (§ below): the companions become
-  versioned standards in the plugin payload; the **single D4 stamp pins fleet
-  and companions together** (one payload — charter↔companion lockstep by
-  construction, which *removes* the skew surface a split home would create);
-  repo citations switch from path-form to standard-form; the D4 mismatch
-  check covers divergence. Residual costs named, not hidden.
+*(none — converged 2026-07-21; next: rubric self-check → `gated`, the
+`decision-adversary` pass, then the maintainer's intent act.)*
 
 ### Parked
 
@@ -143,7 +174,7 @@ updated: 2026-07-21
   for `<WISP_VENDOR_PATH>` resolution). Candidate to ride D6 into the plugin
   with a config lookup; small, decided at migration time.
 
-## O1's substance: what constraint 6 is, and the dissolution
+## D7's substance: what constraint 6 is, and the dissolution
 
 The companions (`lifecycle.md`, `versioning.md`, `relations.md`) carry the
 semantics that give the ratified corpus its meaning — what `status: approved`
@@ -175,7 +206,7 @@ switch to standard-form (*"per the grove lifecycle companion,
 divergence; a semantics change reaches a consumer only through a stamp-bump
 PR whose changelog link shows what changed.
 
-**Residual costs (accepted if O1 confirms, not denied):** a plugin-less
+**Residual costs (accepted — D7, not denied):** a plugin-less
 reader can't resolve the semantics inline from the repo; semantic content
 diffs land in grove's history, not the consumer's — the stamp-bump PR +
 changelog link is the consumer's record.
@@ -240,8 +271,9 @@ changelog link is the consumer's record.
 2. **Skills rewritten to the thin model**: setup (shrinks to floor + config
    seeding), refresh (floor re-copy + stamp bump; the charter three-way-merge
    engine retires), remove, check-install (gains the D4 mismatch
-   disclosure). The plugin grows the `agents/` payload; `plugin.json` gains
-   an explicit `version`.
+   disclosure); setup seeds and refresh regenerates the D7 dial-explainer;
+   the generic charters carry the D3 verified-prior posture. The plugin
+   grows the `agents/` payload; `plugin.json` gains an explicit `version`.
 3. **Supersession pointers** (append-only rule, same change): adr-0007
    superseded in part (placeholder door → D3); adr-0008's companion-location
    note amended again if O1 = move (`.grove/internal/` → plugin payload);
