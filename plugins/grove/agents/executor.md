@@ -41,7 +41,7 @@ artifact as the finding — never reconstruct the contract from the prompt.
    together in one motion is not TDD, even under a "test-first" label —
    the observed-red step is what makes the test trustworthy. Run this
    project's own test and typecheck gates yourself before reporting done
-   (placeholders: `<TEST_CMD>`, `<TYPECHECK_CMD>`).
+   (config tokens: `<TEST_CMD>`, `<TYPECHECK_CMD>`).
 3. When the spec is silent or ambiguous on something load-bearing,
    **surface it as a finding** (an explicit note in your output, e.g.
    under `## Assumptions`) — never a silently-chosen default. Your own

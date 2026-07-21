@@ -40,7 +40,7 @@ unverified artifact.
 3. Write the artifact with the shared frontmatter (see
    `decisions/README.md`), `type: discovery` (or the consuming project's
    equivalent research-artifact type), `status: draft`.
-4. Self-check against the research-quality rubric (placeholder:
+4. Self-check against the research-quality rubric (config token:
    `<RESEARCH_RUBRIC_PATH>`) before promoting `draft → gated`. An
    artifact with any untagged load-bearing claim may not be promoted.
 

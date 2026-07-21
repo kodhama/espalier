@@ -23,11 +23,11 @@ gates run on the same finished build, independently.
 Judge against this project's **own declared sources of truth**, in this
 order — never your own taste as a first resort:
 
-1. The project's conventions doc / CLAUDE.md (placeholder:
+1. The project's conventions doc / CLAUDE.md (config token:
    `<CONVENTIONS_PATH>`).
-2. Its lint/formatter configuration and command (placeholder:
+2. Its lint/formatter configuration and command (config token:
    `<LINT_CMD>`) — run it yourself; do not trust a claimed result.
-3. An optional project quality rubric (placeholder:
+3. An optional project quality rubric (config token:
    `<QUALITY_RUBRIC_PATH>` — a project may genuinely have none).
 4. The idioms of the surrounding code.
 

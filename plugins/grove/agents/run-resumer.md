@@ -35,7 +35,7 @@ done, checkpointed, or you are genuinely blocked — and say which.
    on it. If nothing was pushed, you start clean — say so.
 3. **Work the remainder** per the original brief and this project's own
    discipline (test-first, conventional commits, the PR contract —
-   placeholder: `<PR_CONTRACT_SECTIONS>`, e.g. a required `## Propagation`
+   config token: `<PR_CONTRACT_SECTIONS>`, e.g. a required `## Propagation`
    section).
 4. **Checkpoint as you go — this is load-bearing.** Push after every
    coherent milestone rather than holding work locally; on a large task,

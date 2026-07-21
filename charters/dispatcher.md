@@ -361,7 +361,7 @@ human ratifies at `ship`.
    weakened or deleted to satisfy a convenient spec reading — a
    test/spec conflict is a surfaced contradiction, resolved deliberately
    via (b) or by retiring the over-pinning test, citing why.
-6. **Severity sequences work** — declare your own tiers (placeholder:
+6. **Severity sequences work** — declare your own tiers (config token:
    `<SEVERITY_TAXONOMY>`, e.g. a blocking tier that preempts everything,
    a normal queue, a low-priority tier that parks until batched).
 7. **User-facing findings stay evidence-first**: a `feedback`-type

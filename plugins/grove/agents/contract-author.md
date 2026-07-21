@@ -51,7 +51,7 @@ You never implement.
    uncounted history stays unpinnable (never back-fill or retro-judge
    old edits' significance). **Minor** or **editorial** edits do
    neither.
-5. Self-check against the spec-quality rubric (placeholder:
+5. Self-check against the spec-quality rubric (config token:
    `<SPEC_RUBRIC_PATH>`) and append a `## Rubric check` section with the
    result — honestly; a failing check is listed, never silently passed.
 6. Promote `draft → gated` only after the self-check passes. `approved`

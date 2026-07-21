@@ -31,7 +31,7 @@ ask, not the whole archive. Your floor is `floor-transparency` — a
 3. Write the artifact with the shared frontmatter
    (`id/type/status/depends_on/owner`), `type: discovery` (or this
    project's equivalent research-artifact type), `status: draft`.
-4. Self-check against the research-quality rubric (placeholder:
+4. Self-check against the research-quality rubric (config token:
    `<RESEARCH_RUBRIC_PATH>`) before promoting `draft → gated`. An
    artifact with any untagged load-bearing claim may not be promoted.
 

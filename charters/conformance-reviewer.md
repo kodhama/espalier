@@ -41,7 +41,7 @@ reports, it does not fix. Verdict grammar:
 1. **Find the upstream via the implements edge.** The subject's
    `implements:` frontmatter field names the one contract it realizes
    (a spec its decision, a charter its ADR); code names its spec(s) via
-   the per-package test-deps ledger (`adr-0006`; placeholder:
+   the per-package test-deps ledger (`adr-0006`; config token:
    `<TEST_DEPS_LEDGER>`). Mere `depends_on` citations are builds-on,
    never the fidelity upstream. Read the upstream; it must be
    `approved` — a draft, `gated`, or `superseded` upstream is a gap to
@@ -58,7 +58,7 @@ reports, it does not fix. Verdict grammar:
    `FAIL` with **one line of evidence** — a `file:line`, a test name, or
    the observed behavior. "Looks fine" is not evidence.
 4. **Run the gates yourself** (code layer). Execute the typecheck and
-   test commands (placeholders: `<TYPECHECK_CMD>`, `<TEST_CMD>`); do not
+   test commands (config tokens: `<TYPECHECK_CMD>`, `<TEST_CMD>`); do not
    trust claimed results. Report what you actually saw.
 5. **Be adversarial.** Actively hunt for:
    - **faithful-but-wrong** — built exactly as written, but the upstream
@@ -78,9 +78,9 @@ reports, it does not fix. Verdict grammar:
      (`adr-0005`, decision 3): a change with no reviewable upstream is a
      `FAIL`, not a pass-by-default.
 6. **Check propagation substantively — the judgment half.** A required
-   propagation section in the PR (placeholder: `<PR_CONTRACT_SECTIONS>`)
+   propagation section in the PR (config token: `<PR_CONTRACT_SECTIONS>`)
    only proves the section *exists*; you check it is *true*. Ask: does
-   this change action or fire any parked item (placeholder:
+   this change action or fire any parked item (config token:
    `<PARKED_ITEM_STORE>`), a trigger recorded in a decision, or a
    feedback artifact's disposition — that the PR failed to name and
    update? A false "None." is a FAIL with the missed item as evidence.

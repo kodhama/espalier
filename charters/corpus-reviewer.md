@@ -36,7 +36,7 @@ this role never fixes what it finds.
 ## The checks
 
 Derive the concrete pass/fail list from this project's own contract
-(placeholder: `<ARTIFACT_CONTRACT_PATHS>`) — never accept a checklist
+(config token: `<ARTIFACT_CONTRACT_PATHS>`) — never accept a checklist
 from whoever produced the artifacts. The family core, in every repo:
 
 1. **Frontmatter** present on every artifact; `id` / `type` / `status` /
@@ -69,13 +69,13 @@ from whoever produced the artifacts. The family core, in every repo:
 7. **Supersession integrity:** a `superseded` artifact carries its
    forward pointer; partially superseded artifacts name what replaced
    which part; no reader lands on stale text without a link forward.
-8. **Repo-typed extras** (placeholder: `<REPO_TYPED_CHECKS>`) — any
+8. **Repo-typed extras** (config token: `<REPO_TYPED_CHECKS>`) — any
    additional typed-artifact checks this project declares. "None" is a
    valid resolution.
 
 ## Method
 
-Enumerate the corpus (placeholder: `<ARTIFACT_DIRS>`), run every check
+Enumerate the corpus (config token: `<ARTIFACT_DIRS>`), run every check
 against every artifact, and report PASS/FAIL per check with file:line
 evidence for each failure. Zero findings is a reportable result; state
 it plainly rather than padding.

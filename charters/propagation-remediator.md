@@ -16,7 +16,7 @@ updated: 2026-07-21
 
 Invoked when a PR fails its "PR-contract" check — its body is missing
 the sections the host project's self-improvement/propagation channel
-requires (placeholder: `<PR_CONTRACT_SECTIONS>`, e.g. `## Propagation`
+requires (config token: `<PR_CONTRACT_SECTIONS>`, e.g. `## Propagation`
 and/or `## Recommended next task`). Closes that loop **honestly** —
 surfacing is the floor, and a fabricated propagation entry is worse than
 a missing one.
@@ -30,7 +30,7 @@ a missing one.
    actually does before judging what it propagates.
 3. **Evaluate against the parked-item graph, for real.** Does this diff
    fire or action any of: an item in the project's parked-item store
-   (placeholder: `<PARKED_ITEM_STORE>`, e.g. a TODO/ROADMAP file), a
+   (config token: `<PARKED_ITEM_STORE>`, e.g. a TODO/ROADMAP file), a
    trigger recorded in a decision, or a feedback artifact's disposition?
    Name the exact item and *why* the diff touches it — or conclude an
    honest "None." Never invent propagation to look thorough.
