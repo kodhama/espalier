@@ -1,7 +1,7 @@
 ---
 id: adr-0028-plugin-release-tagging
 type: adr
-status: gated  # drafted 2026-07-22 (in-session shaping); decision-adversary NEEDS-REVISION → F1 (a false validator-backstop claim) verified against source + folded, F2–F5 precision notes folded, the crux (adr-0027 consistency) held SOUND; converged, AWAITS the human intent gate (profile: intent = human). The flip to approved records the maintainer's act; this does not perform it.
+status: approved  # maintainer's intent act ("consider the ADR approved", in-session, 2026-07-22) — recorded in-PR per lifecycle.md; the flip records the act, it does not perform it. decision-adversary NEEDS-REVISION → the F1 blocking finding (a false validator-backstop claim) was verified against source and folded, F2–F5 folded, crux (adr-0027 consistency) held SOUND. author (shaper) ≠ approver (maintainer). The PR #124 merge is the separate ship act, NOT performed by this flip — maintainer directed: don't merge yet, continue the implementation on the PR.
 depends_on: [adr-0026-thin-vendor-boundary, charter-versioning]
 informed_by: [adr-0027-retire-ci-for-now, adr-0010-versioning-is-operational]
 owner: agent
