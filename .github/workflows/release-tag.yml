@@ -1,0 +1,58 @@
+# grove — release tag materializer (adr-0028).
+#
+# Cuts the git tag `grove-v<version>` that mirrors the plugin manifest's
+# version. It does NOT decide the version and it gates nothing: the judgment
+# (the semver level) and the human act both happen UPSTREAM, when the
+# maintainer approves and merges the PR that bumps
+# `plugins/grove/.claude-plugin/plugin.json` (adr-0028 D2/D3). This job only
+# materializes the tag that release already implies.
+#
+# Deterministic + idempotent: it creates `grove-v<version>` only if that tag
+# does not already exist, so re-runs are no-ops. It is NOT self-healing across
+# a skipped version — a version whose tag failed during an outage needs a
+# hand-cut, like the one-time `grove-v0.1.0` seed (adr-0028 Consequences 2).
+#
+# NO RECURSION: the tag push targets `refs/tags/*`, which matches no workflow's
+# `push: branches: [main]` trigger, and pushes made with the default
+# GITHUB_TOKEN do not spawn new workflow runs — so neither this job nor
+# `grove-tests.yml` retriggers.
+
+name: release-tag
+
+on:
+  push:
+    branches: [main]
+    # Only wake when the manifest itself changed. The idempotent existence
+    # check below is the correctness backstop; this filter is efficiency.
+    paths:
+      - "plugins/grove/.claude-plugin/plugin.json"
+
+# WRITE — unlike grove-tests.yml (read-only), this pushes a tag. The default
+# GITHUB_TOKEN with contents:write suffices; no PAT. This is grove CI's only
+# write-capable surface, isolated here on purpose (adr-0028 D4, Honest Cost 1).
+permissions:
+  contents: write
+
+jobs:
+  tag:
+    name: tag the release if the manifest version is new
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Materialize grove-v<version> if absent
+        run: |
+          set -euo pipefail
+          v=$(jq -r .version plugins/grove/.claude-plugin/plugin.json)
+          if [ -z "$v" ] || [ "$v" = "null" ]; then
+            echo "::error::no version in plugin.json"; exit 1
+          fi
+          tag="grove-v$v"
+          if git ls-remote --tags --exit-code origin "refs/tags/$tag" >/dev/null 2>&1; then
+            echo "$tag already exists — no-op"
+            exit 0
+          fi
+          git tag "$tag"
+          git push origin "$tag"
+          echo "created and pushed $tag"
