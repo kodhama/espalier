@@ -5,7 +5,7 @@ status: approved  # maintainer's intent act ("I approve", in-session, 2026-07-21
 depends_on: [adr-0026-thin-vendor-boundary, adr-0012-methodology-delivery-machinery]
 informed_by: [adr-0013-check-scope-mode, adr-0022-strict-mode-review-friction, adr-0024-enforced-gate-under-ship-agent, adr-0025-decline-review-waiver, adr-0023-review-triage-blackboard, spec-0002-review-bookkeeping-check, spec-0003-review-asks-and-audit]
 owner: agent
-updated: 2026-07-21
+updated: 2026-07-23
 ---
 
 # ADR-0027: retire the deterministic CI/bookkeeping machinery for now — Claude-plugin path only, revive via a provider-agnostic installer later (grove#119)
@@ -60,6 +60,9 @@ updated: 2026-07-21
   layer adr-0012 added on top of the roles, not the roles. The `record-verdict`
   / `record-ask` / `record-audit` / `review-preview` / `check-install` skills
   retire with the protocol; `grove-status` and the non-CI skills stay.
+  **The `grove-status` subclause is superseded by
+  `adr-0032-status-emission-belongs-to-wisp`:** the separately optional adapter
+  was later removed from Grove.
 
   **The producer's closing hand-off survives the medium** *(maintainer
   refinement, 2026-07-21: keep the "nudge value … driving the dispatcher

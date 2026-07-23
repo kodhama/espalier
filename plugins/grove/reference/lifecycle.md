@@ -5,7 +5,7 @@ type: charter
 status: approved  # maintainer's intent act 2026-07-12 ("merge", PR #48) — in-PR flip recording the act, adr-0007 precedent; conformance-reviewed against adr-0008 before approval; amended 2026-07-21 per adr-0026 D7 (delivery: plugin-carried under the version stamp, no longer installed per-repo)
 depends_on: [adr-0008-lifecycle-enum-companion, adr-0026-thin-vendor-boundary]
 owner: agent
-updated: 2026-07-21
+updated: 2026-07-23
 ---
 
 # lifecycle — the artifact state enum, stated once
@@ -19,8 +19,8 @@ updated: 2026-07-21
 > consuming repo cites it standard-form: *"per the grove lifecycle
 > companion, `plugin@<stamp>`"*; `adr-0008` as amended).
 
-> **This file is not an agent role.** Like `grove-status.md`, it has no
-> pipeline stage and is never dispatched. It is the methodology
+> **This file is not an agent role.** It has no pipeline stage and is
+> never dispatched. It is the methodology
 > statement every role — and the `corpus-reviewer`'s
 > lifecycle-membership check — sources instead of a per-repo
 > restatement. Every other statement of the enum, in grove itself or in

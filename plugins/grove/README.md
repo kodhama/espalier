@@ -57,8 +57,7 @@ repo; grove discloses that skew, it cannot prevent it.
   (`lifecycle.md`, `versioning.md`, `relations.md` — plugin-carried under the
   single version pin, `adr-0026` D7; consuming repos cite them standard-form,
   *"per the grove lifecycle companion, `plugin@<stamp>`"*, and install no
-  copy), the gates templates setup seeds from, the optional `grove-status`
-  telemetry skill template, and the dormant CI templates (`reference/ci/`,
+  copy), the gates templates setup seeds from, and the dormant CI templates (`reference/ci/`,
   retired-for-now by `adr-0027`).
 - **`check/`** — the review-bookkeeping check runtime, **preserved dormant**
   (`adr-0027` D1: operationally retired, code kept so the D4 revival — a
