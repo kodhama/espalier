@@ -430,13 +430,13 @@ async function main() {
       const stderr = join(paths.logs, `${phase.id}.stderr`);
       const final = join(paths.results, `${phase.id}.json`);
       const args = [
+        '-a',
+        'never',
         'exec',
         '-C',
         paths.consumer,
         '-s',
         'read-only',
-        '-a',
-        'never',
         '--json',
         '--output-schema',
         bundlePath(phase.schema),

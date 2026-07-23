@@ -364,6 +364,11 @@ test('INV20/S18 — probe preparation isolates candidate state without launching
   assert.match(runner, /CODEX_HOME/);
   assert.match(runner, /codex exec/);
   assert.doesNotMatch(runner, /--ephemeral/);
+  assert.match(
+    runner,
+    /const args = \[\s*'-a',\s*'never',\s*'exec',/,
+    'the global approval flag must precede the exec subcommand',
+  );
   assert.doesNotMatch(runner, /\.\.\.process\.env/);
   assert.match(runner, /activeChild === childForSignal/);
   assert.match(runner, /terminatePid\(pid, 'SIGKILL'\)/);
