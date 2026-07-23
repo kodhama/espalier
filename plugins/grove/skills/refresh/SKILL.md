@@ -57,8 +57,9 @@ worktree** — never the shared checkout. The plugin source
   would record a version whose shape the repo doesn't have.
 - **What's installed:** gates machinery (`.grove/internal/gates/` +
   `.grove/gates.toml`), the shared config (`.grove/config.toml`), the
-  dial-explainer (`.grove/README.md`), and whether the optional telemetry
-  skill is installed (`.claude/skills/grove-status/SKILL.md`).
+  dial-explainer (`.grove/README.md`), and whether the removed pre-`adr-0032`
+  status adapter remains at `.claude/skills/grove-status/SKILL.md`. If present,
+  flag it as legacy and point to `/grove:remove`; do not maintain or rewrite it.
 - **Retired CI check (pre-adr-0027 installs):** a repo may still carry the
   retired review-bookkeeping check — `.grove/internal/check/`, the
   `.github/workflows/grove-review-bookkeeping.yml` workflow,
@@ -81,15 +82,6 @@ exist upstream; never copy grove's `test/` dirs or `test-deps.md`):
 (setup step 4's content, citing the companions standard-form with the new
 stamp). If the consumer hand-edited it, flag the overwrite in the hand-back —
 its own header says it is regenerated.
-
-**Resolved-template class — diff the template; if it changed, re-copy it
-re-applying the resolutions the install already made** (the resolutions are
-the consumer's, the template is grove's):
-
-- `.claude/skills/grove-status/SKILL.md` *(if the telemetry skill is
-  installed)* ← `reference/skills/grove-status/SKILL.md`, vendoring header
-  stripped — resolution: `<WISP_VENDOR_PATH>`, read from the installed copy;
-  drop its `## Placeholders` section once resolved.
 
 **Consumer-authoritative — NEVER touch:** `.grove/gates.toml`,
 `.grove/config.toml`, the `.grove/agents/` addenda, `.grove/review.toml`
@@ -114,20 +106,19 @@ trigger — report it, never leave a mangled CLAUDE.md.
 - `node --check` passes on the refreshed runtime's entry points (at minimum
   `.grove/internal/gates/bin/resolve-profile.mjs`).
 - `git status --short` touches **only**: `.grove/internal/`,
-  `.grove/README.md`, `.claude/skills/grove-status/` (if the telemetry skill
-  was refreshed), and CLAUDE.md. Anything else in the diff is a bug in this
+  `.grove/README.md`, and CLAUDE.md. Anything else in the diff is a bug in this
   refresh — fix or revert it.
 
 ## 4. Hand back
 
-Setup step 11's restraint applies — **perform no git of your own**: no add,
+Setup step 10's restraint applies — **perform no git of your own**: no add,
 commit, branch, push, or PR — with one carve-out setup does not have (stated
 here as this skill's own rule): when the user has **explicitly directed a
 landing** (e.g. "open the PR"), follow their direction exactly and stop at
 their gate; never merge. Report: old → new stamp (and the loud D4 disclosure
-of any divergence found), every surface re-copied or regenerated, the
-template re-resolution if any, every legacy piece flagged (pre-adr-0027 CI
-carriers; a pre-adr-0026 layout means you stopped and pointed at the
-migration), the verification results, and — plainly — anything you were
-unsure of. The consumer-authoritative surfaces you did not touch are part of
-the report, not an omission.
+of any divergence found), every surface re-copied or regenerated, every legacy
+piece flagged (pre-adr-0032 status adapter; pre-adr-0027 CI carriers; a
+pre-adr-0026 layout means you stopped and pointed at the migration), the
+verification results, and — plainly — anything you were unsure of. The
+consumer-authoritative surfaces you did not touch are part of the report, not
+an omission.

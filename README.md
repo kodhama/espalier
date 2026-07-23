@@ -83,12 +83,6 @@ the checkpoint-resume bounds shared with `run-resumer`.
   lockstep, auto-loaded as `grove:<role>`), the setup/refresh/remove/
   set-profile skills, the gate-profile machinery, and the plugin-carried
   companions (`adr-0026`).
-- **`.claude/skills/grove-status/`** — the runtime-status skill an
-  agent uses to report itself onto a [wisp](https://github.com/kodhama/wisp)
-  event bus, if one is vendored (telemetry is optional by construction —
-  grove never requires wisp to function). Its governing charter is
-  [`charters/grove-status.md`](charters/grove-status.md) — commands,
-  addressing, and the invariants it guarantees.
 - **`.trellis/`** — the Trellis governance overlay this repo runs on
   itself (bootstrapped via `trellis setup`, not hand-copied).
 
@@ -111,9 +105,7 @@ conventions, parked-item store, rubric paths, resolved interactively
 and honestly, with "none exists yet" where a convention genuinely
 doesn't), a short dial-explainer, and the managed `CLAUDE.md` block
 with the `grove plugin@<version>` stamp (`adr-0026` D4 — a ratified
-record with loud skew disclosure, never a lock). Telemetry is composed
-only if you have [wisp](https://github.com/kodhama/wisp) available;
-grove never requires it. See
+record with loud skew disclosure, never a lock). See
 [`plugins/grove/README.md`](plugins/grove/README.md) for the full plugin
 contents.
 
@@ -126,9 +118,8 @@ own tooling no longer composes or maintains vendored copies
 (`adr-0026` — the merge-on-update class is exactly what the plugin
 route deleted), so keeping hand-vendored charters current is entirely
 yours. If you go this way: copy from [`charters/`](charters/), resolve
-each `## Config tokens` entry to your project's real values, vendor
-[wisp](https://github.com/kodhama/wisp) if you want the `grove-status`
-telemetry skill, and run `trellis setup` if you also want the
+each `## Config tokens` entry to your project's real values, and run
+`trellis setup` if you also want the
 governance overlay grove itself runs on (recommended, not required).
 
 ## Status

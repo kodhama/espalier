@@ -244,24 +244,10 @@ nothing without it.** If declined, note that plainly and move on; nothing is cha
 
 **This is the one place setup writes outside grove's own footprint** — outside the `.grove/`
 namespace and the managed `CLAUDE.md` block. Treat it as exactly that: an **offered, consented,
-augment-never-clobber exception**, and in the step 10 confirm name precisely which ignore file and
+augment-never-clobber exception**, and in the step 9 confirm name precisely which ignore file and
 which line you touched (or that none were, or that the offer was declined). Never a silent write.
 
-## 8. Telemetry (optional — grove never requires it)
-
-Ask whether [wisp](https://github.com/kodhama/wisp) is vendored or otherwise available in this
-project.
-
-- **If yes:** copy `${CLAUDE_PLUGIN_ROOT}/reference/skills/grove-status/SKILL.md` into this
-  project's `.claude/skills/grove-status/SKILL.md` (stripping the first-line vendoring header),
-  resolve `<WISP_VENDOR_PATH>` to wherever wisp actually lives in this project (e.g. `tools/wisp/`,
-  or `.` if this project *is* wisp), and drop its own `## Placeholders` section once resolved.
-  (This is the one per-repo-vendored skill left — parked as `adr-0026` P3, to ride into the plugin
-  with a config lookup at a later migration.)
-- **If no:** don't install the skill. Mention `github.com/kodhama/wisp` as where it lives if they
-  want live dashboard telemetry later, and move on — grove's agent roles work fully without it.
-
-## 9. Recommend, don't install, Trellis
+## 8. Recommend, don't install, Trellis
 
 Close by telling the user grove pairs with the governance layer it runs under, but do **not**
 install it yourself:
@@ -270,20 +256,19 @@ install it yourself:
 > it runs under. If you want that too: `/plugin install trellis@kodhama` then `/trellis:setup`.
 > Recommended, not required — grove works standalone.
 
-## 10. Confirm
+## 9. Confirm
 
 Tell the user exactly what you wrote: the **gate-profile** — which preset you seeded
 `.grove/gates.toml` from (or `steward` by default) and that the floor-guard machinery
 (`.grove/internal/gates/`) and C1 defaults (`.grove/internal/enforcement.toml`) landed — every
 `config.toml` key you seeded and to what value (or the honest "none exists yet" statements you
 wrote instead), the dial-explainer (`.grove/README.md`), whether `decisions/`/`specs/` were
-seeded, the `CLAUDE.md` block + the exact version stamped, whether the telemetry skill was
-composed, and **which tooling-ignore files and lines step 7 touched** (naming each `.grove/` line
+seeded, the `CLAUDE.md` block + the exact version stamped, and **which tooling-ignore files and lines step 7 touched** (naming each `.grove/` line
 and its file — or that no linter/formatter was found, or that the offer was declined). Remind them
 nothing was copied into `.claude/agents/` — the roles are the plugin's. They can remove all of it
 any time with `/grove:remove`.
 
-## 11. Hand back — grove wrote no git; landing is yours
+## 10. Hand back — grove wrote no git; landing is yours
 
 Setup composes files; it does **not** land them. Perform **no git** of your own — no `add`, no
 `commit`, no branch, no push, no PR — and **recommend no landing approach**: not a direct commit,

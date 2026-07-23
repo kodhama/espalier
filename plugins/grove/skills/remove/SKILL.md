@@ -24,7 +24,6 @@ A current (thin-vendor, post-`adr-0026`) install comprises:
 - **`.grove/internal/gates/`** + **`.grove/internal/enforcement.toml`** — the grove-managed
   floor-guard machinery and C1 defaults.
 - The managed **`CLAUDE.md` block** (`grove:begin`…`grove:end`, with the version stamp).
-- Optionally **`.claude/skills/grove-status/`** — the telemetry skill, if wisp was available.
 
 **Older installs left more** — check for each of these too:
 
@@ -36,6 +35,9 @@ A current (thin-vendor, post-`adr-0026`) install comprises:
   `.github/workflows/grove-review-bookkeeping.yml`, and the split policy carrier —
   `.grove/review.toml` plus `.grove/internal/review-wiring.toml` (`adr-0018` D10). Both the
   setup-era check step and the then-standalone `/grove:check-install` wrote the same pieces.
+- **Pre-`adr-0032` status-adapter installs:** `.claude/skills/grove-status/`.
+  Grove no longer ships or maintains this Wisp adapter; identify it explicitly
+  as a legacy Grove-managed path before offering removal.
 
 Also look for the **tooling-ignore entry** setup may have added (with consent): a `.grove/` line
 (or a `.grove/**` glob) in `.eslintignore`, `.prettierignore`, `.markdownlintignore`, the
@@ -129,8 +131,8 @@ else** in the file. Discipline, per ignore file:
 
 ## 7. Confirm
 
-Tell the user exactly what you removed (which `.grove/` files, the `grove-status` skill if
-present, any legacy pieces — vendored role files, installed companions, the check runtime +
+Tell the user exactly what you removed (which `.grove/` files, any legacy pieces — the
+`grove-status` adapter if present, vendored role files, installed companions, the check runtime +
 workflow + policy carriers — any `.grove/` tooling-ignore line stripped and from which file, and
 the `CLAUDE.md` block), and remind them the plugin itself (the `grove:<role>` agents and these
 skills) unloads via `/plugin`, not file deletion. If nothing was present, say so plainly — **do

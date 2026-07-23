@@ -5,7 +5,7 @@ status: approved  # maintainer's intent act ("Approved", in-session, 2026-07-21)
 depends_on: [adr-0012-methodology-delivery-machinery, adr-0018-gate-profile-and-trigger-split, adr-0021-gate-profile-self-adoption, spec-0002-review-bookkeeping-check]
 informed_by: [adr-0008-lifecycle-enum-companion, adr-0014-install-is-invisible-and-ungated, adr-0023-review-triage-blackboard, adr-0010-versioning-is-operational, adr-0001-corpus-reviewer-lift]
 owner: agent
-updated: 2026-07-21
+updated: 2026-07-23
 ---
 
 # ADR-0026: the thin-vendor boundary — plugin-carried fleet, repo-owned floor (grove#112)
@@ -217,6 +217,8 @@ updated: 2026-07-21
 - **P3 — `grove-status` skill home** (today the one per-repo-vendored skill,
   for `<WISP_VENDOR_PATH>` resolution). Candidate to ride D6 into the plugin
   with a config lookup; small, decided at migration time.
+  **Superseded by `adr-0032-status-emission-belongs-to-wisp`:**
+  `grove-status` was removed from Grove; status emission belongs to Wisp.
 
 ## D7's substance: what constraint 6 is, and the dissolution
 

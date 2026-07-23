@@ -11,12 +11,7 @@ plugin payload, [`plugins/grove/agents/`](../plugins/grove/agents/).
 The two are a **two-copy lockstep** (`adr-0026` P1, ex `adr-0021` D4):
 a charter edit updates its payload counterpart in the same PR.
 
-One file, [`grove-status.md`](grove-status.md), charters a skill rather
-than an agent role — the shared runtime-telemetry contract every role
-composes into its own work. It has no agent-payload counterpart and
-no pipeline stage; its own charter says so explicitly rather than
-forcing the "one file, one agent" shape above onto it. Another,
-[`lifecycle.md`](lifecycle.md), is the lifecycle companion (`adr-0008`)
+One file, [`lifecycle.md`](lifecycle.md), is the lifecycle companion (`adr-0008`)
 — the artifact state enum, stated once and shipped in the plugin
 payload under the version stamp (`adr-0026` D7) — not a role either.
 
