@@ -133,6 +133,15 @@ test("all projections are marked, source-addressed, and native ids are unique un
     assert.match(id, /^[a-z0-9_]+$/);
     assert.doesNotMatch(id, /-/);
   }
+  const launcherBundle = JSON.parse(
+    outputs.get("plugins/grove/build/generated/codex-launchers.json"),
+  );
+  for (const launcher of launcherBundle.launchers) {
+    assert.match(
+      launcher.content,
+      new RegExp(`Canonical Grove role id: ${launcher.canonical_id}\\.`),
+    );
+  }
 
   assert.equal(
     [...outputs].filter(([name]) =>
@@ -292,6 +301,10 @@ test("dispatcher Codex skill selects full driving or scoped native exposure from
   assert.match(
     dispatcher.content,
     /Grove exposure selector: scoped-advisor/,
+  );
+  assert.match(
+    dispatcher.content,
+    /Canonical Grove role id: dispatcher\./,
   );
 });
 
