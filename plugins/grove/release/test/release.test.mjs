@@ -308,22 +308,27 @@ test('INV20/S18 — each discovered role requires a distinct invocation token', 
     multi_agent_version: 'v2',
   };
   validRecord.config_and_addendum.invocation = 'CONFIG';
-  const invocationProof = (item, index, rootThreadId) => ({
-    native_id: item.native_id ?? item.role,
-    invocation: item.invocation,
-    thread_id: `${rootThreadId}-child-${index}`,
-    task_name: item.native_id ?? item.role,
-    fork_turns: 'none',
-    observed_agent_role: item.native_id ?? item.role,
-    observed_parent_thread_id: rootThreadId,
-    observed_cli_version: '0.145.0',
-    observed_model: 'gpt-5.6-sol',
-    observed_model_provider: 'openai',
-    observed_multi_agent_version: 'v2',
-    observed_child_result: item,
-    session_meta_sha256: String(index + 1).repeat(64).slice(0, 64),
-    session_metadata: `codex-home/sessions/${rootThreadId}-child-${index}.jsonl`,
-  });
+  const invocationProof = (item, index, rootThreadId) => {
+    const nativeId = item.native_id ?? item.role;
+    const taskName = `probe_${nativeId.replace(/^grove_/, '')}`;
+    return {
+      native_id: nativeId,
+      invocation: item.invocation,
+      thread_id: `${rootThreadId}-child-${index}`,
+      task_name: taskName,
+      fork_turns: 'none',
+      observed_agent_role: nativeId,
+      observed_agent_path: `/root/${taskName}`,
+      observed_parent_thread_id: rootThreadId,
+      observed_cli_version: '0.145.0',
+      observed_model: 'gpt-5.6-sol',
+      observed_model_provider: 'openai',
+      observed_multi_agent_version: 'v2',
+      observed_child_result: item,
+      session_meta_sha256: String(index + 1).repeat(64).slice(0, 64),
+      session_metadata: `codex-home/sessions/${rootThreadId}-child-${index}.jsonl`,
+    };
+  };
   const phase = (id, kind, phaseInvocations) => {
     const rootThreadId = `root-${id}`;
     return {
@@ -403,6 +408,25 @@ test('INV20/S18 — each discovered role requires a distinct invocation token', 
   unrelatedParent.probe_evidence.phases[5].invocations[0].observed_parent_thread_id = 'other-root';
   assert.match(
     validateSupportRecord(unrelatedParent, supportedRow, '0.3.0', {
+      inventory,
+      sourceDigests: digests,
+    }).join('\n'),
+    /does not prove invocation/i,
+  );
+  const unboundTaskPath = structuredClone(validRecord);
+  unboundTaskPath.probe_evidence.phases[5].invocations[0].observed_agent_path =
+    `/root/other/${unboundTaskPath.probe_evidence.phases[5].invocations[0].task_name}`;
+  assert.match(
+    validateSupportRecord(unboundTaskPath, supportedRow, '0.3.0', {
+      inventory,
+      sourceDigests: digests,
+    }).join('\n'),
+    /does not prove invocation/i,
+  );
+  const malformedTaskName = structuredClone(validRecord);
+  malformedTaskName.probe_evidence.phases[5].invocations[0].task_name = 'Probe-Executor';
+  assert.match(
+    validateSupportRecord(malformedTaskName, supportedRow, '0.3.0', {
       inventory,
       sourceDigests: digests,
     }).join('\n'),
@@ -846,7 +870,7 @@ test('S18 — persisted V2 sessions must prove exact native roles and no-history
       name: 'spawn_agent',
       arguments: {
         agent_type: 'grove_executor',
-        task_name: 'grove_executor',
+        task_name: 'probe_executor',
         fork_turns: 'none',
       },
     },
@@ -855,7 +879,7 @@ test('S18 — persisted V2 sessions must prove exact native roles and no-history
       name: 'spawn_agent',
       arguments: {
         agent_type: 'grove_code_reviewer',
-        task_name: 'grove_code_reviewer',
+        task_name: 'probe_code_reviewer',
         fork_turns: 'none',
       },
     },
@@ -865,7 +889,7 @@ test('S18 — persisted V2 sessions must prove exact native roles and no-history
     executor: {
       thread_id: 'executor',
       agent_role: 'grove_executor',
-      agent_path: '/root/grove_executor',
+      agent_path: '/root/probe_executor',
       parent_thread_id: 'root-v2',
       cli_version: '0.145.0',
       model: 'gpt-5.6-sol',
@@ -882,7 +906,7 @@ test('S18 — persisted V2 sessions must prove exact native roles and no-history
     reviewer: {
       thread_id: 'reviewer',
       agent_role: 'grove_code_reviewer',
-      agent_path: '/root/grove_code_reviewer',
+      agent_path: '/root/probe_code_reviewer',
       parent_thread_id: 'root-v2',
       cli_version: '0.145.0',
       model: 'gpt-5.6-sol',
@@ -911,11 +935,23 @@ test('S18 — persisted V2 sessions must prove exact native roles and no-history
   assert.deepEqual(
     validateCodexV2SessionEvidence(events, expected, input).invocations.map((item) => ({
       role: item.observed_agent_role,
+      task: item.task_name,
+      path: item.observed_agent_path,
       fork: item.fork_turns,
     })),
     [
-      { role: 'grove_executor', fork: 'none' },
-      { role: 'grove_code_reviewer', fork: 'none' },
+      {
+        role: 'grove_executor',
+        task: 'probe_executor',
+        path: '/root/probe_executor',
+        fork: 'none',
+      },
+      {
+        role: 'grove_code_reviewer',
+        task: 'probe_code_reviewer',
+        path: '/root/probe_code_reviewer',
+        fork: 'none',
+      },
     ],
   );
   assert.throws(
@@ -961,6 +997,38 @@ test('S18 — persisted V2 sessions must prove exact native roles and no-history
       },
     }),
     /does not prove exactly one custom agent role grove_executor/i,
+  );
+  assert.throws(
+    () => validateCodexV2SessionEvidence(events, expected, {
+      ...input,
+      threadRoles: {
+        ...threadRoles,
+        executor: { ...threadRoles.executor, agent_path: '/root/other/probe_executor' },
+      },
+    }),
+    /does not prove exactly one custom agent role grove_executor/i,
+  );
+  assert.throws(
+    () => validateCodexV2SessionEvidence(events, expected, {
+      ...input,
+      collaborationCalls: collaborationCalls.map((call, index) => (
+        index === 2
+          ? { ...call, arguments: { ...call.arguments, task_name: 'probe_executor' } }
+          : call
+      )),
+    }),
+    /does not invoke exact custom agent role grove_code_reviewer/i,
+  );
+  assert.throws(
+    () => validateCodexV2SessionEvidence(events, expected, {
+      ...input,
+      collaborationCalls: collaborationCalls.map((call, index) => (
+        index === 0
+          ? { ...call, arguments: { ...call.arguments, task_name: 'Probe-Executor' } }
+          : call
+      )),
+    }),
+    /does not invoke exact custom agent role grove_executor/i,
   );
   assert.throws(
     () => validateCodexV2SessionEvidence(events, expected, {

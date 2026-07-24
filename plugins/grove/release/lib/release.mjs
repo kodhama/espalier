@@ -385,6 +385,7 @@ function validateCodexProbeEvidence(record, row, errors) {
       errors.push(`${row.surface_id} probe_evidence phase ${expected.id} has the wrong invocation proof count`);
       continue;
     }
+    const taskNames = new Set();
     for (let invocationIndex = 0; invocationIndex < expected.invocations.length; invocationIndex += 1) {
       const expectedInvocation = expected.invocations[invocationIndex];
       const observed = phase.invocations[invocationIndex];
@@ -393,7 +394,9 @@ function validateCodexProbeEvidence(record, row, errors) {
         || observed?.native_id !== expectedInvocation.native_id
         || observed?.invocation !== expectedInvocation.invocation
         || observed?.observed_agent_role !== expectedInvocation.native_id
-        || observed?.task_name !== expectedInvocation.native_id
+        || !/^[a-z0-9_]+$/.test(observed?.task_name ?? '')
+        || taskNames.has(observed?.task_name)
+        || observed?.observed_agent_path !== `/root/${observed?.task_name}`
         || observed?.fork_turns !== 'none'
         || !nonEmpty(observed?.thread_id)
         || childThreadIds.has(observed?.thread_id)
@@ -413,6 +416,7 @@ function validateCodexProbeEvidence(record, row, errors) {
           `${row.surface_id} probe_evidence phase ${expected.id} does not prove invocation ${invocationIndex + 1}`,
         );
       }
+      if (nonEmpty(observed?.task_name)) taskNames.add(observed.task_name);
       if (nonEmpty(observed?.thread_id)) childThreadIds.add(observed.thread_id);
     }
   }

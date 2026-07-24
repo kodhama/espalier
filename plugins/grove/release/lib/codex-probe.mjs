@@ -370,6 +370,7 @@ export function validateCodexV2SessionEvidence(
   }
 
   const invocations = [];
+  const taskNames = new Set();
   for (let index = 0; index < expectedInvocations.length; index += 1) {
     const expected = expectedInvocations[index];
     const spawn = calls[index * 2];
@@ -377,18 +378,21 @@ export function validateCodexV2SessionEvidence(
     if (spawn?.name !== 'spawn_agent' || wait?.name !== 'wait_agent') {
       throw new Error(`persisted root session does not prove sequential spawn/wait pair ${index + 1}`);
     }
+    const taskName = spawn.arguments?.task_name;
     if (
       spawn.arguments?.agent_type !== expected.native_id
-      || spawn.arguments?.task_name !== expected.native_id
+      || !/^[a-z0-9_]+$/.test(taskName ?? '')
+      || taskNames.has(taskName)
       || spawn.arguments?.fork_turns !== 'none'
     ) {
       throw new Error(
         `persisted root session does not invoke exact custom agent role ${expected.native_id}`,
       );
     }
+    taskNames.add(taskName);
     const matches = children.filter((role) => (
       role.agent_role === expected.native_id
-      && role.agent_path?.endsWith(`/${expected.native_id}`)
+      && role.agent_path === `/root/${taskName}`
       && role.multi_agent_version === 'v2'
       && role.model === expectedModel
       && role.model_provider === expectedModelProvider
@@ -416,7 +420,7 @@ export function validateCodexV2SessionEvidence(
       native_id: expected.native_id,
       invocation: expected.invocation,
       thread_id: roleProof.thread_id,
-      task_name: spawn.arguments.task_name,
+      task_name: taskName,
       fork_turns: spawn.arguments.fork_turns,
       observed_agent_role: roleProof.agent_role,
       observed_agent_path: roleProof.agent_path,
@@ -556,8 +560,9 @@ function nativePrompt(identities) {
     invocation,
   }));
   return `This is a Grove support-evidence probe, not role work.
-For each assignment below, sequentially spawn the exact custom agent
-named by native_id with fork_turns set to "none", wait for it, and ask it only to load its installed Grove
+For each assignment below, sequentially spawn with agent_type set to the exact
+native_id and fork_turns set to "none"; use a unique lowercase task_name, wait
+for it, and ask it only to load its installed Grove
 role skill/reference and discover its canonical id, source, digest, and
 exposure. Require each child to return only one compact JSON object containing
 canonical_id, native_id, exposure, source, digest, and invocation. Spawn no
@@ -572,8 +577,9 @@ ${expectedBlock(assignments)}
 
 function separationPrompt({ producer, reviewer }) {
   return `This is a Grove support-evidence probe, not implementation or review.
-Sequentially spawn exactly two distinct custom agents with fork_turns set to
-"none": grove_executor and grove_code_reviewer. Wait for each. Ask each only to load its Grove role and
+Sequentially spawn exactly two distinct custom agents with agent_type set to
+grove_executor and grove_code_reviewer respectively, fork_turns set to "none",
+and unique lowercase task_name values. Wait for each. Ask each only to load its Grove role and
 return only compact JSON containing native_id and its assigned invocation
 token. Do not let either agent perform role
 work. Return only JSON matching the supplied schema:
@@ -583,8 +589,8 @@ ${JSON.stringify({ separate: true, producer, reviewer }, null, 2)}
 
 function scopedPrompt(expected) {
   return `This is a Grove support-evidence probe, not dispatch work.
-Spawn exactly the custom agent grove_dispatcher with fork_turns set to "none"
-and wait for it. Ask it to
+Spawn with agent_type set exactly to grove_dispatcher, fork_turns set to "none",
+and a lowercase task_name, then wait for it. Ask it to
 load the installed dispatcher role and discover its actual exposure plus
 whether that role advertises driving-session responsibility. Ask the child to
 return only one compact JSON object containing native_id, exposure,
@@ -599,7 +605,8 @@ ${JSON.stringify({
 
 function configPrompt(expected) {
   return `This is a Grove support-evidence probe, not implementation work.
-Spawn exactly grove_executor with fork_turns set to "none" and wait for it.
+Spawn with agent_type set exactly to grove_executor, fork_turns set to "none",
+and a lowercase task_name, then wait for it.
 Ask it to load its Grove role,
 read the consumer's .grove/config.toml and .grove/agents/executor.md, and
 discover the config and addendum sentinel values without running either
