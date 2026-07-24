@@ -1,12 +1,4 @@
 <!-- GENERATED — DO NOT EDIT; canonical-source: charters/validator.md; sha256: c58eae46db62e54a66d502b0584a02c44a3d4189f1df90a5e84bf9df8241dc44 -->
----
-id: charter-validator
-type: charter
-status: gated
-depends_on: [adr-0006-operational-conformance-mechanism, charter-versioning, charter-relations, adr-0016-implements-edge-taxonomy]
-owner: agent
-updated: 2026-07-21
----
 
 # validator — stage 5: per-PR critique + triggered drift audits
 

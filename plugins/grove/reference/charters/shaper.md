@@ -1,12 +1,4 @@
 <!-- GENERATED — DO NOT EDIT; canonical-source: charters/shaper.md; sha256: 20a09193caae4e9be7f86d7b0fe9ca0c4499dd7b968f2500b8d20446534a95a6 -->
----
-id: charter-shaper
-type: charter
-status: gated
-depends_on: [charter-lifecycle, charter-relations, adr-0023-review-triage-blackboard, adr-0027-retire-ci-for-now]
-owner: agent
-updated: 2026-07-21
----
 
 # shaper — stage 2: convergent shaping (interactive)
 

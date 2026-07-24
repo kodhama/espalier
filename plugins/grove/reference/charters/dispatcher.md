@@ -1,12 +1,4 @@
 <!-- GENERATED — DO NOT EDIT; canonical-source: charters/dispatcher.md; sha256: 9961fd1792f3b21343aec90ade15335bd4c4f681c83fbf99410bddef0850ceef -->
----
-id: charter-dispatcher
-type: charter
-status: gated
-depends_on: [adr-0012-methodology-delivery-machinery, adr-0023-review-triage-blackboard, adr-0026-thin-vendor-boundary, adr-0027-retire-ci-for-now]
-owner: agent
-updated: 2026-07-21
----
 
 # dispatcher — dispatch, sequencing, the findings ledger, checkpoint-resume
 

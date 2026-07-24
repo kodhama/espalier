@@ -1,12 +1,4 @@
 <!-- GENERATED — DO NOT EDIT; canonical-source: charters/contract-author.md; sha256: 2285985e6071db5d881ed6a158e48218040b3bea53bad7de327548c9fa8c8e47 -->
----
-id: charter-contract-author
-type: charter
-status: gated
-depends_on: [adr-0004-spec-lifecycle-and-organization, adr-0006-operational-conformance-mechanism, charter-lifecycle, charter-versioning, adr-0023-review-triage-blackboard, adr-0026-thin-vendor-boundary, adr-0027-retire-ci-for-now]
-owner: agent
-updated: 2026-07-21
----
 
 # contract-author — stage 3: specs from approved intent
 

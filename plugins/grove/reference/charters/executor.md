@@ -1,12 +1,4 @@
 <!-- GENERATED — DO NOT EDIT; canonical-source: charters/executor.md; sha256: 8531d32a9793d32f6517c84d9fdbf620467cdeb2b88f72a28d0e514f5d434f03 -->
----
-id: charter-executor
-type: charter
-status: gated
-depends_on: [adr-0004-spec-lifecycle-and-organization, adr-0005-tdd-and-artifact-gated-dispatch, adr-0006-operational-conformance-mechanism, adr-0023-review-triage-blackboard, adr-0026-thin-vendor-boundary, adr-0027-retire-ci-for-now]
-owner: agent
-updated: 2026-07-21
----
 
 # executor — stage 4: test-first implementation from artifacts only
 

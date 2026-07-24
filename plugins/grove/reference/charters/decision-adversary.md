@@ -1,13 +1,4 @@
 <!-- GENERATED — DO NOT EDIT; canonical-source: charters/decision-adversary.md; sha256: 0ed0d6ddb257e26dc7d54cac0098f1ea30fd6d442d0769e7e1c93056b6c511b9 -->
----
-id: charter-decision-adversary
-type: charter
-status: gated
-implements: adr-0012-methodology-delivery-machinery  # the realized contract (adr-0012 AC9/F8); machine-readable fidelity selector
-depends_on: [adr-0012-methodology-delivery-machinery, adr-0023-review-triage-blackboard, adr-0027-retire-ci-for-now]
-owner: agent
-updated: 2026-07-21
----
 
 # decision-adversary — stage 2½: break gated decisions before ratification
 

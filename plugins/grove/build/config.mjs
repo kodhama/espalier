@@ -4,17 +4,21 @@ export const INVENTORY_PATH = "plugins/grove/roles.json";
 export const COMPANION_PROJECTIONS = Object.freeze([
   {
     source: "charters/lifecycle.md",
-    output: "plugins/grove/reference/charters/lifecycle.md",
+    output: "plugins/grove/reference/lifecycle.md",
   },
   {
     source: "charters/relations.md",
-    output: "plugins/grove/reference/charters/relations.md",
+    output: "plugins/grove/reference/relations.md",
   },
   {
     source: "charters/versioning.md",
-    output: "plugins/grove/reference/charters/versioning.md",
+    output: "plugins/grove/reference/versioning.md",
   },
 ]);
+
+export const GENERATED_FILES = Object.freeze(
+  COMPANION_PROJECTIONS.map(({ output }) => output),
+);
 
 export const LAUNCHER_BUNDLE_PATH =
   "plugins/grove/build/generated/codex-launchers.json";

@@ -10,6 +10,7 @@ import path from "node:path";
 import {
   CANONICAL_ROLE_IDS,
   COMPANION_PROJECTIONS,
+  GENERATED_FILES,
   GENERATED_ROOTS,
   INVENTORY_PATH,
   LAUNCHER_BUNDLE_PATH,
@@ -81,8 +82,11 @@ function isWithinGeneratedRoot(output) {
     normalized === output &&
     !path.posix.isAbsolute(output) &&
     !normalized.startsWith("../") &&
-    GENERATED_ROOTS.some(
-      (root) => normalized === root || normalized.startsWith(`${root}/`),
+    (
+      GENERATED_FILES.includes(normalized)
+      || GENERATED_ROOTS.some(
+        (root) => normalized === root || normalized.startsWith(`${root}/`),
+      )
     )
   );
 }
@@ -242,8 +246,19 @@ async function readCanonical(repoRoot, source) {
   }
 }
 
+function runtimeReferenceBody(source, body) {
+  if (!body.startsWith("---\n")) {
+    throw new Error(`${source} must begin with artifact front matter`);
+  }
+  const frontmatterEnd = body.indexOf("\n---\n", 4);
+  if (frontmatterEnd === -1) {
+    throw new Error(`${source} has unterminated artifact front matter`);
+  }
+  return body.slice(frontmatterEnd + 5);
+}
+
 function referenceProjection(source, body, digest, sourceFragment) {
-  let projectedBody = body;
+  let projectedBody = runtimeReferenceBody(source, body);
   if (sourceFragment === "scoped-agent-boundary") {
     const needle =
       "> **The `grove:dispatcher` plugin agent (`plugins/grove/agents/dispatcher.md`)";
@@ -501,6 +516,7 @@ export async function checkProjectionSet({ repoRoot, outputs }) {
       actualGenerated.add(path.posix.join(root, file));
     }
   }
+  for (const file of GENERATED_FILES) actualGenerated.add(file);
   // Skill directories share a host-owned parent with the four authored
   // lifecycle skills. Detect orphaned generated role skills by their marker
   // without treating those authored siblings as generated output.

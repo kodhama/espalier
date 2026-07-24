@@ -1,13 +1,4 @@
 <!-- GENERATED — DO NOT EDIT; canonical-source: charters/code-reviewer.md; sha256: a73a41cdebf423f9bba617a0c8066ceacf3dd19d348f70a0f53bc70e13fd235a -->
----
-id: charter-code-reviewer
-type: charter
-status: gated
-implements: adr-0007-code-reviewer-agent  # the realized contract (its chartering ADR); machine-readable fidelity selector per adr-0012
-depends_on: [adr-0007-code-reviewer-agent, adr-0012-methodology-delivery-machinery, adr-0023-review-triage-blackboard, adr-0026-thin-vendor-boundary, adr-0027-retire-ci-for-now]
-owner: agent
-updated: 2026-07-21
----
 
 # code-reviewer — stage 4½: the independent code-quality gate
 

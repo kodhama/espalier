@@ -1,12 +1,4 @@
 <!-- GENERATED — DO NOT EDIT; canonical-source: charters/propagation-remediator.md; sha256: 4a723a1e138182d25630fe0c3fb09ed144478edf6399fb38eba46220a5f16527 -->
----
-id: charter-propagation-remediator
-type: charter
-status: gated
-depends_on: [adr-0023-review-triage-blackboard, adr-0026-thin-vendor-boundary, adr-0027-retire-ci-for-now]
-owner: agent
-updated: 2026-07-21
----
 
 # propagation-remediator — self-improvement auto-remediation
 

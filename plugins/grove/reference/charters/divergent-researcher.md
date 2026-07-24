@@ -1,12 +1,4 @@
 <!-- GENERATED — DO NOT EDIT; canonical-source: charters/divergent-researcher.md; sha256: 7a67ee0f9ea5f2990b286a5ac341b14fc3818787a8099fd9f98ace443a39d333 -->
----
-id: charter-divergent-researcher
-type: charter
-status: gated
-depends_on: [adr-0026-thin-vendor-boundary]
-owner: agent
-updated: 2026-07-21
----
 
 # divergent-researcher — stage 1: research discipline
 

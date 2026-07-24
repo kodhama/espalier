@@ -4,6 +4,9 @@ Grove packages one canonical agent methodology for Claude Code and Codex. The
 normative role and companion prose remains in the repository's
 [`charters/`](../../charters/) directory. Host payloads are generated
 projections and loading adapters; they are not independent copies to edit.
+Runtime reference projections omit the source artifact front matter while
+retaining the canonical prose. The lifecycle, relations, and versioning
+companions each ship once at their established `reference/*.md` path.
 
 The package version proposed by this branch is read from [`VERSION`](VERSION).
 The maintainer's merge of that version change is the human release act; this

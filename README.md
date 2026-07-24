@@ -116,9 +116,10 @@ codex plugin add grove@kodhama
 ```
 
 Start a fresh task and run Grove setup with an explicit surface id. The Codex
-plugin carries skills and references. Eligible project-scoped native launchers
-are generated under `.codex/agents/` by setup; neither the package nor those
-launchers duplicate a charter body.
+plugin carries one frontmatter-free runtime reference per charter, shared by
+both host adapters. Eligible project-scoped native launchers are generated
+under `.codex/agents/` by setup; Claude envelopes, Codex skills, and those
+launchers do not duplicate the runtime charter body.
 
 ## Surface support
 

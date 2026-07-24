@@ -1,12 +1,4 @@
-<!-- vendored from ../../charters/versioning.md — the repo's canonical copy; keep in sync -->
----
-id: charter-versioning
-type: charter
-status: approved  # maintainer's intent act 2026-07-12 ("#51 approved", grove#51) — in-PR flip recording the act (charters/lifecycle.md, adr-0007 precedent); conformance-reviewed against adr-0010 before approval; amended 2026-07-13 per adr-0011 (edge taxonomy split to relations.md — the `changes:` edge definition and all `depends_on`-class language moved out; version forms/pins/cross-check stay); amended 2026-07-21 per adr-0026 D7 (delivery: plugin-carried under the version stamp, no longer installed per-repo)
-depends_on: [adr-0010-versioning-is-operational, adr-0011-relations-companion, adr-0026-thin-vendor-boundary]
-owner: agent
-updated: 2026-07-21
----
+<!-- GENERATED — DO NOT EDIT; canonical-source: charters/versioning.md; sha256: 68bdf6c6f491e55c0e48e2589c0271ae25e53f576375d4aaef735faa55113fc6 -->
 
 # versioning — conformance-detection semantics, stated once
 

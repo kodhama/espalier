@@ -1,12 +1,4 @@
 <!-- GENERATED — DO NOT EDIT; canonical-source: charters/run-resumer.md; sha256: f311c8fd9144d6751f94b31d4798344bef2c2e32917bc1158b287a4554c1d687 -->
----
-id: charter-run-resumer
-type: charter
-status: gated
-depends_on: [adr-0023-review-triage-blackboard, adr-0026-thin-vendor-boundary, adr-0027-retire-ci-for-now]
-owner: agent
-updated: 2026-07-21
----
 
 # run-resumer — max-turns remediation (checkpoint-and-resume)
 

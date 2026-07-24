@@ -1,12 +1,4 @@
 <!-- GENERATED — DO NOT EDIT; canonical-source: charters/corpus-reviewer.md; sha256: b84aa2829f05d3b4b6b19af717b5ffafe70589e10205f66c8bcc96cd60ee6ef3 -->
----
-id: charter-corpus-reviewer
-type: charter
-status: approved  # ratified by PR #6 (2026-07-08); amended 2026-07-12 for adr-0006 duties (re-ratified on this PR's merge); amended 2026-07-12 per adr-0008 (lifecycle check sources the companion); amended 2026-07-12 per adr-0010 (changes: cross-check duty + pin-semantics repoint — re-ratified on this PR's merge); amended 2026-07-13 per adr-0011 (types + resolves informed_by; flags a @version pin on informed_by as a category error; flags informed_by → draft for the conformance-reviewer's honesty judgment); amended 2026-07-21 per adr-0026 (D3: placeholder door → shared-config tokens; D7: companion cited plugin-carried, not installed)
-depends_on: [adr-0001-corpus-reviewer-lift, adr-0006-operational-conformance-mechanism, adr-0008-lifecycle-enum-companion, charter-versioning, charter-relations, adr-0026-thin-vendor-boundary]
-owner: agent
-updated: 2026-07-21
----
 
 # corpus-reviewer — standing: the record audits itself honestly
 

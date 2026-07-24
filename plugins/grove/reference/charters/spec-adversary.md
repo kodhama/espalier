@@ -1,13 +1,4 @@
 <!-- GENERATED — DO NOT EDIT; canonical-source: charters/spec-adversary.md; sha256: a21ca8ac5e26da567636e3e10e1d191befb14b75ea4995bece30cdbae20a4098 -->
----
-id: charter-spec-adversary
-type: charter
-status: gated
-implements: adr-0012-methodology-delivery-machinery  # the realized contract for the narrowed intrinsic-quality remit (adr-0012); machine-readable fidelity selector
-depends_on: [adr-0012-methodology-delivery-machinery, adr-0023-review-triage-blackboard, adr-0027-retire-ci-for-now]
-owner: agent
-updated: 2026-07-21
----
 
 # spec-adversary — stage 3½: break gated specs before ratification
 

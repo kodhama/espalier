@@ -10,7 +10,12 @@ import {
   checkProjectionSet,
   writeProjectionSet,
 } from "../lib/generate.mjs";
-import { GENERATED_ROOTS, INVENTORY_PATH } from "../config.mjs";
+import {
+  COMPANION_PROJECTIONS,
+  GENERATED_FILES,
+  GENERATED_ROOTS,
+  INVENTORY_PATH,
+} from "../config.mjs";
 
 const PACKAGE_ROOT = path.resolve(import.meta.dirname, "..", "..");
 const REPO_ROOT = path.resolve(PACKAGE_ROOT, "..", "..");
@@ -56,6 +61,16 @@ async function withFixture(fn) {
   } finally {
     await rm(root, { recursive: true, force: true });
   }
+}
+
+function withoutArtifactFrontmatter(text) {
+  const match = text.match(/^---\n[\s\S]*?\n---\n/);
+  assert.ok(match, "fixture canonical source must have leading artifact front matter");
+  return text.slice(match[0].length);
+}
+
+function withoutGeneratedHeader(text) {
+  return text.slice(text.indexOf("\n") + 1);
 }
 
 test("inventory is metadata-only, complete, and models the driving/scoped boundary", async () => {
@@ -123,7 +138,15 @@ test("all projections are marked, source-addressed, and native ids are unique un
     [...outputs].filter(([name]) =>
       name.startsWith("plugins/grove/reference/charters/"),
     ).length,
-    16,
+    13,
+  );
+  assert.deepEqual(
+    COMPANION_PROJECTIONS.map(({ output }) => output),
+    [
+      "plugins/grove/reference/lifecycle.md",
+      "plugins/grove/reference/relations.md",
+      "plugins/grove/reference/versioning.md",
+    ],
   );
   assert.equal(
     [...outputs].filter(([name]) =>
@@ -149,6 +172,82 @@ test("all projections are marked, source-addressed, and native ids are unique un
     }
   }
 });
+
+test("runtime references strip artifact front matter and preserve canonical prose", async () => {
+  const outputs = await buildProjectionSet({ repoRoot: REPO_ROOT });
+  const inventory = JSON.parse(
+    await readFile(path.join(REPO_ROOT, INVENTORY_PATH), "utf8"),
+  );
+  const projections = [
+    ...inventory.roles.map((role) => ({
+      source: role.source,
+      output: role.outputs.reference,
+      fragment: role.exposures.find((item) => item.source_fragment)
+        ?.source_fragment,
+    })),
+    ...COMPANION_PROJECTIONS,
+  ];
+  for (const projection of projections) {
+    const canonical = await readFile(
+      path.join(REPO_ROOT, projection.source),
+      "utf8",
+    );
+    let expected = withoutArtifactFrontmatter(canonical);
+    if (projection.fragment === "scoped-agent-boundary") {
+      const needle =
+        "> **The `grove:dispatcher` plugin agent (`plugins/grove/agents/dispatcher.md`)";
+      expected = expected.replace(
+        needle,
+        `<a id="${projection.fragment}"></a>\n\n${needle}`,
+      );
+    }
+    const generated = outputs.get(projection.output);
+    assert.equal(withoutGeneratedHeader(generated), expected, projection.output);
+    assert.doesNotMatch(
+      withoutGeneratedHeader(generated).slice(0, 300),
+      /\n?(?:id|type|status|depends_on|implements|owner|updated):/,
+      projection.output,
+    );
+  }
+});
+
+test("artifact-only metadata changes the source digest but not runtime prose", async () =>
+  withFixture(async (root) => {
+    const before = await buildProjectionSet({ repoRoot: root });
+    const source = path.join(root, "charters", "executor.md");
+    const canonical = await readFile(source, "utf8");
+    await writeFile(
+      source,
+      canonical.replace("updated: 2026-07-21", "updated: 2026-07-24"),
+    );
+    const after = await buildProjectionSet({ repoRoot: root });
+    const reference = "plugins/grove/reference/charters/executor.md";
+
+    assert.notEqual(before.get(reference), after.get(reference));
+    assert.equal(
+      withoutGeneratedHeader(before.get(reference)),
+      withoutGeneratedHeader(after.get(reference)),
+    );
+    assert.notEqual(
+      before.get("plugins/grove/agents/executor.md"),
+      after.get("plugins/grove/agents/executor.md"),
+    );
+    assert.notEqual(
+      before.get("plugins/grove/skills/role-executor/SKILL.md"),
+      after.get("plugins/grove/skills/role-executor/SKILL.md"),
+    );
+  }));
+
+test("runtime reference generation fails closed on malformed artifact front matter", async () =>
+  withFixture(async (root) => {
+    const source = path.join(root, "charters", "executor.md");
+    const canonical = await readFile(source, "utf8");
+    await writeFile(source, canonical.replace(/^---\n/, ""));
+    await assert.rejects(
+      buildProjectionSet({ repoRoot: root }),
+      /must begin with artifact front matter/i,
+    );
+  }));
 
 test("lifecycle skill entrypoints are thin generated read-through projections", async () => {
   const outputs = await buildProjectionSet({ repoRoot: REPO_ROOT });
@@ -384,4 +483,9 @@ test("configured roots are explicit and do not include plugin custom-agent TOML"
     );
   }
   assert.equal(GENERATED_ROOTS.some((root) => root === ".codex/agents"), false);
+  assert.deepEqual(GENERATED_FILES, [
+    "plugins/grove/reference/lifecycle.md",
+    "plugins/grove/reference/relations.md",
+    "plugins/grove/reference/versioning.md",
+  ]);
 });
