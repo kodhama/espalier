@@ -210,6 +210,25 @@ function plainObject(value) {
   return value != null && typeof value === 'object' && !Array.isArray(value);
 }
 
+function sameJsonValue(actual, expected) {
+  if (actual === expected) return true;
+  if (Array.isArray(actual) || Array.isArray(expected)) {
+    return (
+      Array.isArray(actual)
+      && Array.isArray(expected)
+      && actual.length === expected.length
+      && actual.every((value, index) => sameJsonValue(value, expected[index]))
+    );
+  }
+  if (!plainObject(actual) || !plainObject(expected)) return false;
+  const actualKeys = Object.keys(actual).sort();
+  const expectedKeys = Object.keys(expected).sort();
+  return (
+    sameJsonValue(actualKeys, expectedKeys)
+    && actualKeys.every((key) => sameJsonValue(actual[key], expected[key]))
+  );
+}
+
 function validateIdentitySet(actual, expected, label, errors) {
   if (!Array.isArray(actual)) {
     errors.push(`${label} identities must be an array`);
@@ -255,6 +274,161 @@ function validateIdentitySet(actual, expected, label, errors) {
   }
 }
 
+function validateCodexProbeEvidence(record, row, errors) {
+  const evidence = record?.probe_evidence;
+  const phases = evidence?.phases;
+  if (!Array.isArray(phases)) {
+    errors.push(`${row.surface_id} support record requires retained probe_evidence phases`);
+    return;
+  }
+  const native = record?.role_identities?.native ?? [];
+  const expectedInvocation = (childResult, nativeId = childResult?.native_id) => ({
+    native_id: nativeId,
+    invocation: childResult?.invocation,
+    child_result: childResult,
+  });
+  const phasePlan = [
+    { id: '01-driving-session', kind: 'driving-session', invocations: [] },
+    {
+      id: '02-native-batch-1',
+      kind: 'native-batch',
+      invocations: native.slice(0, 4).map((item) => expectedInvocation(item)),
+    },
+    {
+      id: '03-native-batch-2',
+      kind: 'native-batch',
+      invocations: native.slice(4, 8).map((item) => expectedInvocation(item)),
+    },
+    {
+      id: '04-native-batch-3',
+      kind: 'native-batch',
+      invocations: native.slice(8, 12).map((item) => expectedInvocation(item)),
+    },
+    {
+      id: '05-producer-reviewer-separation',
+      kind: 'separation',
+      invocations: [
+        expectedInvocation(record?.producer_reviewer_separation?.producer),
+        expectedInvocation(record?.producer_reviewer_separation?.reviewer),
+      ],
+    },
+    {
+      id: '06-scoped-dispatcher',
+      kind: 'scoped-dispatcher',
+      invocations: [expectedInvocation(record?.spawned_dispatcher)],
+    },
+    {
+      id: '07-config-addendum',
+      kind: 'config-addendum',
+      invocations: [expectedInvocation(
+        record?.config_and_addendum,
+        record?.config_and_addendum?.role,
+      )],
+    },
+  ];
+  if (phases.length !== phasePlan.length) {
+    errors.push(`${row.surface_id} probe_evidence must contain exactly ${phasePlan.length} phases`);
+  }
+  const rootThreadIds = new Set();
+  const childThreadIds = new Set();
+  const artifactKeys = ['raw_jsonl', 'final_output', 'stderr', 'agent_metadata'];
+  for (let index = 0; index < phasePlan.length; index += 1) {
+    const expected = phasePlan[index];
+    const phase = phases[index];
+    if (!phase || phase.id !== expected.id || phase.kind !== expected.kind) {
+      errors.push(`${row.surface_id} probe_evidence phase ${index + 1} must be ${expected.id}/${expected.kind}`);
+      continue;
+    }
+    if (
+      phase.verdict !== 'pass'
+      || phase.exit_code !== 0
+      || !Number.isInteger(phase.raw_event_count)
+      || phase.raw_event_count < 1
+      || phase.completed_spawn_count !== expected.invocations.length
+      || !nonEmpty(phase.raw_jsonl)
+      || !nonEmpty(phase.final_output)
+      || !nonEmpty(phase.stderr)
+      || !nonEmpty(phase.agent_metadata)
+      || !Array.isArray(phase.argv)
+      || phase.argv[0] !== 'codex'
+      || !phase.argv.includes('exec')
+      || !phase.argv.includes('--json')
+    ) {
+      errors.push(`${row.surface_id} probe_evidence phase ${expected.id} lacks complete passing raw evidence`);
+    }
+    if (
+      !nonEmpty(phase.root_thread_id)
+      || rootThreadIds.has(phase.root_thread_id)
+      || childThreadIds.has(phase.root_thread_id)
+    ) {
+      errors.push(`${row.surface_id} probe_evidence phase ${expected.id} requires a unique root thread`);
+    } else {
+      rootThreadIds.add(phase.root_thread_id);
+    }
+    if (
+      !plainObject(phase.artifact_sha256)
+      || artifactKeys.some((key) => !/^[0-9a-f]{64}$/.test(phase.artifact_sha256[key] ?? ''))
+    ) {
+      errors.push(`${row.surface_id} probe_evidence phase ${expected.id} requires SHA-256 bindings for every raw artifact`);
+    }
+    if (
+      !nonEmpty(phase.model)
+      || !nonEmpty(phase.model_provider)
+      || phase.multi_agent_version !== 'v2'
+      || phase.model !== record?.clean_environment?.model
+      || phase.model_provider !== record?.clean_environment?.model_provider
+      || phase.multi_agent_version !== record?.clean_environment?.multi_agent_version
+    ) {
+      errors.push(`${row.surface_id} probe_evidence phase ${expected.id} model/backend differs from the support record`);
+    }
+    if (!Array.isArray(phase.invocations) || phase.invocations.length !== expected.invocations.length) {
+      errors.push(`${row.surface_id} probe_evidence phase ${expected.id} has the wrong invocation proof count`);
+      continue;
+    }
+    for (let invocationIndex = 0; invocationIndex < expected.invocations.length; invocationIndex += 1) {
+      const expectedInvocation = expected.invocations[invocationIndex];
+      const observed = phase.invocations[invocationIndex];
+      if (
+        !expectedInvocation
+        || observed?.native_id !== expectedInvocation.native_id
+        || observed?.invocation !== expectedInvocation.invocation
+        || observed?.observed_agent_role !== expectedInvocation.native_id
+        || observed?.task_name !== expectedInvocation.native_id
+        || observed?.fork_turns !== 'none'
+        || !nonEmpty(observed?.thread_id)
+        || childThreadIds.has(observed?.thread_id)
+        || rootThreadIds.has(observed?.thread_id)
+        || observed?.observed_parent_thread_id !== phase.root_thread_id
+        || !nonEmpty(observed?.observed_cli_version)
+        || !nonEmpty(observed?.observed_model)
+        || !nonEmpty(observed?.observed_model_provider)
+        || observed?.observed_model !== record?.clean_environment?.model
+        || observed?.observed_model_provider !== record?.clean_environment?.model_provider
+        || observed?.observed_multi_agent_version !== record?.clean_environment?.multi_agent_version
+        || !sameJsonValue(observed?.observed_child_result, expectedInvocation.child_result)
+        || !/^[0-9a-f]{64}$/.test(observed?.session_meta_sha256 ?? '')
+        || !nonEmpty(observed?.session_metadata)
+      ) {
+        errors.push(
+          `${row.surface_id} probe_evidence phase ${expected.id} does not prove invocation ${invocationIndex + 1}`,
+        );
+      }
+      if (nonEmpty(observed?.thread_id)) childThreadIds.add(observed.thread_id);
+    }
+  }
+  if (
+    !nonEmpty(evidence?.plugin_list)
+    || !/^[0-9a-f]{64}$/.test(evidence?.plugin_list_sha256 ?? '')
+    || !nonEmpty(evidence?.codex_version)
+    || !/^[0-9a-f]{64}$/.test(evidence?.codex_version_sha256 ?? '')
+  ) {
+    errors.push(`${row.surface_id} probe_evidence requires SHA-256-bound plugin-list and Codex-version artifacts`);
+  }
+  if (evidence?.promotion_requires_raw_evidence_review !== true) {
+    errors.push(`${row.surface_id} probe_evidence must require independent raw-evidence review before promotion`);
+  }
+}
+
 export function validateSupportRecord(record, row, version, {
   inventory = null,
   sourceDigests = null,
@@ -274,6 +448,7 @@ export function validateSupportRecord(record, row, version, {
     'observed_at',
     'procedure',
   ];
+  if (row.host === 'codex') required.push('probe_evidence');
   if (record?.host !== row.host) errors.push(`${row.surface_id} support record host does not match`);
   if (record?.surface_id !== row.surface_id) errors.push(`${row.surface_id} support record surface_id does not match`);
   if (record?.grove_version !== version) errors.push(`${row.surface_id} support record Grove version does not match ${version}`);
@@ -320,6 +495,16 @@ export function validateSupportRecord(record, row, version, {
     errors.push(`${row.surface_id} clean environment must prove an empty consumer, candidate-only plugin state, and fresh session`);
   }
   if (
+    row.host === 'codex'
+    && (
+      !nonEmpty(record?.clean_environment?.model)
+      || !nonEmpty(record?.clean_environment?.model_provider)
+      || record?.clean_environment?.multi_agent_version !== 'v2'
+    )
+  ) {
+    errors.push(`${row.surface_id} clean environment must declare the proven Codex model, provider, and V2 backend`);
+  }
+  if (
     record?.launcher_form?.count !== native.length
     || record?.launcher_form?.contains_charter_body !== false
   ) {
@@ -360,6 +545,7 @@ export function validateSupportRecord(record, row, version, {
   ) {
     errors.push(`${row.surface_id} config and addendum must both be observed by grove_executor`);
   }
+  if (row.host === 'codex') validateCodexProbeEvidence(record, row, errors);
   return errors;
 }
 

@@ -228,6 +228,219 @@ export function validateCodexExecEvidence(events, expectedInvocations, threadRol
   };
 }
 
+function sameJsonValue(actual, expected) {
+  if (actual === expected) return true;
+  if (Array.isArray(actual) || Array.isArray(expected)) {
+    return (
+      Array.isArray(actual)
+      && Array.isArray(expected)
+      && actual.length === expected.length
+      && actual.every((value, index) => sameJsonValue(value, expected[index]))
+    );
+  }
+  if (
+    actual === null
+    || expected === null
+    || typeof actual !== 'object'
+    || typeof expected !== 'object'
+  ) {
+    return false;
+  }
+  const actualKeys = Object.keys(actual).sort();
+  const expectedKeys = Object.keys(expected).sort();
+  return (
+    sameJsonValue(actualKeys, expectedKeys)
+    && actualKeys.every((key) => sameJsonValue(actual[key], expected[key]))
+  );
+}
+
+export function parseCodexSessionEvidenceJsonl(text, sessionMetadata, rootThreadId) {
+  const firstLine = text.split(/\r?\n/, 1)[0];
+  const records = text.split(/\r?\n/).filter(Boolean).map((line) => JSON.parse(line));
+  const record = records[0];
+  if (record?.type !== 'session_meta' || !record.payload?.id) return null;
+  const turnContext = records.find((item) => item?.type === 'turn_context')?.payload;
+  const finalMessage = records
+    .filter((item) => (
+      item?.type === 'response_item'
+      && item.payload?.type === 'message'
+      && item.payload?.role === 'assistant'
+    ))
+    .flatMap((item) => item.payload.content ?? [])
+    .filter((item) => item?.type === 'output_text' && typeof item.text === 'string')
+    .map((item) => item.text)
+    .at(-1) ?? null;
+  const common = {
+    thread_id: record.payload.id,
+    cli_version: record.payload.cli_version ?? null,
+    model: turnContext?.model ?? null,
+    model_provider: record.payload.model_provider ?? null,
+    multi_agent_version: turnContext?.multi_agent_version ?? null,
+    session_meta_sha256: createHash('sha256').update(firstLine).digest('hex'),
+    session_metadata: sessionMetadata,
+  };
+  if (record.payload.id === rootThreadId) {
+    const collaborationCalls = records
+      .filter((item) => (
+        item?.type === 'response_item'
+        && item.payload?.type === 'function_call'
+        && item.payload?.namespace === 'collaboration'
+      ))
+      .map((item) => {
+        const parsed = JSON.parse(item.payload.arguments);
+        const { message: _encryptedMessage, ...argumentsWithoutMessage } = parsed;
+        return {
+          name: item.payload.name,
+          call_id: item.payload.call_id,
+          arguments: argumentsWithoutMessage,
+        };
+      });
+    return {
+      kind: 'root',
+      ...common,
+      collaboration_calls: collaborationCalls,
+    };
+  }
+  const source = record.payload.source?.subagent?.thread_spawn;
+  if (!source) return null;
+  return {
+    kind: 'child',
+    ...common,
+    agent_role: source.agent_role ?? record.payload.agent_role ?? null,
+    agent_path: source.agent_path ?? record.payload.agent_path ?? null,
+    agent_nickname: source.agent_nickname ?? record.payload.agent_nickname ?? null,
+    parent_thread_id: source.parent_thread_id ?? record.payload.parent_thread_id ?? null,
+    final_message: finalMessage,
+  };
+}
+
+export function validateCodexV2SessionEvidence(
+  events,
+  expectedInvocations,
+  {
+    rootThreadId,
+    model,
+    expectedModel,
+    modelProvider,
+    expectedModelProvider,
+    multiAgentVersion,
+    collaborationCalls = [],
+    threadRoles = {},
+  } = {},
+) {
+  if (!Array.isArray(events) || events.length === 0) {
+    throw new Error('Codex JSONL contains no events');
+  }
+  const started = events.find((event) => event?.type === 'thread.started');
+  if (!started?.thread_id || started.thread_id !== rootThreadId) {
+    throw new Error('Codex JSONL thread id does not match persisted root session');
+  }
+  if (!events.some((event) => event?.type === 'turn.completed')) {
+    throw new Error('Codex JSONL contains no turn.completed event');
+  }
+  if (multiAgentVersion !== 'v2') {
+    throw new Error(`persisted root session is not MultiAgentV2: ${multiAgentVersion ?? 'unknown'}`);
+  }
+  if (!expectedModel || model !== expectedModel) {
+    throw new Error(
+      `persisted root session model ${model ?? 'unknown'} does not match pinned model ${expectedModel ?? 'missing'}`,
+    );
+  }
+  if (!expectedModelProvider || modelProvider !== expectedModelProvider) {
+    throw new Error(
+      `persisted root session model provider ${modelProvider ?? 'unknown'} does not match pinned provider ${expectedModelProvider ?? 'missing'}`,
+    );
+  }
+
+  const calls = collaborationCalls.filter((call) => (
+    call?.name === 'spawn_agent' || call?.name === 'wait_agent'
+  ));
+  if (calls.length !== expectedInvocations.length * 2) {
+    throw new Error(
+      `persisted root session proves ${calls.length} spawn/wait call(s); expected ${expectedInvocations.length * 2}`,
+    );
+  }
+  const children = Object.values(threadRoles).filter(
+    (role) => role?.parent_thread_id === rootThreadId,
+  );
+  if (children.length !== expectedInvocations.length) {
+    throw new Error(
+      `persisted sessions prove ${children.length} direct child agent(s); expected ${expectedInvocations.length}`,
+    );
+  }
+
+  const invocations = [];
+  for (let index = 0; index < expectedInvocations.length; index += 1) {
+    const expected = expectedInvocations[index];
+    const spawn = calls[index * 2];
+    const wait = calls[(index * 2) + 1];
+    if (spawn?.name !== 'spawn_agent' || wait?.name !== 'wait_agent') {
+      throw new Error(`persisted root session does not prove sequential spawn/wait pair ${index + 1}`);
+    }
+    if (
+      spawn.arguments?.agent_type !== expected.native_id
+      || spawn.arguments?.task_name !== expected.native_id
+      || spawn.arguments?.fork_turns !== 'none'
+    ) {
+      throw new Error(
+        `persisted root session does not invoke exact custom agent role ${expected.native_id}`,
+      );
+    }
+    const matches = children.filter((role) => (
+      role.agent_role === expected.native_id
+      && role.agent_path?.endsWith(`/${expected.native_id}`)
+      && role.multi_agent_version === 'v2'
+      && role.model === expectedModel
+      && role.model_provider === expectedModelProvider
+    ));
+    if (matches.length !== 1) {
+      throw new Error(
+        `isolated session metadata does not prove exactly one custom agent role ${expected.native_id}`,
+      );
+    }
+    const roleProof = matches[0];
+    let childResult;
+    try {
+      childResult = JSON.parse(roleProof.final_message);
+    } catch {
+      throw new Error(
+        `persisted child session returned non-JSON discovery evidence for ${expected.native_id}`,
+      );
+    }
+    if (!sameJsonValue(childResult, expected.child_result)) {
+      throw new Error(
+        `persisted child session returned wrong discovery evidence for ${expected.native_id}`,
+      );
+    }
+    invocations.push({
+      native_id: expected.native_id,
+      invocation: expected.invocation,
+      thread_id: roleProof.thread_id,
+      task_name: spawn.arguments.task_name,
+      fork_turns: spawn.arguments.fork_turns,
+      observed_agent_role: roleProof.agent_role,
+      observed_agent_path: roleProof.agent_path,
+      observed_parent_thread_id: roleProof.parent_thread_id,
+      observed_cli_version: roleProof.cli_version,
+      observed_model: roleProof.model,
+      observed_model_provider: roleProof.model_provider,
+      observed_multi_agent_version: roleProof.multi_agent_version,
+      observed_child_result: childResult,
+      session_meta_sha256: roleProof.session_meta_sha256,
+      session_metadata: roleProof.session_metadata,
+    });
+  }
+  return {
+    raw_event_count: events.length,
+    completed_spawn_count: expectedInvocations.length,
+    root_thread_id: rootThreadId,
+    model,
+    model_provider: modelProvider,
+    multi_agent_version: multiAgentVersion,
+    invocations,
+  };
+}
+
 function identitySchema() {
   return {
     type: 'object',
@@ -337,15 +550,18 @@ ${expectedBlock(assignments)}
 }
 
 function nativePrompt(identities) {
-  const assignments = identities.map(({ native_id, invocation }) => ({
+  const assignments = identities.map(({ canonical_id, native_id, invocation }) => ({
+    canonical_id,
     native_id,
     invocation,
   }));
   return `This is a Grove support-evidence probe, not role work.
 For each assignment below, sequentially spawn the exact custom agent
-named by native_id, wait for it, and ask it only to load its installed Grove
+named by native_id with fork_turns set to "none", wait for it, and ask it only to load its installed Grove
 role skill/reference and discover its canonical id, source, digest, and
-exposure. Spawn no other agents and never run two concurrently. Preserve every
+exposure. Require each child to return only one compact JSON object containing
+canonical_id, native_id, exposure, source, digest, and invocation. Spawn no
+other agents and never run two concurrently. Preserve every
 invocation token exactly. Return only one JSON object matching the supplied
 schema, with identities in the listed order.
 
@@ -356,9 +572,10 @@ ${expectedBlock(assignments)}
 
 function separationPrompt({ producer, reviewer }) {
   return `This is a Grove support-evidence probe, not implementation or review.
-Sequentially spawn exactly two distinct custom agents: grove_executor and
-grove_code_reviewer. Wait for each. Ask each only to load its Grove role and
-return its assigned invocation token. Do not let either agent perform role
+Sequentially spawn exactly two distinct custom agents with fork_turns set to
+"none": grove_executor and grove_code_reviewer. Wait for each. Ask each only to load its Grove role and
+return only compact JSON containing native_id and its assigned invocation
+token. Do not let either agent perform role
 work. Return only JSON matching the supplied schema:
 ${JSON.stringify({ separate: true, producer, reviewer }, null, 2)}
 `;
@@ -366,10 +583,11 @@ ${JSON.stringify({ separate: true, producer, reviewer }, null, 2)}
 
 function scopedPrompt(expected) {
   return `This is a Grove support-evidence probe, not dispatch work.
-Spawn exactly the custom agent grove_dispatcher and wait for it. Ask it to
+Spawn exactly the custom agent grove_dispatcher with fork_turns set to "none"
+and wait for it. Ask it to
 load the installed dispatcher role and discover its actual exposure plus
 whether that role advertises driving-session responsibility. Ask the child to
-return only a compact JSON object containing native_id, exposure,
+return only one compact JSON object containing native_id, exposure,
 advertised_driving_session, and its assigned invocation token. Return only
 JSON matching the supplied schema:
 ${JSON.stringify({
@@ -381,7 +599,8 @@ ${JSON.stringify({
 
 function configPrompt(expected) {
   return `This is a Grove support-evidence probe, not implementation work.
-Spawn exactly grove_executor and wait for it. Ask it to load its Grove role,
+Spawn exactly grove_executor with fork_turns set to "none" and wait for it.
+Ask it to load its Grove role,
 read the consumer's .grove/config.toml and .grove/agents/executor.md, and
 discover the config and addendum sentinel values without running either
 command or modifying the repository. Ask the child to return only a compact
@@ -614,9 +833,16 @@ export async function prepareCodexSupportProbe({
     join(codexHome, 'config.toml'),
     '# Probe-local configuration; credentials must not use the shared OS keyring.\n' +
     'cli_auth_credentials_store = "file"\n\n' +
+    '# Pin the current V2 path so this support record is model/backend-specific and reproducible.\n' +
+    'model = "gpt-5.6-sol"\n\n' +
+    '[features]\n' +
+    'multi_agent_v2 = true\n\n' +
     '[agents]\n' +
     'enabled = true\n' +
-    'max_concurrent_threads_per_session = 1\n',
+    'max_concurrent_threads_per_session = 1\n\n' +
+    '# Codex loads project-scoped .codex/agents only for a trusted project.\n' +
+    `[projects.${JSON.stringify(await realpath(consumerRoot))}]\n` +
+    'trust_level = "trusted"\n',
   );
   const runnerSource = join(packageRoot, 'release', 'bin', 'run-codex-support-probe.mjs');
   await cp(runnerSource, join(destination, 'run-probe.mjs'));
@@ -636,6 +862,10 @@ export async function prepareCodexSupportProbe({
     profile: 'steward',
     sandbox: 'read-only',
     approval_policy: 'never',
+    model: 'gpt-5.6-sol',
+    model_provider: 'openai',
+    multi_agent_version: 'v2',
+    project_trust: 'explicit isolated consumer',
     paths: {
       marketplace: 'marketplace',
       package_snapshot: 'marketplace/plugins/grove',

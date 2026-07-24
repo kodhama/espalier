@@ -53,19 +53,29 @@ verifies it has exactly one enabled Grove candidate, and executes sequential
 non-ephemeral phases: both driving roles, three native batches of four, a
 separate executor/reviewer check, the scoped dispatcher, and the executor
 config/addendum sentinels. The probe-local config caps subagent concurrency at
-one. Each phase has a bounded timeout and retains JSONL, exact argv,
+one, pins `gpt-5.6-sol` with MultiAgentV2, and explicitly trusts only the
+fresh isolated consumer so Codex loads its project-scoped launchers. Native
+spawns use the exact launcher id with no history fork. Each phase has a bounded
+timeout and retains JSONL, exact argv,
 timestamps, exit code, stderr, structured output, and a minimal mapping from
-each spawned thread to the observed custom-agent role, parent thread, CLI
-version, and raw session-metadata hash recorded by the isolated Codex session.
+each persisted spawn call to the observed custom-agent role, agent path,
+parent thread, CLI version/model/provider/backend, exact child discovery JSON,
+and raw session-metadata hash recorded by the isolated Codex session. Every
+retained phase artifact, plus the plugin inventory and Codex version, is bound
+into the candidate record by SHA-256; roots are unique per phase and child
+lineage must resolve to that phase's root.
 This safe projection remains with the logs; full session metadata and
 instructions remain only in the isolated home.
 
 The runner writes an incomplete attempt at the first failure. On success it
 writes a validator-clean **candidate** support record, but never promotes
-`surfaces.json`; raw events still require review. The isolated home may contain
-login state, so do not archive it. After retaining evidence, run the printed
-`--sanitize` command to remove only that marked probe home, SQLite state, and
-runtime temp directory.
+`surfaces.json`. The validator checks internal structure and artifact bindings;
+an independent reviewer must still compare those hashes with the retained raw
+files and inspect the raw events before promotion. That review is the external
+trust boundary: the JSON validator does not claim to authenticate who created
+the files. The isolated home may contain login state, so do not archive it.
+After retaining evidence, run the printed `--sanitize` command to remove only
+that marked probe home, SQLite state, and runtime temp directory.
 
 ## Install through Claude
 

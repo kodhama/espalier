@@ -198,7 +198,11 @@ async function parseJsonl(path) {
   return lines.map((line) => JSON.parse(line));
 }
 
-async function collectSessionRoleMetadata() {
+async function fileSha256(path) {
+  return createHash('sha256').update(await readFile(path)).digest('hex');
+}
+
+async function collectSessionEvidence(rootThreadId, parseSessionEvidence) {
   const files = [];
   async function visit(directory) {
     let entries;
@@ -217,24 +221,18 @@ async function collectSessionRoleMetadata() {
   await visit(join(paths.codex_home, 'sessions'));
   await visit(join(paths.codex_home, 'archived_sessions'));
 
-  const result = {};
+  const threadRoles = {};
+  let rootSession = null;
   for (const path of files) {
-    const firstLine = (await readFile(path, 'utf8')).split(/\r?\n/, 1)[0];
-    const record = JSON.parse(firstLine);
-    if (record?.type !== 'session_meta' || !record.payload?.id) continue;
-    const source = record.payload.source?.subagent?.thread_spawn;
-    if (!source) continue;
-    result[record.payload.id] = {
-      thread_id: record.payload.id,
-      agent_role: source.agent_role ?? record.payload.agent_role ?? null,
-      agent_nickname: source.agent_nickname ?? record.payload.agent_nickname ?? null,
-      parent_thread_id: source.parent_thread_id ?? record.payload.parent_thread_id ?? null,
-      cli_version: record.payload.cli_version ?? null,
-      session_meta_sha256: createHash('sha256').update(firstLine).digest('hex'),
-      session_metadata: relativeResultPath(path),
-    };
+    const text = await readFile(path, 'utf8');
+    const evidence = parseSessionEvidence(text, relativeResultPath(path), rootThreadId);
+    if (evidence?.kind === 'root') rootSession = evidence;
+    else if (evidence?.kind === 'child') threadRoles[evidence.thread_id] = evidence;
   }
-  return result;
+  if (!rootSession) {
+    throw new Error(`persisted Codex session not found for root thread ${rootThreadId}`);
+  }
+  return { rootSession, threadRoles };
 }
 
 function expectedAgentInvocations(phase) {
@@ -243,6 +241,7 @@ function expectedAgentInvocations(phase) {
     return phase.expected.map((identity) => ({
       native_id: identity.native_id,
       invocation: identity.invocation,
+      child_result: identity,
       required_observations: [
         identity.canonical_id,
         identity.source,
@@ -252,12 +251,16 @@ function expectedAgentInvocations(phase) {
     }));
   }
   if (phase.kind === 'separation') {
-    return [phase.expected.producer, phase.expected.reviewer];
+    return [phase.expected.producer, phase.expected.reviewer].map((identity) => ({
+      ...identity,
+      child_result: identity,
+    }));
   }
   if (phase.kind === 'scoped-dispatcher') {
     return [{
       native_id: phase.expected.native_id,
       invocation: phase.expected.invocation,
+      child_result: phase.expected,
       required_observations: [
         phase.expected.exposure,
         String(phase.expected.advertised_driving_session),
@@ -268,6 +271,7 @@ function expectedAgentInvocations(phase) {
     return [{
       native_id: phase.expected.role,
       invocation: phase.expected.invocation,
+      child_result: phase.expected,
       required_observations: [
         phase.expected.config_sentinel,
         phase.expected.addendum_sentinel,
@@ -280,6 +284,13 @@ function expectedAgentInvocations(phase) {
 
 async function validateLaunchers() {
   const expected = manifest.expected.native;
+  const generated = JSON.parse(await readFile(
+    join(paths.package_snapshot, 'build', 'generated', 'codex-launchers.json'),
+    'utf8',
+  ));
+  const projections = new Map(
+    (generated.launchers ?? []).map((launcher) => [launcher.native_id, launcher]),
+  );
   const names = (await readdir(join(paths.consumer, '.codex', 'agents')))
     .filter((name) => name.endsWith('.toml'))
     .sort();
@@ -287,13 +298,16 @@ async function validateLaunchers() {
   if (!sameJson(names, expectedNames)) throw new Error('consumer launcher set differs from the native inventory');
   for (const identity of expected) {
     const launcher = await readFile(join(paths.consumer, '.codex', 'agents', `${identity.native_id}.toml`), 'utf8');
+    const projection = projections.get(identity.native_id);
     if (
-      !launcher.includes(`canonical-source: ${identity.source}`)
-      || !launcher.includes(identity.digest)
-      || launcher.includes('\n## Method\n')
-      || launcher.length > 2_500
+      !projection
+      || projection.canonical_id !== identity.canonical_id
+      || projection.exposure !== identity.exposure
+      || projection.source !== identity.source
+      || projection.digest !== identity.digest
+      || launcher !== projection.content
     ) {
-      throw new Error(`launcher ${identity.native_id} is not a thin source-addressed projection`);
+      throw new Error(`launcher ${identity.native_id} differs from its exact generated projection`);
     }
   }
 }
@@ -488,11 +502,28 @@ async function main() {
         const output = JSON.parse(await readFile(final, 'utf8'));
         validatePhaseOutput(phase, output);
         const events = await parseJsonl(jsonl);
-        const threadRoles = await collectSessionRoleMetadata();
-        const eventProof = probeModule.validateCodexExecEvidence(
+        const rootThreadId = events.find((event) => event?.type === 'thread.started')?.thread_id;
+        const sessionEvidence = await collectSessionEvidence(
+          rootThreadId,
+          probeModule.parseCodexSessionEvidenceJsonl,
+        );
+        const expectedInvocations = expectedAgentInvocations(phase);
+        if (manifest.multi_agent_version !== 'v2') {
+          throw new Error(`prepared probe declares unsupported multi-agent backend: ${manifest.multi_agent_version}`);
+        }
+        const eventProof = probeModule.validateCodexV2SessionEvidence(
           events,
-          expectedAgentInvocations(phase),
-          threadRoles,
+          expectedInvocations,
+          {
+            rootThreadId,
+            model: sessionEvidence.rootSession.model,
+            expectedModel: manifest.model,
+            modelProvider: sessionEvidence.rootSession.model_provider,
+            expectedModelProvider: manifest.model_provider,
+            multiAgentVersion: sessionEvidence.rootSession.multi_agent_version,
+            collaborationCalls: sessionEvidence.rootSession.collaboration_calls,
+            threadRoles: sessionEvidence.threadRoles,
+          },
         );
         const metadataProofPath = join(paths.logs, `${phase.id}-agent-metadata.json`);
         await writeFile(
@@ -501,6 +532,12 @@ async function main() {
         );
         Object.assign(phaseReport, eventProof, { verdict: 'pass' });
         phaseReport.agent_metadata = relativeResultPath(metadataProofPath);
+        phaseReport.artifact_sha256 = {
+          raw_jsonl: await fileSha256(jsonl),
+          final_output: await fileSha256(final),
+          stderr: await fileSha256(stderr),
+          agent_metadata: await fileSha256(metadataProofPath),
+        };
         assertNotInterrupted();
       } catch (error) {
         phaseReport.verdict = 'fail';
@@ -539,6 +576,10 @@ async function main() {
         fresh_sessions: manifest.phases.length,
         profile: manifest.profile,
         surface_provenance: manifest.surface_provenance,
+        model: manifest.model,
+        model_provider: manifest.model_provider,
+        multi_agent_version: manifest.multi_agent_version,
+        project_trust: manifest.project_trust,
         session: 'sequential fresh non-ephemeral codex exec probes',
         sandbox: manifest.sandbox,
         approval_policy: manifest.approval_policy,
@@ -570,13 +611,16 @@ async function main() {
         'Used a fresh isolated CODEX_HOME and verified exactly one enabled Grove plugin.',
         'Ran driving roles without delegation and twelve native identities in three sequential batches.',
         'Ran separate executor/reviewer, scoped-dispatcher, and executor config/addendum probes.',
-        'Validated completed custom-agent roles and invocation challenges in raw collaboration events.',
-        'Retained raw JSONL, exact argv, timestamps, exit codes, and structured final output for every phase.',
+        'Validated exact V2 agent_type calls, no-history forks, child agent_role metadata, and invocation challenges.',
+        'Retained Codex JSONL plus normalized persisted-session proof, exact argv, timestamps, exit codes, and structured final output for every phase.',
       ],
       probe_evidence: {
         phases: phaseReports,
         plugin_list: 'logs/plugin-list.json',
+        plugin_list_sha256: await fileSha256(join(paths.logs, 'plugin-list.json')),
         codex_version: 'logs/codex-version.txt',
+        codex_version_sha256: await fileSha256(join(paths.logs, 'codex-version.txt')),
+        promotion_requires_raw_evidence_review: true,
       },
     };
 
