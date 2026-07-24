@@ -1,12 +1,4 @@
-<!-- vendored from ../../charters/lifecycle.md — the repo's canonical copy; keep in sync -->
----
-id: charter-lifecycle
-type: charter
-status: approved  # maintainer's intent act 2026-07-12 ("merge", PR #48) — in-PR flip recording the act, adr-0007 precedent; conformance-reviewed against adr-0008 before approval; amended 2026-07-21 per adr-0026 D7 (delivery: plugin-carried under the version stamp, no longer installed per-repo)
-depends_on: [adr-0008-lifecycle-enum-companion, adr-0026-thin-vendor-boundary]
-owner: agent
-updated: 2026-07-23
----
+<!-- GENERATED — DO NOT EDIT; canonical-source: charters/lifecycle.md; sha256: d0e020ec18dfb84055b56e0240571f8092667f37d2c2067ace607313a94b5a84 -->
 
 # lifecycle — the artifact state enum, stated once
 

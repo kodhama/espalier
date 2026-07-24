@@ -1,12 +1,4 @@
-<!-- vendored from ../../charters/relations.md — the repo's canonical copy; keep in sync -->
----
-id: charter-relations
-type: charter
-status: approved  # maintainer's intent act 2026-07-13 (grove#58 "#58 approved. Passes the gate. Execute to the same PR.") — conformance-reviewed against adr-0011 before approval; in-PR flip recording the act; amended 2026-07-21 per adr-0026 D7 (delivery: plugin-carried under the version stamp, no longer installed per-repo)
-depends_on: [adr-0011-relations-companion, adr-0016-implements-edge-taxonomy, adr-0026-thin-vendor-boundary]
-owner: agent
-updated: 2026-07-21
----
+<!-- GENERATED — DO NOT EDIT; canonical-source: charters/relations.md; sha256: d37d7242fd0445471c5f18139d9907345800acd8eb004b61adb3c0e16a3fe9d5 -->
 
 # relations — the artifact edge taxonomy, stated once
 
