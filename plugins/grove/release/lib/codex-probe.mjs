@@ -590,12 +590,17 @@ ${JSON.stringify({ separate: true, producer, reviewer }, null, 2)}
 function scopedPrompt(expected) {
   return `This is a Grove support-evidence probe, not dispatch work.
 Spawn with agent_type set exactly to grove_dispatcher, fork_turns set to "none",
-and a lowercase task_name, then wait for it. Ask it to
-load the installed dispatcher role and discover its actual exposure plus
-whether that role advertises driving-session responsibility. Ask the child to
-return only one compact JSON object containing native_id, exposure,
-advertised_driving_session, and its assigned invocation token. Return only
-JSON matching the supplied schema:
+and a lowercase task_name, then wait for it. Pass the assigned native_id and
+invocation token to the child and require it to preserve both exactly;
+the canonical role id is distinct and must not replace native_id. Ask it to
+load the installed dispatcher role and discover this spawned custom agent's
+selected exposure plus whether that selected exposure itself claims authority
+to enact or sequence the full driving-session dispatcher. For
+advertised_driving_session, return true only when the spawned adapter claims
+that authority; a statement that a separate driving task retains the full
+dispatcher is not such a claim. Ask the child to return only one compact JSON
+object containing native_id, exposure, advertised_driving_session, and its
+assigned invocation token. Return only JSON matching the supplied schema:
 ${JSON.stringify({
     native_id: expected.native_id,
     invocation: expected.invocation,

@@ -141,6 +141,10 @@ test("all projections are marked, source-addressed, and native ids are unique un
       launcher.content,
       new RegExp(`Canonical Grove role id: ${launcher.canonical_id}\\.`),
     );
+    assert.match(
+      launcher.content,
+      new RegExp(`Codex native agent id: ${launcher.native_id}\\.`),
+    );
   }
 
   assert.equal(
@@ -305,6 +309,10 @@ test("dispatcher Codex skill selects full driving or scoped native exposure from
   assert.match(
     dispatcher.content,
     /Canonical Grove role id: dispatcher\./,
+  );
+  assert.match(
+    dispatcher.content,
+    /Codex native agent id: grove_dispatcher\./,
   );
 });
 

@@ -545,6 +545,9 @@ test('INV20/S18 — probe preparation isolates candidate state without launching
   assert.match(nativePrompt, /"canonical_id": "code-reviewer"/);
   assert.match(nativePrompt, /fork_turns set to "none"/);
   assert.doesNotMatch(scopedPrompt, /scoped-advisor/);
+  assert.match(scopedPrompt, /canonical role id is distinct/);
+  assert.match(scopedPrompt, /selected exposure itself claims authority/);
+  assert.match(scopedPrompt, /separate driving task retains the full/);
   assert.doesNotMatch(configPrompt, /fixture-support-command-030/);
   assert.doesNotMatch(configPrompt, /fixture-executor-addendum-030/);
   assert.match(runner, /CODEX_HOME/);

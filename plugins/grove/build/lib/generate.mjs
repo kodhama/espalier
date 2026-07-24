@@ -374,6 +374,7 @@ function launcherContent(role, exposure, digest) {
       tomlScalar(
         `Load and follow the installed Grove skill grove:role-${role.id}. ` +
           `Canonical Grove role id: ${role.id}. ` +
+          `Codex native agent id: ${exposure.native_id}. ` +
           `Verify canonical source ${role.source} at sha256 ${digest}. ` +
           `Grove exposure selector: ${exposure.class}. ` +
           `Use only its declared ${exposure.class} exposure.`,
